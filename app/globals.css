@@ -976,9 +976,10 @@ code {
   position: relative;
   z-index: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 4px;
   width: 100%;
   text-align: center;
 }
