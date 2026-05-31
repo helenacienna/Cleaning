@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { makeCleanerShiftAssignmentId } from '../../../data/demo-data';
 
+const STORAGE_KEY = 'cienna-allocation-board-state-v1';
+
 function formatJobOrder(jobOrder) {
   return String(jobOrder).padStart(3, '0');
 }
@@ -197,16 +199,75 @@ export default function AllocationBoard({
   title = 'Task card allocation board',
   description = 'Switch view to see every task card, including unallocated work. Drag cards between staff and days.',
 }) {
-  const [cards, setCards] = useState(board.cards);
+  const [cards, setCards] = useState(() => {
+    if (typeof window === 'undefined') {
+      return board.cards;
+    }
+
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      return board.cards;
+    }
+
+    try {
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed.cards) ? parsed.cards : board.cards;
+    } catch {
+      return board.cards;
+    }
+  });
   const [view, setView] = useState(initialView);
   const [selectedDay, setSelectedDay] = useState(board.days[0]);
   const [hierarchyMode, setHierarchyMode] = useState('nested');
   const [openGroups, setOpenGroups] = useState({});
   const [openZoneGroups, setOpenZoneGroups] = useState({});
   const [activeDropKey, setActiveDropKey] = useState('');
+  const [history, setHistory] = useState([]);
+  const [saveNotice, setSaveNotice] = useState('Loaded organiser state');
+
+  function setCardsWithHistory(updater) {
+    setCards((existing) => {
+      const nextCards = typeof updater === 'function' ? updater(existing) : updater;
+      setHistory((past) => [...past.slice(-19), existing]);
+      return nextCards;
+    });
+  }
+
+  function persistCards(nextCards, message = 'Changes saved locally') {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ cards: nextCards }));
+    }
+    setSaveNotice(message);
+  }
 
   function moveCard(cardId, updates, targetCardId = null) {
-    setCards((existing) => reorderCards(existing, cardId, updates, targetCardId));
+    setCardsWithHistory((existing) => {
+      const nextCards = reorderCards(existing, cardId, updates, targetCardId);
+      persistCards(nextCards);
+      return nextCards;
+    });
+  }
+
+  function undoLastMove() {
+    setHistory((past) => {
+      if (!past.length) {
+        return past;
+      }
+
+      const previousCards = past[past.length - 1];
+      setCards(previousCards);
+      persistCards(previousCards, 'Reverted last change');
+      return past.slice(0, -1);
+    });
+  }
+
+  function resetBoard() {
+    setHistory([]);
+    setCards(board.cards);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+    setSaveNotice('Reset to original demo layout');
   }
 
   function handleDragStart(event, cardId) {
@@ -251,13 +312,16 @@ export default function AllocationBoard({
           <span className="badge">{cards.length} task cards</span>
           <span className="badge">{assignedCount} allocated</span>
           <span className="badge">{unallocatedCount} unallocated</span>
+          <span className="badge">{saveNotice}</span>
+          <button className="button secondary" type="button" onClick={undoLastMove} disabled={!history.length}>Undo</button>
+          <button className="button secondary" type="button" onClick={resetBoard}>Reset layout</button>
           {!lockView && (
             <>
               <button className={`button ${view === 'weekly' ? 'primary' : 'secondary'}`} type="button" onClick={() => setView('weekly')}>Weekly board</button>
               <button className={`button ${view === 'daily' ? 'primary' : 'secondary'}`} type="button" onClick={() => setView('daily')}>Daily staff view</button>
             </>
           )}
-          <span className="button primary">Save allocations</span>
+          <span className="button primary">Organising surface active</span>
         </div>
       </div>
 

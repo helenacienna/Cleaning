@@ -535,6 +535,11 @@ code {
   justify-content: flex-end;
 }
 
+.admin-calendar-controls .button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .admin-summary-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
