@@ -815,6 +815,10 @@ code {
   border: 1px solid rgba(15,23,42,0.08);
 }
 
+.hierarchy-facility-box {
+  border-width: 2px;
+}
+
 .hierarchy-mode-compact .hierarchy-facility-box,
 .hierarchy-mode-compact .hierarchy-zone-box,
 .hierarchy-mode-compact .hierarchy-group-box {
@@ -845,6 +849,12 @@ code {
 .facility-theme-cienna-south {
   background: #fde68a;
   border-color: #f59e0b;
+}
+
+.facility-theme-cienna-north .hierarchy-facility-progress,
+.facility-theme-cienna-central .hierarchy-facility-progress,
+.facility-theme-cienna-south .hierarchy-facility-progress {
+  border-width: 2px;
 }
 
 .hierarchy-facility-box-continuous {
@@ -967,9 +977,10 @@ code {
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: center;
+  gap: 12px;
   width: 100%;
+  text-align: center;
 }
 
 .hierarchy-facility-progress span,
@@ -978,6 +989,12 @@ code {
 .hierarchy-group-toggle strong {
   color: var(--muted);
   font-size: 12px;
+}
+
+.hierarchy-facility-progress strong {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
 }
 
 .hierarchy-facility-progress.complete {
