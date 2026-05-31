@@ -3,7 +3,7 @@ import AllocationBoard from '../calendar/AllocationBoard';
 import { scheduleBuilder } from '../../../data/demo-data';
 
 export const metadata = {
-  title: 'Daily Hierarchy · Cienna Cleaning',
+  title: 'Organiser Board · Cienna Cleaning',
 };
 
 export default function DailyHierarchyPage() {
@@ -12,7 +12,7 @@ export default function DailyHierarchyPage() {
       <div className="topbar">
         <div className="brand">
           <p>Cienna Cleaning Admin</p>
-          <h1>Daily hierarchy board</h1>
+          <h1>Daily organiser board</h1>
         </div>
         <div className="badge-row">
           <Link className="button secondary" href="/">Back to dashboard</Link>

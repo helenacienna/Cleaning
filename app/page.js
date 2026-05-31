@@ -110,7 +110,7 @@ export default function HomePage() {
         <div className="workflow-card">
           <span className="badge">Step 2</span>
           <strong>Organise the shift</strong>
-          <p className="muted">Use the daily hierarchy as the main organiser board to drag, reorder, and shape the day.</p>
+          <p className="muted">Use the organiser board as the main planning surface to drag, reorder, and shape the day.</p>
           <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
         </div>
         <div className="workflow-card">

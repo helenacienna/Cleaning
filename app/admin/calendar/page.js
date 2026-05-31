@@ -24,7 +24,7 @@ export default function AdminCalendarPage() {
         <div className="workflow-banner">
           <div>
             <span className="badge">Workflow</span>
-            <strong>This weekly planner is now secondary — the daily hierarchy is the main organiser surface.</strong>
+            <strong>This weekly planner is now secondary — the organiser board is the main planning surface.</strong>
           </div>
           <div className="workflow-banner-actions">
             <Link className="button secondary" href="/admin/task-cards">Task card library</Link>
@@ -36,7 +36,7 @@ export default function AdminCalendarPage() {
         <div className="admin-calendar-header">
           <div>
             <h2>Secondary weekly planner</h2>
-            <p className="muted">Use this as a supporting overview only — daily hierarchy is now the primary place to organise task cards.</p>
+            <p className="muted">Use this as a supporting overview only — the organiser board is now the primary place to organise task cards.</p>
           </div>
         <div className="admin-calendar-controls">
           <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>

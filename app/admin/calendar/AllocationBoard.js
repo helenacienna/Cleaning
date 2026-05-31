@@ -196,25 +196,24 @@ export default function AllocationBoard({
   board,
   initialView = 'weekly',
   lockView = false,
-  title = 'Task card allocation board',
-  description = 'Switch view to see every task card, including unallocated work. Drag cards between staff and days.',
+  title = 'Task card organiser board',
+  description = 'Switch view to see every task card, including unallocated work. Drag cards between staff, days, and groups.',
 }) {
+  const initialStoredState = typeof window !== 'undefined' ? (() => {
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  })() : null;
+
   const [cards, setCards] = useState(() => {
     if (typeof window === 'undefined') {
       return board.cards;
     }
 
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      return board.cards;
-    }
-
-    try {
-      const parsed = JSON.parse(stored);
-      return Array.isArray(parsed.cards) ? parsed.cards : board.cards;
-    } catch {
-      return board.cards;
-    }
+    return Array.isArray(initialStoredState?.cards) ? initialStoredState.cards : board.cards;
   });
   const [view, setView] = useState(initialView);
   const [selectedDay, setSelectedDay] = useState(board.days[0]);
@@ -223,7 +222,8 @@ export default function AllocationBoard({
   const [openZoneGroups, setOpenZoneGroups] = useState({});
   const [activeDropKey, setActiveDropKey] = useState('');
   const [history, setHistory] = useState([]);
-  const [saveNotice, setSaveNotice] = useState('Loaded organiser state');
+  const [shiftState, setShiftState] = useState(initialStoredState?.shiftState || 'draft');
+  const [saveNotice, setSaveNotice] = useState(initialStoredState?.cards ? 'Loaded organiser draft' : 'Draft ready');
 
   function setCardsWithHistory(updater) {
     setCards((existing) => {
@@ -235,7 +235,15 @@ export default function AllocationBoard({
 
   function persistCards(nextCards, message = 'Changes saved locally') {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ cards: nextCards }));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ cards: nextCards, shiftState }));
+    }
+    setSaveNotice(message);
+  }
+
+  function persistShiftState(nextShiftState, message) {
+    setShiftState(nextShiftState);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ cards, shiftState: nextShiftState }));
     }
     setSaveNotice(message);
   }
@@ -267,6 +275,7 @@ export default function AllocationBoard({
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(STORAGE_KEY);
     }
+    setShiftState('draft');
     setSaveNotice('Reset to original demo layout');
   }
 
@@ -312,16 +321,19 @@ export default function AllocationBoard({
           <span className="badge">{cards.length} task cards</span>
           <span className="badge">{assignedCount} allocated</span>
           <span className="badge">{unallocatedCount} unallocated</span>
+          <span className={`badge ${shiftState === 'published' ? 'status-completed' : 'status-pending'}`}>{shiftState === 'published' ? 'Published shift' : 'Draft shift'}</span>
           <span className="badge">{saveNotice}</span>
           <button className="button secondary" type="button" onClick={undoLastMove} disabled={!history.length}>Undo</button>
           <button className="button secondary" type="button" onClick={resetBoard}>Reset layout</button>
+          <button className={`button ${shiftState === 'draft' ? 'primary' : 'secondary'}`} type="button" onClick={() => persistShiftState('draft', 'Shift moved back to draft')}>Keep as draft</button>
+          <button className={`button ${shiftState === 'published' ? 'primary' : 'secondary'}`} type="button" onClick={() => persistShiftState('published', 'Shift published from organiser board')}>Publish shift</button>
           {!lockView && (
             <>
               <button className={`button ${view === 'weekly' ? 'primary' : 'secondary'}`} type="button" onClick={() => setView('weekly')}>Weekly board</button>
               <button className={`button ${view === 'daily' ? 'primary' : 'secondary'}`} type="button" onClick={() => setView('daily')}>Daily staff view</button>
             </>
           )}
-          <span className="button primary">Organising surface active</span>
+          <span className="button primary">Organiser board active</span>
         </div>
       </div>
 
@@ -329,7 +341,7 @@ export default function AllocationBoard({
         <div className="daily-board-panel">
           <div className="daily-board-toolbar">
             <div>
-              <h3>Daily hierarchy view</h3>
+              <h3>Daily organiser view</h3>
               <p className="muted">Time lanes follow staff shift windows instead of fixed task times, while task order still shapes how work flows through the shift.</p>
             </div>
             <div className="daily-board-controls">
