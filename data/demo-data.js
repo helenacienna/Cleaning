@@ -234,6 +234,7 @@ const allocationCards = allocationDays.flatMap((day, dayIndex) => (
         staff: staff.name,
         day,
         jobOrder: index + 1,
+        status: index % 5 < 3 ? 'completed' : index % 5 === 3 ? 'in-progress' : 'pending',
         facility: template.facility,
         zone: template.zone,
         taskGroup: template.taskGroup,
@@ -310,9 +311,9 @@ export const scheduleBuilder = {
     days: allocationDays,
     cards: [
       ...allocationCards,
-      { id: 'alloc-unassigned-1', title: 'Check dock spill kit', templateId: 'custom_001', staff: 'Unallocated', day: 'Mon 1', jobOrder: 61, facility: 'Cienna North', zone: 'Loading dock', taskGroup: 'Back-of-house tidy', type: 'suggestive', groupId: 'group-unassigned-dock', groupName: 'Back-of-house tidy' },
-      { id: 'alloc-unassigned-2', title: 'Recheck sauna entry mat', templateId: 'custom_002', staff: 'Unallocated', day: 'Wed 3', jobOrder: 62, facility: 'Cienna Central', zone: 'Pool area', taskGroup: 'Amenities wipe-down', type: 'critical', groupId: 'group-unassigned-pool', groupName: 'Amenities wipe-down' },
-      { id: 'alloc-unassigned-3', title: 'Inspect parcel overflow shelf', templateId: 'custom_003', staff: 'Unallocated', day: 'Fri 5', jobOrder: 63, facility: 'Cienna South', zone: 'Mail room', taskGroup: 'Parcel room reset', type: 'suggestive', groupId: 'group-unassigned-mail', groupName: 'Parcel room reset' },
+      { id: 'alloc-unassigned-1', title: 'Check dock spill kit', templateId: 'custom_001', staff: 'Unallocated', day: 'Mon 1', jobOrder: 61, status: 'pending', facility: 'Cienna North', zone: 'Loading dock', taskGroup: 'Back-of-house tidy', type: 'suggestive', groupId: 'group-unassigned-dock', groupName: 'Back-of-house tidy' },
+      { id: 'alloc-unassigned-2', title: 'Recheck sauna entry mat', templateId: 'custom_002', staff: 'Unallocated', day: 'Wed 3', jobOrder: 62, status: 'in-progress', facility: 'Cienna Central', zone: 'Pool area', taskGroup: 'Amenities wipe-down', type: 'critical', groupId: 'group-unassigned-pool', groupName: 'Amenities wipe-down' },
+      { id: 'alloc-unassigned-3', title: 'Inspect parcel overflow shelf', templateId: 'custom_003', staff: 'Unallocated', day: 'Fri 5', jobOrder: 63, status: 'pending', facility: 'Cienna South', zone: 'Mail room', taskGroup: 'Parcel room reset', type: 'suggestive', groupId: 'group-unassigned-mail', groupName: 'Parcel room reset' },
     ],
   },
   exceptionWorkflow: {

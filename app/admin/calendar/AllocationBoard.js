@@ -125,6 +125,13 @@ function groupHierarchy(cards) {
   }));
 }
 
+function getCompletionStats(cards) {
+  const completed = cards.filter((card) => card.status === 'completed').length;
+  const total = cards.length;
+  const percent = total ? Math.round((completed / total) * 100) : 0;
+  return { completed, total, percent };
+}
+
 export default function AllocationBoard({
   board,
   initialView = 'weekly',
@@ -254,28 +261,41 @@ export default function AllocationBoard({
                                   <div className={`hierarchy-group-stack hierarchy-group-stack-${hierarchyMode}`}>
                                     {zone.groups.map((group) => (
                                       <div className={`hierarchy-group-box hierarchy-group-${hierarchyMode}`} key={`${zone.zoneName}-${group.groupName}`}>
+                                        {(() => {
+                                          const groupKey = `${staff}-${lane.key}-${zone.zoneName}-${group.groupName}`;
+                                          const progress = getCompletionStats(group.cards);
+                                          const isOpen = openGroups[groupKey];
+
+                                          return (
+                                            <>
                                         <div className="hierarchy-box-title">
                                           <strong>{group.groupName}</strong>
                                           <span>{group.cards.length} cards</span>
                                         </div>
 
-                                        <button className="hierarchy-group-toggle" type="button" onClick={() => toggleGroup(`${staff}-${lane.key}-${zone.zoneName}-${group.groupName}`)}>
-                                          <span>{openGroups[`${staff}-${lane.key}-${zone.zoneName}-${group.groupName}`] ? 'Hide tasks' : 'Show tasks'}</span>
-                                          <strong>{group.cards.length} tasks</strong>
+                                        <button className={`hierarchy-group-toggle ${progress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleGroup(groupKey)}>
+                                          <span className="hierarchy-group-progress-fill" style={{ width: `${progress.percent}%` }} />
+                                          <span className="hierarchy-group-toggle-copy">
+                                            <span>{isOpen ? 'Hide tasks' : 'Show tasks'}</span>
+                                            <strong>{progress.completed}/{progress.total} complete</strong>
+                                          </span>
                                         </button>
 
-                                        {openGroups[`${staff}-${lane.key}-${zone.zoneName}-${group.groupName}`] && (
+                                        {isOpen && (
                                           <div className={`hierarchy-task-stack hierarchy-task-stack-${hierarchyMode}`}>
                                             {group.cards.map((card) => (
                                               <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
                                                 <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
                                                 <strong>{card.title}</strong>
                                                 <span>{card.taskGroup}</span>
-                                                <small>{card.facility} · {card.zone}</small>
+                                                <small>{card.facility} · {card.zone} · {card.status === 'completed' ? 'Completed' : card.status === 'in-progress' ? 'In progress' : 'Pending'}</small>
                                               </div>
                                             ))}
                                           </div>
                                         )}
+                                            </>
+                                          );
+                                        })()}
                                       </div>
                                     ))}
                                   </div>

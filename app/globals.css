@@ -887,6 +887,8 @@ code {
 }
 
 .hierarchy-group-toggle {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -900,9 +902,31 @@ code {
   cursor: pointer;
 }
 
+.hierarchy-group-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, rgba(99,230,165,0.18), rgba(88,240,193,0.34));
+  border-right: 1px solid rgba(99,230,165,0.45);
+  pointer-events: none;
+}
+
+.hierarchy-group-toggle-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
 .hierarchy-group-toggle span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.hierarchy-group-toggle.complete {
+  border-color: rgba(99,230,165,0.4);
 }
 
 .daily-task-card {
