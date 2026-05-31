@@ -100,6 +100,14 @@ const allocationStaff = [
 ];
 const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5'];
 
+function slugifyValue(value = '') {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+export function makeCleanerShiftAssignmentId({ staff, day, facility, zone }) {
+  return `shift-${slugifyValue(day)}-${slugifyValue(staff)}-${slugifyValue(facility)}-${slugifyValue(zone)}`;
+}
+
 const allocationRoutes = {
   'Mia Thompson': [
     { facility: 'Cienna North', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [0] },
@@ -197,6 +205,8 @@ export const cleanerAssignments = allocationStaff.map((staff, index) => ({
   stats: { total: 6, completed: index === 0 ? 3 : index === 1 ? 2 : 4, photoRequired: 2 },
   tasks: buildAssignmentTasks(staff.facility, zoneBlueprints[index].zone),
 }));
+
+const staffMetaByName = Object.fromEntries(allocationStaff.map((staff) => [staff.name, staff]));
 
 export const qrZones = facilities.flatMap((facilityName, facilityIndex) => (
   zoneBlueprints.map((zoneBlueprint) => ({
@@ -317,6 +327,44 @@ const denseScoreDemoCards = Array.from({ length: 21 }, (_, index) => ({
   issueNote: index === 2 || index === 14 ? 'Scored 1/5 on review and needs attention' : '',
   detached: false,
 }));
+
+export const cleanerShiftAssignments = Array.from(
+  new Map(
+    [...allocationCards, ...denseScoreDemoCards].map((card) => {
+      const key = `${card.staff}|${card.day}|${card.facility}|${card.zone}`;
+      return [key, null];
+    })
+  ).keys()
+).map((key) => {
+  const [staff, day, facility, zone] = key.split('|');
+  const matchingCards = [...allocationCards, ...denseScoreDemoCards]
+    .filter((card) => card.staff === staff && card.day === day && card.facility === facility && card.zone === zone)
+    .sort((a, b) => a.jobOrder - b.jobOrder);
+  const shiftMeta = staffMetaByName[staff];
+  const completed = matchingCards.filter((card) => card.status === 'completed').length;
+  const photoRequired = matchingCards.filter((card) => card.type === 'critical').length;
+
+  return {
+    id: makeCleanerShiftAssignmentId({ staff, day, facility, zone }),
+    location: facility,
+    zone,
+    staff,
+    day,
+    shift: shiftMeta?.shiftLabel ?? 'Shift',
+    routeLabel: shiftMeta?.routeLabel ?? '',
+    progress: matchingCards.length ? Math.round((completed / matchingCards.length) * 100) : 0,
+    stats: { total: matchingCards.length, completed, photoRequired },
+    tasks: matchingCards.map((card) => ({
+      id: card.id,
+      title: card.title,
+      status: card.status,
+      photoRequired: card.type === 'critical',
+      commentRequired: card.auditScore === 1,
+      taskGroup: card.taskGroup,
+      score: card.auditScore,
+    })),
+  };
+});
 
 const draftSelection = taskCardTemplates.filter((task) => task.facility === 'Cienna North' && task.zone === 'Entry t4').slice(0, 5);
 

@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { makeCleanerShiftAssignmentId } from '../../../data/demo-data';
 
 function formatJobOrder(jobOrder) {
   return String(jobOrder).padStart(3, '0');
@@ -315,6 +317,12 @@ export default function AllocationBoard({
                                         const zoneKey = `${staff}-${detail.lane.key}-${facility.facilityName}-${zone.zoneName}`;
                                         const zoneOpen = openZoneGroups[zoneKey];
                                         const zoneProgress = getCompletionStats(zone.groups.flatMap((group) => group.cards));
+                                        const cleanerAssignmentId = makeCleanerShiftAssignmentId({
+                                          staff,
+                                          day: selectedDay,
+                                          facility: facility.facilityName,
+                                          zone: zone.zoneName,
+                                        });
                                         const zoneNotifications = zone.groups
                                           .flatMap((group) => group.cards)
                                           .filter((card) => card.auditScore === 1);
@@ -329,6 +337,12 @@ export default function AllocationBoard({
                                                   <strong>{zoneProgress.completed}/{zoneProgress.total} complete</strong>
                                                 </span>
                                               </button>
+                                            </div>
+
+                                            <div className="hierarchy-zone-link-row">
+                                              <Link className="button secondary hierarchy-cleaner-link" href={`/scan/${cleanerAssignmentId}`}>
+                                                Open cleaner checklist
+                                              </Link>
                                             </div>
 
                                             {zoneNotifications.length > 0 && (

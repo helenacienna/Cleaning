@@ -1,14 +1,16 @@
 import Link from 'next/link';
 import CleanerChecklistModal from './CleanerChecklistModal';
-import { cleanerAssignments, cleanerProfile } from '../../../data/demo-data';
+import { cleanerAssignments, cleanerProfile, cleanerShiftAssignments } from '../../../data/demo-data';
+
+const allCleanerAssignments = [...cleanerAssignments, ...cleanerShiftAssignments];
 
 export function generateStaticParams() {
-  return cleanerAssignments.map((assignment) => ({ zoneId: assignment.id }));
+  return allCleanerAssignments.map((assignment) => ({ zoneId: assignment.id }));
 }
 
 export async function generateMetadata({ params }) {
   const { zoneId } = await params;
-  const assignment = cleanerAssignments.find((item) => item.id === zoneId);
+  const assignment = allCleanerAssignments.find((item) => item.id === zoneId);
   return {
     title: assignment ? `${assignment.zone} · Cleaner Tasks` : 'Cleaner Tasks',
   };
@@ -16,7 +18,7 @@ export async function generateMetadata({ params }) {
 
 export default async function CleanerZonePage({ params }) {
   const { zoneId } = await params;
-  const assignment = cleanerAssignments.find((item) => item.id === zoneId);
+  const assignment = allCleanerAssignments.find((item) => item.id === zoneId);
 
   if (!assignment) {
     return (
@@ -49,13 +51,20 @@ export default async function CleanerZonePage({ params }) {
           <div className="cleaner-strip">
             <div>
               <span className="muted">Cleaner</span>
-              <strong>{cleanerProfile.name}</strong>
+              <strong>{assignment.staff ?? cleanerProfile.name}</strong>
             </div>
             <div>
               <span className="muted">Shift</span>
               <strong>{assignment.shift}</strong>
             </div>
           </div>
+
+          {(assignment.day || assignment.routeLabel) && (
+            <div className="stat-row">
+              {assignment.day && <span className="flag">{assignment.day}</span>}
+              {assignment.routeLabel && <span className="flag">{assignment.routeLabel}</span>}
+            </div>
+          )}
 
           <div className="progress"><span style={{ width: `${assignment.progress}%` }} /></div>
           <div className="stat-row">

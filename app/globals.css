@@ -940,6 +940,16 @@ code {
   gap: 6px;
 }
 
+.hierarchy-zone-link-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hierarchy-cleaner-link {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
 .hierarchy-zone-notification {
   display: grid;
   gap: 2px;
