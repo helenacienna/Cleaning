@@ -909,6 +909,8 @@ code {
 }
 
 .hierarchy-zone-toggle {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -922,9 +924,31 @@ code {
   cursor: pointer;
 }
 
+.hierarchy-zone-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, rgba(89,195,255,0.18), rgba(137,220,255,0.34));
+  border-right: 1px solid rgba(89,195,255,0.45);
+  pointer-events: none;
+}
+
+.hierarchy-zone-toggle-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
 .hierarchy-zone-toggle span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.hierarchy-zone-toggle.complete {
+  border-color: rgba(99,230,165,0.4);
 }
 
 .hierarchy-group-toggle {

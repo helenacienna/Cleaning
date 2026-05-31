@@ -261,18 +261,20 @@ export default function AllocationBoard({
                                   {(() => {
                                     const zoneKey = `${staff}-${lane.key}-${facility.facilityName}-${zone.zoneName}`;
                                     const zoneOpen = openZoneGroups[zoneKey];
-                                    const zoneTaskCount = zone.groups.reduce((sum, group) => sum + group.cards.length, 0);
+                                    const zoneProgress = getCompletionStats(zone.groups.flatMap((group) => group.cards));
 
                                     return (
                                       <>
                                   <div className="hierarchy-zone-row">
                                     <div className="hierarchy-box-title hierarchy-zone-label">
                                       <strong>{zone.zoneName}</strong>
-                                      <span>{zoneTaskCount} tasks</span>
                                     </div>
-                                    <button className="hierarchy-zone-toggle" type="button" onClick={() => toggleZoneGroups(zoneKey)}>
-                                      <span>{zoneOpen ? 'Hide task groups' : 'Show task groups'}</span>
-                                      <strong>{zone.groups.length} groups</strong>
+                                    <button className={`hierarchy-zone-toggle ${zoneProgress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleZoneGroups(zoneKey)}>
+                                      <span className="hierarchy-zone-progress-fill" style={{ width: `${zoneProgress.percent}%` }} />
+                                      <span className="hierarchy-zone-toggle-copy">
+                                        <span>{zoneOpen ? 'Hide task groups' : 'Show task groups'}</span>
+                                        <strong>{zoneProgress.completed}/{zoneProgress.total} complete</strong>
+                                      </span>
                                     </button>
                                   </div>
 
