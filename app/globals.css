@@ -1367,9 +1367,10 @@ code {
   gap: 12px;
   padding: 10px;
   border-radius: 18px;
-  background: rgba(8,17,31,0.82);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.96);
+  border: 1px solid rgba(15,23,42,0.10);
   backdrop-filter: blur(10px);
+  box-shadow: 0 10px 28px rgba(15,23,42,0.08);
 }
 
 .flow-position .muted {
@@ -1395,12 +1396,13 @@ code {
   gap: 8px;
   padding: 12px;
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.07);
-  background: rgba(255,255,255,0.035);
-  opacity: 0.72;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: #ffffff;
+  opacity: 0.8;
   transform: scale(0.98);
   transition: opacity 160ms ease, transform 160ms ease, border-color 160ms ease, background 160ms ease;
   cursor: pointer;
+  box-shadow: 0 10px 24px rgba(15,23,42,0.06);
 }
 
 .completion-bubble {
@@ -1414,7 +1416,7 @@ code {
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  border: 1px solid rgba(255,255,255,0.14);
+  border: 1px solid rgba(15,23,42,0.10);
 }
 
 .completion-open {
@@ -1433,12 +1435,12 @@ code {
   opacity: 1;
   transform: scale(1);
   border-color: rgba(89,195,255,0.42);
-  background: linear-gradient(180deg, rgba(89,195,255,0.1), rgba(255,255,255,0.04));
+  background: linear-gradient(180deg, rgba(89,195,255,0.12), #ffffff);
 }
 
 .graded-task-card {
   border-color: rgba(99,230,165,0.28);
-  background: linear-gradient(180deg, rgba(99,230,165,0.12), rgba(255,255,255,0.035));
+  background: linear-gradient(180deg, rgba(99,230,165,0.14), #ffffff);
 }
 
 .compact-task-top {
@@ -1479,7 +1481,7 @@ code {
 }
 
 .selected-grade {
-  outline: 2px solid rgba(255,255,255,0.72);
+  outline: 2px solid rgba(255,255,255,0.96);
   box-shadow: 0 0 0 4px rgba(89,195,255,0.18);
   transform: translateY(-1px) scale(1.03);
 }
@@ -1507,7 +1509,7 @@ code {
   display: grid;
   place-items: stretch;
   padding: 14px;
-  background: rgba(2,8,18,0.86);
+  background: rgba(15,23,42,0.20);
   backdrop-filter: blur(14px);
 }
 
@@ -1522,9 +1524,9 @@ code {
   padding: 10px;
   overflow: hidden;
   border-radius: 28px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: radial-gradient(circle at top, #142743 0%, #08111f 58%);
-  box-shadow: 0 28px 90px rgba(0,0,0,0.5);
+  border: 1px solid rgba(15,23,42,0.10);
+  background: linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+  box-shadow: 0 28px 90px rgba(15,23,42,0.18);
 }
 
 .modal-header {
@@ -1533,7 +1535,7 @@ code {
   align-items: center;
   gap: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(15,23,42,0.08);
 }
 
 .compact-modal-header strong {
@@ -1573,8 +1575,8 @@ code {
   gap: 14px;
   padding: 16px;
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.07);
-  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(15,23,42,0.08);
+  background: rgba(255,255,255,0.92);
 }
 
 .task-number {
@@ -1605,8 +1607,8 @@ code {
   margin-top: 14px;
   padding: 14px;
   border-radius: 18px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(15,23,42,0.08);
+  background: rgba(248,250,252,0.96);
 }
 
 .grade-panel strong,
@@ -1622,7 +1624,7 @@ code {
 
 .grade-button {
   min-height: 38px;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(15,23,42,0.10);
   border-radius: 14px;
   color: var(--text);
   font-weight: 900;
