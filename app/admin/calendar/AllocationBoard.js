@@ -130,6 +130,7 @@ export default function AllocationBoard({ board }) {
   const [view, setView] = useState('weekly');
   const [selectedDay, setSelectedDay] = useState(board.days[0]);
   const [hierarchyMode, setHierarchyMode] = useState('nested');
+  const [openGroups, setOpenGroups] = useState({});
 
   function moveCard(cardId, staff, day) {
     setCards((existing) => existing.map((card) => (
@@ -146,6 +147,10 @@ export default function AllocationBoard({ board }) {
     event.preventDefault();
     const cardId = event.dataTransfer.getData('text/plain');
     moveCard(cardId, staff, day);
+  }
+
+  function toggleGroup(groupKey) {
+    setOpenGroups((existing) => ({ ...existing, [groupKey]: !existing[groupKey] }));
   }
 
   const assignedCount = cards.filter((card) => card.staff !== 'Unallocated').length;
@@ -244,16 +249,23 @@ export default function AllocationBoard({ board }) {
                                           <span>{group.cards.length} cards</span>
                                         </div>
 
-                                        <div className={`hierarchy-task-stack hierarchy-task-stack-${hierarchyMode}`}>
-                                          {group.cards.map((card) => (
-                                            <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
-                                              <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
-                                              <strong>{card.title}</strong>
-                                              <span>{card.taskGroup}</span>
-                                              <small>{card.facility} · {card.zone}</small>
-                                            </div>
-                                          ))}
-                                        </div>
+                                        <button className="hierarchy-group-toggle" type="button" onClick={() => toggleGroup(`${staff}-${lane.key}-${zone.zoneName}-${group.groupName}`)}>
+                                          <span>{openGroups[`${staff}-${lane.key}-${zone.zoneName}-${group.groupName}`] ? 'Hide tasks' : 'Show tasks'}</span>
+                                          <strong>{group.cards.length} tasks</strong>
+                                        </button>
+
+                                        {openGroups[`${staff}-${lane.key}-${zone.zoneName}-${group.groupName}`] && (
+                                          <div className={`hierarchy-task-stack hierarchy-task-stack-${hierarchyMode}`}>
+                                            {group.cards.map((card) => (
+                                              <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
+                                                <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
+                                                <strong>{card.title}</strong>
+                                                <span>{card.taskGroup}</span>
+                                                <small>{card.facility} · {card.zone}</small>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
                                     ))}
                                   </div>

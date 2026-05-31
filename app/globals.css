@@ -886,6 +886,25 @@ code {
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
+.hierarchy-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.025);
+  color: inherit;
+  cursor: pointer;
+}
+
+.hierarchy-group-toggle span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .daily-task-card {
   grid-template-columns: 58px 1fr;
   align-items: start;
