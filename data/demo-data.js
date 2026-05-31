@@ -1,185 +1,194 @@
-const facilityName = 'Cienna';
-const zoneNames = [
-  'Rooftop',
-  'Lifts',
-  'Entry t4',
-  'Entry t3',
-  'Residents lounge',
-  'Pool area',
-  'Carparks',
+const facilities = ['Cienna North', 'Cienna Central', 'Cienna South'];
+
+const zoneBlueprints = [
+  {
+    id: 'zone-1',
+    zone: 'Rooftop',
+    groups: [
+      { key: 'rooftop-presentation', name: 'Rooftop presentation', tasks: ['Clear tables', 'Wipe handrails'] },
+      { key: 'bbq-reset', name: 'BBQ area reset', tasks: ['Clean BBQ surrounds', 'Check outdoor bins'] },
+      { key: 'planter-perimeter', name: 'Planter perimeter', tasks: ['Sweep planter edges', 'Remove loose litter'] },
+    ],
+  },
+  {
+    id: 'zone-2',
+    zone: 'Lifts',
+    groups: [
+      { key: 'lift-refresh', name: 'Lift refresh', tasks: ['Polish lift mirrors', 'Wipe buttons and rails'] },
+      { key: 'lift-foyer-detail', name: 'Lift foyer detail', tasks: ['Vacuum lift foyer mats', 'Spot clean foyer glass'] },
+      { key: 'button-sanitising', name: 'Button sanitising', tasks: ['Sanitise call buttons', 'Wipe door tracks'] },
+    ],
+  },
+  {
+    id: 'zone-3',
+    zone: 'Entry t4',
+    groups: [
+      { key: 'toilet-block-t4', name: 'Toilet block', tasks: ['Clean toilets', 'Mop floor'] },
+      { key: 'entry-detail-t4', name: 'Entry detail', tasks: ['Vacuum mats', 'Wipe intercom panel'] },
+      { key: 'glass-presentation-t4', name: 'Glass presentation', tasks: ['Spot clean glass', 'Remove marks from doors'] },
+    ],
+  },
+  {
+    id: 'zone-4',
+    zone: 'Entry t3',
+    groups: [
+      { key: 'toilet-block-t3', name: 'Toilet block', tasks: ['Check toilet paper', 'Wipe basins and mirrors'] },
+      { key: 'entry-detail-t3', name: 'Entry detail', tasks: ['Check entrance presentation', 'Clean skirting edges'] },
+      { key: 'mail-lobby-reset', name: 'Mail lobby reset', tasks: ['Tidy parcel shelves', 'Wipe lobby bench'] },
+    ],
+  },
+  {
+    id: 'zone-5',
+    zone: 'Residents lounge',
+    groups: [
+      { key: 'lounge-touchup', name: 'Residents lounge touch-up', tasks: ['Wipe tables', 'Arrange cushions and chairs'] },
+      { key: 'kitchenette-reset', name: 'Kitchenette reset', tasks: ['Clean kitchenette bench', 'Restock paper towel'] },
+      { key: 'soft-furnishing-check', name: 'Soft furnishing check', tasks: ['Vacuum lounge floor', 'Spot clean upholstery'] },
+    ],
+  },
+  {
+    id: 'zone-6',
+    zone: 'Pool area',
+    groups: [
+      { key: 'pool-deck-reset', name: 'Pool deck reset', tasks: ['Check pool furniture', 'Rinse high-traffic patches'] },
+      { key: 'amenities-wipe-down', name: 'Amenities wipe-down', tasks: ['Wipe gate handles', 'Clean shower touch points'] },
+      { key: 'safety-inspection', name: 'Safety inspection', tasks: ['Check safety signage', 'Remove leaf litter'] },
+    ],
+  },
+  {
+    id: 'zone-7',
+    zone: 'Carparks',
+    groups: [
+      { key: 'carpark-round', name: 'Carpark round', tasks: ['Pick litter', 'Blow leaves from corners'] },
+      { key: 'bin-bay-detail', name: 'Bin bay detail', tasks: ['Check bin bays', 'Degrease bin bay handles'] },
+      { key: 'access-ramp-tidy', name: 'Access ramp tidy', tasks: ['Spot clean entry doors', 'Inspect trolley area'] },
+    ],
+  },
+  {
+    id: 'zone-8',
+    zone: 'Gym',
+    groups: [
+      { key: 'gym-floor-care', name: 'Gym floor care', tasks: ['Vacuum gym floor', 'Mop rubber flooring'] },
+      { key: 'equipment-wipe-down', name: 'Equipment wipe-down', tasks: ['Sanitise cardio equipment', 'Wipe free weights'] },
+      { key: 'mirror-presentation', name: 'Mirror presentation', tasks: ['Polish wall mirrors', 'Check drink station'] },
+    ],
+  },
+  {
+    id: 'zone-9',
+    zone: 'Mail room',
+    groups: [
+      { key: 'parcel-room-reset', name: 'Parcel room reset', tasks: ['Tidy parcel shelving', 'Sweep parcel room floor'] },
+      { key: 'locker-wipe-down', name: 'Locker wipe-down', tasks: ['Wipe locker doors', 'Check fingerprint marks'] },
+      { key: 'waste-detail', name: 'Waste detail', tasks: ['Empty bins', 'Replace liners'] },
+    ],
+  },
+  {
+    id: 'zone-10',
+    zone: 'Loading dock',
+    groups: [
+      { key: 'dock-sweep', name: 'Dock sweep', tasks: ['Sweep loading dock', 'Remove cardboard scraps'] },
+      { key: 'roller-door-check', name: 'Roller door check', tasks: ['Wipe roller door handles', 'Check scuff marks near door'] },
+      { key: 'back-of-house-tidy', name: 'Back-of-house tidy', tasks: ['Tidy delivery corner', 'Check back-of-house bins'] },
+    ],
+  },
 ];
 
-const taskGroupTemplates = [
-  {
-    key: 'toilet-block',
-    name: 'Toilet block',
-    tasks: [
-      'Clean toilets',
-      'Mop floor',
-      'Check toilet paper',
-      'Wipe basins and mirrors',
-      'Refill soap dispensers',
-    ],
-  },
-  {
-    key: 'entry-detail',
-    name: 'Entry detail',
-    tasks: [
-      'Spot clean glass',
-      'Vacuum mats',
-      'Wipe intercom panel',
-      'Check entrance presentation',
-      'Remove marks from doors',
-    ],
-  },
-  {
-    key: 'lift-refresh',
-    name: 'Lift refresh',
-    tasks: [
-      'Polish lift mirrors',
-      'Wipe buttons and rails',
-      'Vacuum lift tracks',
-      'Check lift walls for marks',
-      'Remove rubbish',
-    ],
-  },
-  {
-    key: 'rooftop-presentation',
-    name: 'Rooftop presentation',
-    tasks: [
-      'Clear tables',
-      'Wipe handrails',
-      'Sweep traffic paths',
-      'Check bins',
-      'Spot clean glass balustrade',
-    ],
-  },
-  {
-    key: 'pool-deck',
-    name: 'Pool deck reset',
-    tasks: [
-      'Remove leaf litter',
-      'Check pool furniture',
-      'Wipe gate handles',
-      'Rinse high-traffic patches',
-      'Check safety signage',
-    ],
-  },
-  {
-    key: 'lounge-touchup',
-    name: 'Residents lounge touch-up',
-    tasks: [
-      'Wipe tables',
-      'Arrange cushions and chairs',
-      'Vacuum lounge floor',
-      'Clean kitchenette bench',
-      'Empty bins',
-    ],
-  },
-  {
-    key: 'carpark-round',
-    name: 'Carpark round',
-    tasks: [
-      'Pick litter',
-      'Blow leaves from corners',
-      'Check bin bays',
-      'Spot clean entry doors',
-      'Inspect trolley area',
-    ],
-  },
+const allocationStaff = [
+  { name: 'Mia Thompson', facility: 'Cienna North', shiftLabel: 'Morning flexible shift', shiftWindow: '6:00 AM – 2:00 PM' },
+  { name: 'Leo Nguyen', facility: 'Cienna Central', shiftLabel: 'Day flexible shift', shiftWindow: '7:30 AM – 3:30 PM' },
+  { name: 'Ava Patel', facility: 'Cienna South', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM' },
 ];
-
-const allocationStaff = ['Mia Thompson', 'Leo Nguyen', 'Ava Patel'];
 const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5'];
 
-function buildTaskCatalog() {
-  return taskGroupTemplates.flatMap((group, groupIndex) => (
-    group.tasks.map((title, taskIndex) => ({
-      title,
-      taskGroup: group.name,
-      groupKey: group.key,
-      zone: zoneNames[(groupIndex + taskIndex) % zoneNames.length],
-      required: taskIndex % 3 === 0 ? 'Random photo eligible' : taskIndex % 4 === 0 ? 'Comment on exception' : 'Standard',
-      frequency: taskIndex % 5 === 0 ? 'Weekly' : taskIndex % 2 === 0 ? 'Daily' : 'Every 2 days',
-      frequencyType: taskIndex % 4 === 0 ? 'Suggestive' : 'Critical',
-      templateId: `task_template_${String(groupIndex * 10 + taskIndex + 1).padStart(3, '0')}`,
-    }))
-  ));
+function makeTemplateId(index) {
+  return `task_template_${String(index + 1).padStart(3, '0')}`;
 }
 
-export const taskCardTemplates = buildTaskCatalog().map((task, index) => ({
-  id: `task-card-${String(index + 1).padStart(3, '0')}`,
-  title: task.title,
-  taskGroup: task.taskGroup,
-  groupKey: task.groupKey,
-  templateId: task.templateId,
-  zone: task.zone,
-  facility: facilityName,
-  jobOrderNumber: String(index + 1).padStart(3, '0'),
-  required: task.required,
-  frequency: task.frequency,
-  frequencyType: task.frequencyType,
-  estimatedEffort: index % 3 === 0 ? 'Quick check' : index % 3 === 1 ? 'Standard pass' : 'Detailed pass',
-  lastCompleted: index % 4 === 0 ? '30 May 2026' : index % 4 === 1 ? '29 May 2026' : index % 4 === 2 ? '28 May 2026' : '27 May 2026',
-  suggestedDue: index % 5 === 0 ? '5 Jun 2026' : index % 2 === 0 ? '1 Jun 2026' : '2 Jun 2026',
-  notes: index % 4 === 0 ? 'Watch presentation standard and raise an issue if damaged.' : 'Standard task card ready for daily scheduling.',
-  active: true,
-}));
+function makeTaskCardId(index) {
+  return `task-card-${String(index + 1).padStart(3, '0')}`;
+}
 
+function buildTaskCatalog() {
+  const templates = [];
+
+  facilities.forEach((facilityName, facilityIndex) => {
+    zoneBlueprints.forEach((zoneBlueprint, zoneIndex) => {
+      zoneBlueprint.groups.forEach((group, groupIndex) => {
+        group.tasks.forEach((title, taskIndex) => {
+          const templateIndex = templates.length;
+          templates.push({
+            id: makeTaskCardId(templateIndex),
+            title,
+            taskGroup: group.name,
+            groupKey: group.key,
+            groupIndex,
+            zoneId: `${facilityIndex + 1}-${zoneBlueprint.id}`,
+            zone: zoneBlueprint.zone,
+            facility: facilityName,
+            templateId: makeTemplateId(templateIndex),
+            jobOrderNumber: String(templateIndex + 1).padStart(3, '0'),
+            required: taskIndex === 0 ? 'Standard' : zoneIndex % 3 === 0 ? 'Random photo eligible' : 'Comment on exception',
+            frequency: groupIndex === 0 ? 'Daily' : groupIndex === 1 ? 'Every 2 days' : 'Weekly',
+            frequencyType: groupIndex === 2 ? 'Suggestive' : 'Critical',
+            estimatedEffort: taskIndex === 0 ? 'Quick check' : 'Standard pass',
+            lastCompleted: taskIndex === 0 ? '30 May 2026' : '29 May 2026',
+            suggestedDue: groupIndex === 2 ? '5 Jun 2026' : '1 Jun 2026',
+            notes: `${group.name} · ${zoneBlueprint.zone} · ${facilityName}`,
+            active: true,
+          });
+        });
+      });
+    });
+  });
+
+  return templates;
+}
+
+export const taskCardTemplates = buildTaskCatalog();
 const taskCatalog = taskCardTemplates;
+
+function buildAssignmentTasks(facilityName, zoneName) {
+  return taskCardTemplates
+    .filter((task) => task.facility === facilityName && task.zone === zoneName)
+    .map((task, index) => ({
+      id: `assignment-${facilityName}-${zoneName}-${index + 1}`,
+      title: task.title,
+      status: index < 2 ? 'completed' : index === 2 ? 'photo-required' : index === 3 ? 'pending' : index === 4 ? 'carried-forward' : 'pending',
+      photoRequired: task.required === 'Random photo eligible',
+      commentRequired: task.required === 'Comment on exception',
+    }));
+}
 
 export const appSummary = {
   appName: 'Cienna Cleaning',
   suiteLabel: 'Cienna Suite',
   today: 'Friday, 29 May',
   completionRate: 78,
-  completedTasks: 42,
-  pendingTasks: 12,
-  overdueTasks: 5,
-  photoVerifications: 8,
+  completedTasks: 126,
+  pendingTasks: 54,
+  overdueTasks: 9,
+  photoVerifications: 24,
 };
 
-export const cleanerAssignments = [
-  {
-    id: 'zone-1',
-    location: facilityName,
-    zone: 'Rooftop',
-    shift: 'Flexible morning run',
-    progress: 75,
-    stats: { total: 12, completed: 9, photoRequired: 3 },
-    tasks: [
-      { id: 't1', title: 'Clear tables', status: 'completed', photoRequired: false, commentRequired: false },
-      { id: 't2', title: 'Wipe handrails', status: 'photo-required', photoRequired: true, commentRequired: false },
-      { id: 't3', title: 'Sweep traffic paths', status: 'pending', photoRequired: false, commentRequired: true },
-      { id: 't4', title: 'Check bins', status: 'completed', photoRequired: false, commentRequired: false },
-      { id: 't5', title: 'Spot clean glass balustrade', status: 'pending', photoRequired: true, commentRequired: false },
-      { id: 't6', title: 'Check rooftop presentation', status: 'pending', photoRequired: false, commentRequired: true },
-    ],
-  },
-  {
-    id: 'zone-2',
-    location: facilityName,
-    zone: 'Lifts',
-    shift: 'Flexible mid-morning run',
-    progress: 40,
-    stats: { total: 10, completed: 4, photoRequired: 2 },
-    tasks: [
-      { id: 't7', title: 'Polish lift mirrors', status: 'pending', photoRequired: false, commentRequired: false },
-      { id: 't8', title: 'Wipe buttons and rails', status: 'photo-required', photoRequired: true, commentRequired: false },
-      { id: 't9', title: 'Vacuum lift tracks', status: 'carried-forward', photoRequired: false, commentRequired: true },
-      { id: 't10', title: 'Check lift walls for marks', status: 'pending', photoRequired: false, commentRequired: false },
-      { id: 't11', title: 'Remove rubbish', status: 'pending', photoRequired: false, commentRequired: false },
-    ],
-  },
-];
-
-export const qrZones = cleanerAssignments.map((assignment) => ({
-  id: assignment.id,
-  label: assignment.zone,
-  location: assignment.location,
-  qrUrl: `/scan/${assignment.id}`,
-  code: `CIENNA-${assignment.id.toUpperCase()}`,
+export const cleanerAssignments = allocationStaff.map((staff, index) => ({
+  id: `assignment-${index + 1}`,
+  location: staff.facility,
+  zone: zoneBlueprints[index].zone,
+  shift: staff.shiftLabel,
+  progress: index === 0 ? 75 : index === 1 ? 40 : 62,
+  stats: { total: 6, completed: index === 0 ? 3 : index === 1 ? 2 : 4, photoRequired: 2 },
+  tasks: buildAssignmentTasks(staff.facility, zoneBlueprints[index].zone),
 }));
+
+export const qrZones = facilities.flatMap((facilityName, facilityIndex) => (
+  zoneBlueprints.map((zoneBlueprint) => ({
+    id: `facility-${facilityIndex + 1}-${zoneBlueprint.id}`,
+    label: zoneBlueprint.zone,
+    location: facilityName,
+    qrUrl: `/scan/${zoneBlueprint.id}`,
+    code: `CIENNA-${facilityIndex + 1}-${zoneBlueprint.id.toUpperCase()}`,
+  }))
+));
 
 export const cleanerProfile = {
   name: 'Mia Thompson',
@@ -188,291 +197,129 @@ export const cleanerProfile = {
 };
 
 export const supervisorCards = [
-  {
-    title: 'Live completion',
-    value: '42 / 54',
-    note: 'Across the Cienna facility',
-    tone: 'green',
-  },
-  {
-    title: 'Missed tasks',
-    value: '5',
-    note: '2 carried forward automatically',
-    tone: 'amber',
-  },
-  {
-    title: 'Photo audits',
-    value: '8',
-    note: '3 random verifications still open',
-    tone: 'blue',
-  },
-  {
-    title: 'Issues raised',
-    value: '3',
-    note: '1 marked urgent',
-    tone: 'red',
-  },
+  { title: 'Live completion', value: '126 / 180', note: 'Across 3 Cienna facilities', tone: 'green' },
+  { title: 'Missed tasks', value: '9', note: '4 carried forward automatically', tone: 'amber' },
+  { title: 'Photo audits', value: '24', note: '9 random verifications still open', tone: 'blue' },
+  { title: 'Issues raised', value: '6', note: '2 marked urgent', tone: 'red' },
 ];
 
-export const taskLibrary = [
-  {
-    title: 'Toilet block',
-    category: 'Amenities',
-    duration: 'Variable',
-    flags: ['Reusable', 'Multi-zone', 'Photo optional'],
-  },
-  {
-    title: 'Lift refresh',
-    category: 'Vertical transport',
-    duration: 'Variable',
-    flags: ['Reusable', 'High touch points', 'Daily'],
-  },
-  {
-    title: 'Residents lounge touch-up',
-    category: 'Shared spaces',
-    duration: 'Variable',
-    flags: ['Reusable', 'Presentation', 'Flexible order'],
-  },
-  {
-    title: 'Carpark round',
-    category: 'External',
-    duration: 'Variable',
-    flags: ['Reusable', 'Weather dependent', 'Random photo eligible'],
-  },
-];
+export const taskLibrary = Array.from(
+  new Map(
+    taskCardTemplates.map((task) => [task.taskGroup, {
+      title: task.taskGroup,
+      category: task.zone,
+      duration: 'Variable',
+      flags: ['Reusable', task.frequency, task.required],
+    }])
+  ).values()
+).slice(0, 6);
 
 export const reports = [
-  ['Location', facilityName],
-  ['Zone', 'Rooftop'],
-  ['Cleaner', 'Mia Thompson'],
-  ['Date range', 'Last 7 days'],
+  ['Facilities in sample', String(facilities.length)],
+  ['Zones per facility', String(zoneBlueprints.length)],
+  ['Task groups per zone', '3'],
+  ['Minimum tasks per group', '2'],
   ['Completion rate', '94%'],
-  ['Audits passed', '11 / 12'],
+  ['Audits passed', '33 / 36'],
 ];
 
 const allocationCards = allocationDays.flatMap((day, dayIndex) => (
-  Array.from({ length: 60 }, (_, index) => {
-    const sequence = dayIndex * 60 + index + 1;
-    const jobOrder = index + 1;
-    const template = taskCatalog[index % taskCatalog.length];
-    const zone = zoneNames[(index + dayIndex) % zoneNames.length];
-    const taskGroupNumber = Math.floor(index / 5) + 1;
-
-    return {
-      id: `alloc-${sequence}`,
-      title: template.title,
-      templateId: template.templateId,
-      staff: allocationStaff[index % allocationStaff.length],
-      day,
-      jobOrder,
-      facility: facilityName,
-      zone,
-      taskGroup: template.taskGroup,
-      type: index % 4 === 0 ? 'critical' : 'suggestive',
-      groupId: `group-${dayIndex + 1}-${taskGroupNumber}`,
-      groupName: `${template.taskGroup} ${taskGroupNumber}`,
-      detached: false,
-    };
-  })
+  allocationStaff.flatMap((staff) => (
+    taskCatalog
+      .filter((template) => template.facility === staff.facility)
+      .map((template, index) => ({
+        id: `alloc-${dayIndex + 1}-${staff.name.replace(/\s+/g, '-').toLowerCase()}-${index + 1}`,
+        title: template.title,
+        templateId: template.templateId,
+        staff: staff.name,
+        day,
+        jobOrder: index + 1,
+        facility: template.facility,
+        zone: template.zone,
+        taskGroup: template.taskGroup,
+        type: template.frequencyType.toLowerCase(),
+        groupId: `group-${dayIndex + 1}-${template.zoneId}-${template.groupKey}`,
+        groupName: template.taskGroup,
+        detached: false,
+      }))
+  ))
 ));
 
-const taskGroups = allocationDays.flatMap((day, dayIndex) => (
-  Array.from({ length: 12 }, (_, groupIndex) => {
-    const groupId = `group-${dayIndex + 1}-${groupIndex + 1}`;
-    const groupCards = allocationCards.filter((card) => card.groupId === groupId);
-    return {
-      id: groupId,
-      name: groupCards[0]?.groupName ?? `Task group ${groupIndex + 1}`,
-      day,
-      staff: groupCards[0]?.staff ?? allocationStaff[groupIndex % allocationStaff.length],
-      facility: facilityName,
-      zone: groupCards[0]?.zone ?? zoneNames[groupIndex % zoneNames.length],
-      jobOrderStart: groupCards[0]?.jobOrder ?? 1,
-      jobOrderEnd: groupCards[groupCards.length - 1]?.jobOrder ?? 5,
-      taskCount: groupCards.length,
-      type: groupCards.some((card) => card.type === 'critical') ? 'critical' : 'suggestive',
-    };
-  })
-));
+const uniqueGroupKeys = Array.from(new Set(allocationCards.map((card) => `${card.day}:${card.groupId}:${card.staff}`)));
+const taskGroups = uniqueGroupKeys.map((groupKey) => {
+  const groupCards = allocationCards.filter((card) => `${card.day}:${card.groupId}:${card.staff}` === groupKey);
+  const firstCard = groupCards[0];
+  return {
+    id: firstCard.groupId,
+    name: firstCard.groupName,
+    day: firstCard.day,
+    staff: firstCard.staff,
+    facility: firstCard.facility,
+    zone: firstCard.zone,
+    jobOrderStart: firstCard.jobOrder,
+    jobOrderEnd: groupCards[groupCards.length - 1].jobOrder,
+    taskCount: groupCards.length,
+    type: groupCards.some((card) => card.type === 'critical') ? 'critical' : 'suggestive',
+  };
+});
+
+const draftSelection = taskCardTemplates.filter((task) => task.facility === 'Cienna North' && task.zone === 'Entry t4').slice(0, 5);
 
 export const scheduleBuilder = {
-  selectedLocation: facilityName,
-  selectedZone: 'Rooftop',
+  selectedLocation: 'Cienna North',
+  selectedZone: 'Entry t4',
   frequency: 'Weekdays',
   shift: 'Flexible daily run · no fixed task times',
   assignedCleaner: 'Mia Thompson',
   repeatRule: 'Mon-Fri · generate daily task instances',
   randomPhotoRate: '30% of eligible tasks',
-  draftTasks: [
-    {
-      order: 1,
-      jobOrderNumber: '001',
-      title: 'Clean toilets',
-      templateId: 'task_template_001',
-      taskGroup: 'Toilet block',
-      zone: 'Entry t4',
-      facility: facilityName,
-      required: 'Standard',
-      frequency: 'Daily',
-      frequencyType: 'Critical',
-      lastCompleted: '30 May 2026',
-      suggestedDue: '31 May 2026',
-    },
-    {
-      order: 2,
-      jobOrderNumber: '002',
-      title: 'Mop floor',
-      templateId: 'task_template_002',
-      taskGroup: 'Toilet block',
-      zone: 'Entry t4',
-      facility: facilityName,
-      required: 'Random photo eligible',
-      frequency: 'Daily',
-      frequencyType: 'Critical',
-      lastCompleted: '30 May 2026',
-      suggestedDue: '31 May 2026',
-    },
-    {
-      order: 3,
-      jobOrderNumber: '003',
-      title: 'Check toilet paper',
-      templateId: 'task_template_003',
-      taskGroup: 'Toilet block',
-      zone: 'Entry t4',
-      facility: facilityName,
-      required: 'Standard',
-      frequency: 'Daily',
-      frequencyType: 'Critical',
-      lastCompleted: '30 May 2026',
-      suggestedDue: '31 May 2026',
-    },
-    {
-      order: 4,
-      jobOrderNumber: '018',
-      title: 'Polish lift mirrors',
-      templateId: 'task_template_004',
-      taskGroup: 'Lift refresh',
-      zone: 'Lifts',
-      facility: facilityName,
-      required: 'Comment on low grade',
-      frequency: 'Every 2 days',
-      frequencyType: 'Suggestive',
-      lastCompleted: '29 May 2026',
-      suggestedDue: '31 May 2026',
-    },
-    {
-      order: 5,
-      jobOrderNumber: '045',
-      title: 'Check pool furniture',
-      templateId: 'task_template_005',
-      taskGroup: 'Pool deck reset',
-      zone: 'Pool area',
-      facility: facilityName,
-      required: 'Forced photo',
-      frequency: 'Weekly',
-      frequencyType: 'Suggestive',
-      lastCompleted: '27 May 2026',
-      suggestedDue: '3 Jun 2026',
-    },
-  ],
+  draftTasks: draftSelection.map((task, index) => ({
+    order: index + 1,
+    jobOrderNumber: task.jobOrderNumber,
+    title: task.title,
+    templateId: task.templateId,
+    taskGroup: task.taskGroup,
+    zone: task.zone,
+    facility: task.facility,
+    required: task.required,
+    frequency: task.frequency,
+    frequencyType: task.frequencyType,
+    lastCompleted: task.lastCompleted,
+    suggestedDue: task.suggestedDue,
+  })),
   generatedInstances: [
-    ['Mon 1 Jun', '5 task instances', 'scheduled_zone-1_2026-06-01_morning'],
-    ['Tue 2 Jun', '5 task instances', 'scheduled_zone-1_2026-06-02_morning'],
-    ['Wed 3 Jun', '5 task instances', 'scheduled_zone-1_2026-06-03_morning'],
+    ['Mon 1 Jun', '180 task instances', 'scheduled_cienna_2026-06-01'],
+    ['Tue 2 Jun', '180 task instances', 'scheduled_cienna_2026-06-02'],
+    ['Wed 3 Jun', '180 task instances', 'scheduled_cienna_2026-06-03'],
   ],
   calendarDays: [
-    {
-      date: 'Mon 1',
-      dayType: 'weekday',
-      jobs: [
-        { jobOrderStart: '001', facility: facilityName, zone: 'Entry t4', groupName: 'Toilet block', count: 5, type: 'critical' },
-        { jobOrderStart: '018', facility: facilityName, zone: 'Lifts', groupName: 'Lift refresh', count: 4, type: 'suggestive' },
-      ],
-    },
-    {
-      date: 'Tue 2',
-      dayType: 'weekday',
-      jobs: [
-        { jobOrderStart: '001', facility: facilityName, zone: 'Entry t3', groupName: 'Toilet block', count: 5, type: 'critical' },
-        { jobOrderStart: '041', facility: facilityName, zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'suggestive' },
-      ],
-    },
-    {
-      date: 'Wed 3',
-      dayType: 'weekday',
-      jobs: [
-        { jobOrderStart: '001', facility: facilityName, zone: 'Rooftop', groupName: 'Rooftop presentation', count: 5, type: 'critical' },
-        { jobOrderStart: '018', facility: facilityName, zone: 'Pool area', groupName: 'Pool deck reset', count: 4, type: 'suggestive' },
-      ],
-    },
-    {
-      date: 'Thu 4',
-      dayType: 'weekday',
-      jobs: [
-        { jobOrderStart: '001', facility: facilityName, zone: 'Carparks', groupName: 'Carpark round', count: 5, type: 'critical' },
-        { jobOrderStart: '030', facility: facilityName, zone: 'Entry t3', groupName: 'Entry detail', count: 3, type: 'critical' },
-      ],
-    },
-    {
-      date: 'Fri 5',
-      dayType: 'weekday',
-      jobs: [
-        { jobOrderStart: '001', facility: facilityName, zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 5, type: 'critical' },
-        { jobOrderStart: '045', facility: facilityName, zone: 'Pool area', groupName: 'Pool deck reset', count: 1, type: 'suggestive' },
-      ],
-    },
-    {
-      date: 'Sat 6',
-      dayType: 'weekend',
-      jobs: [
-        { jobOrderStart: '008', facility: facilityName, zone: 'Rooftop', groupName: 'Rooftop presentation', count: 2, type: 'suggestive' },
-      ],
-    },
-    {
-      date: 'Sun 7',
-      dayType: 'weekend',
-      jobs: [],
-    },
+    { date: 'Mon 1', dayType: 'weekday', jobs: [{ jobOrderStart: '001', facility: 'Cienna North', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '061', facility: 'Cienna Central', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '121', facility: 'Cienna South', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }] },
+    { date: 'Tue 2', dayType: 'weekday', jobs: [{ jobOrderStart: '019', facility: 'Cienna North', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '079', facility: 'Cienna Central', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '139', facility: 'Cienna South', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }] },
+    { date: 'Wed 3', dayType: 'weekday', jobs: [{ jobOrderStart: '031', facility: 'Cienna North', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '091', facility: 'Cienna Central', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '151', facility: 'Cienna South', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }] },
+    { date: 'Thu 4', dayType: 'weekday', jobs: [{ jobOrderStart: '043', facility: 'Cienna North', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '103', facility: 'Cienna Central', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '163', facility: 'Cienna South', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }] },
+    { date: 'Fri 5', dayType: 'weekday', jobs: [{ jobOrderStart: '013', facility: 'Cienna North', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '073', facility: 'Cienna Central', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '133', facility: 'Cienna South', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }] },
+    { date: 'Sat 6', dayType: 'weekend', jobs: [{ jobOrderStart: '025', facility: 'Cienna North', zone: 'Carparks', groupName: 'Carpark round', count: 2, type: 'suggestive' }] },
+    { date: 'Sun 7', dayType: 'weekend', jobs: [] },
   ],
   allocationBoard: {
-    staff: [...allocationStaff, 'Unallocated'],
-    staffMeta: {
-      'Mia Thompson': { shiftLabel: 'Morning flexible shift', shiftWindow: '6:00 AM – 2:00 PM' },
-      'Leo Nguyen': { shiftLabel: 'Day flexible shift', shiftWindow: '7:30 AM – 3:30 PM' },
-      'Ava Patel': { shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM' },
-      Unallocated: { shiftLabel: 'Not assigned', shiftWindow: 'No shift yet' },
-    },
+    staff: [...allocationStaff.map((staff) => staff.name), 'Unallocated'],
+    staffMeta: Object.fromEntries([
+      ...allocationStaff.map((staff) => [staff.name, { shiftLabel: staff.shiftLabel, shiftWindow: `${staff.shiftWindow} · ${staff.facility}`, facility: staff.facility }]),
+      ['Unallocated', { shiftLabel: 'Not assigned', shiftWindow: 'No shift yet', facility: 'Unallocated' }],
+    ]),
     days: allocationDays,
     cards: [
       ...allocationCards,
-      { id: 'alloc-unassigned-1', title: 'Wipe intercom panel', staff: 'Unallocated', day: 'Mon 1', jobOrder: 52, facility: facilityName, zone: 'Entry t4', taskGroup: 'Entry detail', type: 'suggestive' },
-      { id: 'alloc-unassigned-2', title: 'Check safety signage', staff: 'Unallocated', day: 'Wed 3', jobOrder: 48, facility: facilityName, zone: 'Pool area', taskGroup: 'Pool deck reset', type: 'critical' },
-      { id: 'alloc-unassigned-3', title: 'Inspect trolley area', staff: 'Unallocated', day: 'Fri 5', jobOrder: 55, facility: facilityName, zone: 'Carparks', taskGroup: 'Carpark round', type: 'suggestive' },
+      { id: 'alloc-unassigned-1', title: 'Check dock spill kit', templateId: 'custom_001', staff: 'Unallocated', day: 'Mon 1', jobOrder: 61, facility: 'Cienna North', zone: 'Loading dock', taskGroup: 'Back-of-house tidy', type: 'suggestive', groupId: 'group-unassigned-dock', groupName: 'Back-of-house tidy' },
+      { id: 'alloc-unassigned-2', title: 'Recheck sauna entry mat', templateId: 'custom_002', staff: 'Unallocated', day: 'Wed 3', jobOrder: 62, facility: 'Cienna Central', zone: 'Pool area', taskGroup: 'Amenities wipe-down', type: 'critical', groupId: 'group-unassigned-pool', groupName: 'Amenities wipe-down' },
+      { id: 'alloc-unassigned-3', title: 'Inspect parcel overflow shelf', templateId: 'custom_003', staff: 'Unallocated', day: 'Fri 5', jobOrder: 63, facility: 'Cienna South', zone: 'Mail room', taskGroup: 'Parcel room reset', type: 'suggestive', groupId: 'group-unassigned-mail', groupName: 'Parcel room reset' },
     ],
   },
   exceptionWorkflow: {
     groups: taskGroups.slice(0, 8),
     detachedTasks: [
-      {
-        ...allocationCards[7],
-        id: 'detached-demo-1',
-        title: 'Extra mop up after spill',
-        detached: true,
-        day: 'Tue 2',
-        jobOrder: 33,
-        staff: 'Leo Nguyen',
-        reason: 'Incident clean-up required outside normal run',
-      },
-      {
-        ...allocationCards[18],
-        id: 'detached-demo-2',
-        title: 'Urgent litter sweep at entry',
-        detached: true,
-        day: 'Wed 3',
-        jobOrder: 48,
-        staff: 'Ava Patel',
-        reason: 'Separated from group and rescheduled individually',
-      },
+      { ...allocationCards[7], id: 'detached-demo-1', title: 'Extra mop up after spill', detached: true, day: 'Tue 2', jobOrder: 33, staff: 'Mia Thompson', reason: 'Incident clean-up required outside normal run' },
+      { ...allocationCards[80], id: 'detached-demo-2', title: 'Urgent litter sweep at entry', detached: true, day: 'Wed 3', jobOrder: 48, staff: 'Leo Nguyen', reason: 'Separated from group and rescheduled individually' },
     ],
   },
 };

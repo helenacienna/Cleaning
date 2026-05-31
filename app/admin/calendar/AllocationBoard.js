@@ -64,6 +64,7 @@ export default function AllocationBoard({ board }) {
   const [cards, setCards] = useState(board.cards);
   const [view, setView] = useState('weekly');
   const [selectedDay, setSelectedDay] = useState(board.days[0]);
+  const [hierarchyMode, setHierarchyMode] = useState('nested');
 
   function moveCard(cardId, staff, day) {
     setCards((existing) => existing.map((card) => (
@@ -109,12 +110,19 @@ export default function AllocationBoard({ board }) {
           <div className="daily-board-toolbar">
             <div>
               <h3>Daily hierarchy view</h3>
-              <p className="muted">Each staff member keeps the shared job-order scroll, but the work is now nested by facility, zone, task group, and individual task card.</p>
+              <p className="muted">Try a few nesting styles to see which hierarchy feels clearest for staff shift, facility, zone, task group, and task card.</p>
             </div>
-            <div className="day-switcher">
-              {board.days.map((day) => (
-                <button className={`button ${selectedDay === day ? 'primary' : 'secondary'}`} type="button" key={day} onClick={() => setSelectedDay(day)}>{day}</button>
-              ))}
+            <div className="daily-board-controls">
+              <div className="view-switcher">
+                <button className={`button ${hierarchyMode === 'nested' ? 'primary' : 'secondary'}`} type="button" onClick={() => setHierarchyMode('nested')}>Nested cards</button>
+                <button className={`button ${hierarchyMode === 'compact' ? 'primary' : 'secondary'}`} type="button" onClick={() => setHierarchyMode('compact')}>Compact stack</button>
+                <button className={`button ${hierarchyMode === 'sections' ? 'primary' : 'secondary'}`} type="button" onClick={() => setHierarchyMode('sections')}>Section bands</button>
+              </div>
+              <div className="day-switcher">
+                {board.days.map((day) => (
+                  <button className={`button ${selectedDay === day ? 'primary' : 'secondary'}`} type="button" key={day} onClick={() => setSelectedDay(day)}>{day}</button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -145,33 +153,33 @@ export default function AllocationBoard({ board }) {
                     const facilities = groupHierarchy(laneCards);
 
                     return (
-                      <div className="daily-timeline-cell hierarchy-cell" key={`${lane.key}-${staff}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
+                      <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode}`} key={`${lane.key}-${staff}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
                         {facilities.map((facility) => (
-                          <section className="hierarchy-facility-box" key={`${staff}-${lane.key}-${facility.facilityName}`}>
+                          <section className={`hierarchy-facility-box hierarchy-facility-${hierarchyMode}`} key={`${staff}-${lane.key}-${facility.facilityName}`}>
                             <div className="hierarchy-box-title hierarchy-facility-title">
                               <strong>{facility.facilityName}</strong>
                               <span>{laneCards.length} tasks in lane</span>
                             </div>
 
-                            <div className="hierarchy-zone-stack">
+                            <div className={`hierarchy-zone-stack hierarchy-zone-stack-${hierarchyMode}`}>
                               {facility.zones.map((zone) => (
-                                <article className="hierarchy-zone-box" key={`${facility.facilityName}-${zone.zoneName}`}>
+                                <article className={`hierarchy-zone-box hierarchy-zone-${hierarchyMode}`} key={`${facility.facilityName}-${zone.zoneName}`}>
                                   <div className="hierarchy-box-title">
                                     <strong>{zone.zoneName}</strong>
                                     <span>{zone.groups.reduce((sum, group) => sum + group.cards.length, 0)} tasks</span>
                                   </div>
 
-                                  <div className="hierarchy-group-stack">
+                                  <div className={`hierarchy-group-stack hierarchy-group-stack-${hierarchyMode}`}>
                                     {zone.groups.map((group) => (
-                                      <div className="hierarchy-group-box" key={`${zone.zoneName}-${group.groupName}`}>
+                                      <div className={`hierarchy-group-box hierarchy-group-${hierarchyMode}`} key={`${zone.zoneName}-${group.groupName}`}>
                                         <div className="hierarchy-box-title">
                                           <strong>{group.groupName}</strong>
                                           <span>{group.cards.length} cards</span>
                                         </div>
 
-                                        <div className="hierarchy-task-stack">
+                                        <div className={`hierarchy-task-stack hierarchy-task-stack-${hierarchyMode}`}>
                                           {group.cards.map((card) => (
-                                            <div className={`allocation-card daily-task-card ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
+                                            <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
                                               <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
                                               <strong>{card.title}</strong>
                                               <span>{card.taskGroup}</span>

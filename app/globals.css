@@ -695,7 +695,9 @@ code {
 
 .daily-board-toolbar,
 .day-switcher,
-.daily-staff-header {
+.daily-staff-header,
+.daily-board-controls,
+.view-switcher {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -706,7 +708,8 @@ code {
   margin: 0 0 4px;
 }
 
-.day-switcher {
+.day-switcher,
+.view-switcher {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -801,9 +804,29 @@ code {
   border: 1px solid rgba(255,255,255,0.08);
 }
 
+.hierarchy-mode-compact .hierarchy-facility-box,
+.hierarchy-mode-compact .hierarchy-zone-box,
+.hierarchy-mode-compact .hierarchy-group-box {
+  gap: 8px;
+  border-radius: 14px;
+}
+
+.hierarchy-mode-sections .hierarchy-zone-box,
+.hierarchy-mode-sections .hierarchy-group-box {
+  border-left: 3px solid rgba(89,195,255,0.35);
+}
+
 .hierarchy-facility-box {
   padding: 12px;
   background: rgba(255,255,255,0.04);
+}
+
+.hierarchy-facility-compact {
+  background: rgba(255,255,255,0.025);
+}
+
+.hierarchy-facility-sections {
+  background: rgba(89,195,255,0.06);
 }
 
 .hierarchy-zone-stack,
@@ -818,9 +841,27 @@ code {
   background: rgba(8,17,31,0.5);
 }
 
+.hierarchy-zone-compact {
+  padding: 8px;
+  background: rgba(8,17,31,0.35);
+}
+
+.hierarchy-zone-sections {
+  background: rgba(255,255,255,0.025);
+}
+
 .hierarchy-group-box {
   padding: 10px;
   background: rgba(255,255,255,0.035);
+}
+
+.hierarchy-group-compact {
+  padding: 8px;
+  background: rgba(255,255,255,0.02);
+}
+
+.hierarchy-group-sections {
+  background: rgba(8,17,31,0.28);
 }
 
 .hierarchy-box-title {
@@ -848,6 +889,14 @@ code {
 .daily-task-card {
   grid-template-columns: 58px 1fr;
   align-items: start;
+}
+
+.hierarchy-task-card-compact {
+  padding: 8px;
+}
+
+.hierarchy-task-card-sections {
+  border-left: 3px solid rgba(88,240,193,0.4);
 }
 
 .job-order-pill {
@@ -1509,8 +1558,8 @@ button.button {
   .admin-calendar-controls { justify-content: flex-start; }
   .task-card-chip-row { justify-content: flex-start; }
   .task-card-list { max-height: none; }
-  .daily-board-toolbar { align-items: flex-start; flex-direction: column; }
-  .day-switcher { justify-content: flex-start; }
+  .daily-board-toolbar, .daily-board-controls { align-items: flex-start; flex-direction: column; }
+  .day-switcher, .view-switcher { justify-content: flex-start; }
   .daily-timeline-grid { grid-template-columns: 76px repeat(3, minmax(230px, 1fr)); min-width: 780px; }
   .exception-grid { grid-template-columns: 1fr; }
   .column-title, .group-card-top, .group-actions { align-items: flex-start; flex-direction: column; }
