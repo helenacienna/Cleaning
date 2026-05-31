@@ -1119,6 +1119,16 @@ code {
   display: block;
 }
 
+.hierarchy-group-row,
+.hierarchy-task-stack {
+  border-radius: 12px;
+}
+
+.hierarchy-group-row:has(.hierarchy-group-toggle:hover),
+.hierarchy-task-stack:has(.hierarchy-task-card:hover) {
+  transition: box-shadow 120ms ease, background 120ms ease;
+}
+
 .hierarchy-zone-row {
   display: block;
 }

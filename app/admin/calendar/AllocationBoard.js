@@ -177,9 +177,9 @@ export default function AllocationBoard({
   const [openGroups, setOpenGroups] = useState({});
   const [openZoneGroups, setOpenZoneGroups] = useState({});
 
-  function moveCard(cardId, staff, day) {
+  function moveCard(cardId, updates) {
     setCards((existing) => existing.map((card) => (
-      card.id === cardId ? { ...card, staff, day } : card
+      card.id === cardId ? { ...card, ...updates } : card
     )));
   }
 
@@ -191,7 +191,13 @@ export default function AllocationBoard({
   function handleDrop(event, staff, day) {
     event.preventDefault();
     const cardId = event.dataTransfer.getData('text/plain');
-    moveCard(cardId, staff, day);
+    moveCard(cardId, { staff, day });
+  }
+
+  function handleHierarchyDrop(event, updates) {
+    event.preventDefault();
+    const cardId = event.dataTransfer.getData('text/plain');
+    moveCard(cardId, updates);
   }
 
   function toggleGroup(groupKey) {
@@ -364,10 +370,20 @@ export default function AllocationBoard({
                                                       const groupKey = `${staff}-${detail.lane.key}-${zone.zoneName}-${group.groupName}`;
                                                       const progress = getCompletionStats(group.cards);
                                                       const isOpen = openGroups[groupKey];
+                                                      const groupDropUpdates = {
+                                                        staff,
+                                                        day: selectedDay,
+                                                        laneIndex: detail.lane.index,
+                                                        facility: facility.facilityName,
+                                                        zone: zone.zoneName,
+                                                        taskGroup: group.groupName,
+                                                        groupName: group.groupName,
+                                                        groupId: group.cards[0]?.groupId ?? `${staff}-${selectedDay}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`,
+                                                      };
 
                                                       return (
                                                         <>
-                                                          <div className="hierarchy-group-row">
+                                                          <div className="hierarchy-group-row" onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleHierarchyDrop(event, groupDropUpdates)}>
                                                             <button className={`hierarchy-group-toggle hierarchy-section-progress ${progress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleGroup(groupKey)}>
                                                               <span className="hierarchy-group-progress-fill" style={{ width: `${progress.percent}%` }} />
                                                               <span className="hierarchy-group-toggle-copy">
@@ -378,7 +394,7 @@ export default function AllocationBoard({
                                                           </div>
 
                                                           {isOpen && (
-                                                            <div className={`hierarchy-task-stack hierarchy-task-stack-${hierarchyMode}`}>
+                                                            <div className={`hierarchy-task-stack hierarchy-task-stack-${hierarchyMode}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleHierarchyDrop(event, groupDropUpdates)}>
                                                               {group.cards.map((card) => (
                                                                 <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${card.status === 'completed' ? 'allocation-card-completed' : card.status === 'pending' ? 'allocation-card-issue' : 'allocation-card-active'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
                                                                   <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
