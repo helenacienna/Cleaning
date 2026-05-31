@@ -727,8 +727,19 @@ code {
   min-width: 980px;
 }
 
+.daily-timeline-grid-continuous {
+  align-items: start;
+}
+
 .daily-time-row {
   display: contents;
+}
+
+.daily-time-column,
+.daily-staff-column,
+.daily-staff-lane-stack {
+  display: grid;
+  gap: 0;
 }
 
 .daily-time-head,
@@ -819,6 +830,27 @@ code {
 .hierarchy-facility-box {
   padding: 12px;
   background: rgba(255,255,255,0.04);
+}
+
+.hierarchy-facility-box-continuous {
+  height: 100%;
+  align-content: start;
+}
+
+.hierarchy-lane-segment {
+  border-right: 0;
+  border-left: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.daily-staff-lane-stack .hierarchy-lane-segment:first-child {
+  padding-top: 12px;
+}
+
+.daily-staff-lane-stack .hierarchy-lane-segment:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
 .hierarchy-facility-compact {

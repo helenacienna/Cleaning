@@ -219,7 +219,7 @@ export default function AllocationBoard({
           </div>
 
           <div className="daily-timeline-scroll">
-            <div className="daily-timeline-grid">
+            <div className="daily-timeline-grid daily-timeline-grid-continuous">
               <div className="daily-time-head">Shift time</div>
               {dailyStaff.map((staff) => {
                 const staffCards = cards.filter((card) => card.staff === staff && card.day === selectedDay);
@@ -235,107 +235,118 @@ export default function AllocationBoard({
                 );
               })}
 
-              {timeLanes.map((lane) => (
-                <div className="daily-time-row" key={lane.key}>
-                  <div className="daily-time-cell">{lane.label}</div>
-                  {dailyStaff.map((staff) => {
-                    const staffCards = cards
-                      .filter((card) => card.staff === staff && card.day === selectedDay)
-                      .sort((a, b) => a.jobOrder - b.jobOrder);
-                    const shiftMeta = board.staffMeta?.[staff];
-                    const laneCards = getCardsForTimeLane(staffCards, lane, shiftMeta);
-                    const facilities = groupHierarchy(laneCards);
+              <div className="daily-time-column">
+                {timeLanes.map((lane) => (
+                  <div className="daily-time-cell" key={lane.key}>{lane.label}</div>
+                ))}
+              </div>
 
-                    return (
-                      <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode}`} key={`${lane.key}-${staff}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
-                        {facilities.map((facility) => (
-                          <section className={`hierarchy-facility-box hierarchy-facility-${hierarchyMode}`} key={`${staff}-${lane.key}-${facility.facilityName}`}>
-                            <div className="hierarchy-box-title hierarchy-facility-title">
-                              <strong>{facility.facilityName}</strong>
-                              <span>{laneCards.length} tasks in lane</span>
-                            </div>
+              {dailyStaff.map((staff) => {
+                const staffCards = cards
+                  .filter((card) => card.staff === staff && card.day === selectedDay)
+                  .sort((a, b) => a.jobOrder - b.jobOrder);
+                const shiftMeta = board.staffMeta?.[staff];
+                const facilityName = shiftMeta?.facility || staffCards[0]?.facility || 'Assigned facility';
 
-                            <div className={`hierarchy-zone-stack hierarchy-zone-stack-${hierarchyMode}`}>
-                              {facility.zones.map((zone) => (
-                                <article className={`hierarchy-zone-box hierarchy-zone-${hierarchyMode}`} key={`${facility.facilityName}-${zone.zoneName}`}>
-                                  {(() => {
-                                    const zoneKey = `${staff}-${lane.key}-${facility.facilityName}-${zone.zoneName}`;
-                                    const zoneOpen = openZoneGroups[zoneKey];
-                                    const zoneProgress = getCompletionStats(zone.groups.flatMap((group) => group.cards));
-
-                                    return (
-                                      <>
-                                  <div className="hierarchy-zone-row">
-                                    <div className="hierarchy-box-title hierarchy-zone-label">
-                                      <strong>{zone.zoneName}</strong>
-                                    </div>
-                                    <button className={`hierarchy-zone-toggle ${zoneProgress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleZoneGroups(zoneKey)}>
-                                      <span className="hierarchy-zone-progress-fill" style={{ width: `${zoneProgress.percent}%` }} />
-                                      <span className="hierarchy-zone-toggle-copy">
-                                        <span>{zoneOpen ? 'Hide task groups' : 'Show task groups'}</span>
-                                        <strong>{zoneProgress.completed}/{zoneProgress.total} complete</strong>
-                                      </span>
-                                    </button>
-                                  </div>
-
-                                  {zoneOpen && (
-                                  <div className={`hierarchy-group-stack hierarchy-group-stack-${hierarchyMode}`}>
-                                    {zone.groups.map((group) => (
-                                      <div className={`hierarchy-group-box hierarchy-group-${hierarchyMode}`} key={`${zone.zoneName}-${group.groupName}`}>
-                                        {(() => {
-                                          const groupKey = `${staff}-${lane.key}-${zone.zoneName}-${group.groupName}`;
-                                          const progress = getCompletionStats(group.cards);
-                                          const isOpen = openGroups[groupKey];
-
-                                          return (
-                                            <>
-                                        <div className="hierarchy-group-row">
-                                          <div className="hierarchy-box-title hierarchy-group-label">
-                                            <strong>{group.groupName}</strong>
-                                          </div>
-
-                                          <button className={`hierarchy-group-toggle ${progress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleGroup(groupKey)}>
-                                            <span className="hierarchy-group-progress-fill" style={{ width: `${progress.percent}%` }} />
-                                            <span className="hierarchy-group-toggle-copy">
-                                              <span>{isOpen ? 'Hide tasks' : 'Show tasks'}</span>
-                                              <strong>{progress.completed}/{progress.total} complete</strong>
-                                            </span>
-                                          </button>
-                                        </div>
-
-                                        {isOpen && (
-                                          <div className={`hierarchy-task-stack hierarchy-task-stack-${hierarchyMode}`}>
-                                            {group.cards.map((card) => (
-                                              <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
-                                                <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
-                                                <strong>{card.title}</strong>
-                                                <span>{card.taskGroup}</span>
-                                                <small>{card.facility} · {card.zone} · {card.status === 'completed' ? 'Completed' : card.status === 'in-progress' ? 'In progress' : 'Pending'}</small>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
-                                            </>
-                                          );
-                                        })()}
-                                      </div>
-                                    ))}
-                                  </div>
-                                  )}
-                                      </>
-                                    );
-                                  })()}
-                                </article>
-                              ))}
-                            </div>
-                          </section>
-                        ))}
-                        {!laneCards.length && <span className="slot-empty">Drop</span>}
+                return (
+                  <div className="daily-staff-column" key={`column-${staff}`}>
+                    <section className={`hierarchy-facility-box hierarchy-facility-box-continuous hierarchy-facility-${hierarchyMode}`}>
+                      <div className="hierarchy-box-title hierarchy-facility-title">
+                        <strong>{facilityName}</strong>
+                        <span>{staffCards.length} tasks this shift</span>
                       </div>
-                    );
-                  })}
-                </div>
-              ))}
+
+                      <div className="daily-staff-lane-stack">
+                        {timeLanes.map((lane) => {
+                          const laneCards = getCardsForTimeLane(staffCards, lane, shiftMeta);
+                          const facility = groupHierarchy(laneCards)[0];
+
+                          return (
+                            <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${lane.key}-${staff}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
+                              {facility && (
+                                <div className={`hierarchy-zone-stack hierarchy-zone-stack-${hierarchyMode}`}>
+                                  {facility.zones.map((zone) => (
+                                    <article className={`hierarchy-zone-box hierarchy-zone-${hierarchyMode}`} key={`${facility.facilityName}-${lane.key}-${zone.zoneName}`}>
+                                      {(() => {
+                                        const zoneKey = `${staff}-${lane.key}-${facility.facilityName}-${zone.zoneName}`;
+                                        const zoneOpen = openZoneGroups[zoneKey];
+                                        const zoneProgress = getCompletionStats(zone.groups.flatMap((group) => group.cards));
+
+                                        return (
+                                          <>
+                                            <div className="hierarchy-zone-row">
+                                              <div className="hierarchy-box-title hierarchy-zone-label">
+                                                <strong>{zone.zoneName}</strong>
+                                              </div>
+                                              <button className={`hierarchy-zone-toggle ${zoneProgress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleZoneGroups(zoneKey)}>
+                                                <span className="hierarchy-zone-progress-fill" style={{ width: `${zoneProgress.percent}%` }} />
+                                                <span className="hierarchy-zone-toggle-copy">
+                                                  <span>{zoneOpen ? 'Hide task groups' : 'Show task groups'}</span>
+                                                  <strong>{zoneProgress.completed}/{zoneProgress.total} complete</strong>
+                                                </span>
+                                              </button>
+                                            </div>
+
+                                            {zoneOpen && (
+                                              <div className={`hierarchy-group-stack hierarchy-group-stack-${hierarchyMode}`}>
+                                                {zone.groups.map((group) => (
+                                                  <div className={`hierarchy-group-box hierarchy-group-${hierarchyMode}`} key={`${zone.zoneName}-${group.groupName}`}>
+                                                    {(() => {
+                                                      const groupKey = `${staff}-${lane.key}-${zone.zoneName}-${group.groupName}`;
+                                                      const progress = getCompletionStats(group.cards);
+                                                      const isOpen = openGroups[groupKey];
+
+                                                      return (
+                                                        <>
+                                                          <div className="hierarchy-group-row">
+                                                            <div className="hierarchy-box-title hierarchy-group-label">
+                                                              <strong>{group.groupName}</strong>
+                                                            </div>
+
+                                                            <button className={`hierarchy-group-toggle ${progress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleGroup(groupKey)}>
+                                                              <span className="hierarchy-group-progress-fill" style={{ width: `${progress.percent}%` }} />
+                                                              <span className="hierarchy-group-toggle-copy">
+                                                                <span>{isOpen ? 'Hide tasks' : 'Show tasks'}</span>
+                                                                <strong>{progress.completed}/{progress.total} complete</strong>
+                                                              </span>
+                                                            </button>
+                                                          </div>
+
+                                                          {isOpen && (
+                                                            <div className={`hierarchy-task-stack hierarchy-task-stack-${hierarchyMode}`}>
+                                                              {group.cards.map((card) => (
+                                                                <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
+                                                                  <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
+                                                                  <strong>{card.title}</strong>
+                                                                  <span>{card.taskGroup}</span>
+                                                                  <small>{card.facility} · {card.zone} · {card.status === 'completed' ? 'Completed' : card.status === 'in-progress' ? 'In progress' : 'Pending'}</small>
+                                                                </div>
+                                                              ))}
+                                                            </div>
+                                                          )}
+                                                        </>
+                                                      );
+                                                    })()}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
+                                    </article>
+                                  ))}
+                                </div>
+                              )}
+                              {!facility && <span className="slot-empty">Drop</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
