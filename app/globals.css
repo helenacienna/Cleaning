@@ -833,18 +833,18 @@ code {
 }
 
 .facility-theme-cienna-north {
-  background: linear-gradient(180deg, #ffffff 0%, #dff4ff 100%);
-  border-color: rgba(89,195,255,0.45);
+  background: #cdefff;
+  border-color: #59c3ff;
 }
 
 .facility-theme-cienna-central {
-  background: linear-gradient(180deg, #ffffff 0%, #dcfce7 100%);
-  border-color: rgba(34,197,94,0.40);
+  background: #c9f7d8;
+  border-color: #22c55e;
 }
 
 .facility-theme-cienna-south {
-  background: linear-gradient(180deg, #ffffff 0%, #fef3c7 100%);
-  border-color: rgba(245,158,11,0.42);
+  background: #fde68a;
+  border-color: #f59e0b;
 }
 
 .hierarchy-facility-box-continuous {
