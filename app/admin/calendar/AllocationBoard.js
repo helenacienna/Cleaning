@@ -163,6 +163,33 @@ function buildFacilityRuns(staffCards, timeLanes, shiftMeta) {
   }, []);
 }
 
+function reorderCards(cards, cardId, updates, targetCardId = null) {
+  const movingCard = cards.find((card) => card.id === cardId);
+  if (!movingCard) {
+    return cards;
+  }
+
+  const remainingCards = cards.filter((card) => card.id !== cardId);
+  const updatedCard = { ...movingCard, ...updates };
+
+  if (!targetCardId) {
+    return remainingCards.map((card) => ({ ...card })).concat(updatedCard);
+  }
+
+  const targetIndex = remainingCards.findIndex((card) => card.id === targetCardId);
+  if (targetIndex === -1) {
+    return remainingCards.concat(updatedCard);
+  }
+
+  const nextCards = [...remainingCards];
+  nextCards.splice(targetIndex, 0, updatedCard);
+
+  return nextCards.map((card, index) => ({
+    ...card,
+    jobOrder: index + 1,
+  }));
+}
+
 export default function AllocationBoard({
   board,
   initialView = 'weekly',
@@ -178,10 +205,8 @@ export default function AllocationBoard({
   const [openZoneGroups, setOpenZoneGroups] = useState({});
   const [activeDropKey, setActiveDropKey] = useState('');
 
-  function moveCard(cardId, updates) {
-    setCards((existing) => existing.map((card) => (
-      card.id === cardId ? { ...card, ...updates } : card
-    )));
+  function moveCard(cardId, updates, targetCardId = null) {
+    setCards((existing) => reorderCards(existing, cardId, updates, targetCardId));
   }
 
   function handleDragStart(event, cardId) {
@@ -195,11 +220,11 @@ export default function AllocationBoard({
     moveCard(cardId, { staff, day });
   }
 
-  function handleHierarchyDrop(event, updates) {
+  function handleHierarchyDrop(event, updates, targetCardId = null) {
     event.preventDefault();
     const cardId = event.dataTransfer.getData('text/plain');
     setActiveDropKey('');
-    moveCard(cardId, updates);
+    moveCard(cardId, updates, targetCardId);
   }
 
   function toggleGroup(groupKey) {
@@ -409,15 +434,22 @@ export default function AllocationBoard({
                                                             }} onDragLeave={() => {
                                                               if (activeDropKey === dropKey) setActiveDropKey('');
                                                             }} onDrop={(event) => handleHierarchyDrop(event, groupDropUpdates)}>
-                                                              {group.cards.map((card) => (
-                                                                <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${card.status === 'completed' ? 'allocation-card-completed' : card.status === 'pending' ? 'allocation-card-issue' : 'allocation-card-active'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
+                                                              {group.cards.map((card) => {
+                                                                const cardDropKey = `${dropKey}-${card.id}`;
+                                                                return (
+                                                                <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${card.status === 'completed' ? 'allocation-card-completed' : card.status === 'pending' ? 'allocation-card-issue' : 'allocation-card-active'} ${activeDropKey === cardDropKey ? 'hierarchy-card-drop-target-active' : ''}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} onDragOver={(event) => {
+                                                                  event.preventDefault();
+                                                                  if (activeDropKey !== cardDropKey) setActiveDropKey(cardDropKey);
+                                                                }} onDragLeave={() => {
+                                                                  if (activeDropKey === cardDropKey) setActiveDropKey('');
+                                                                }} onDrop={(event) => handleHierarchyDrop(event, groupDropUpdates, card.id)} key={card.id}>
                                                                   <span className="hierarchy-drag-handle" aria-hidden="true">⋮⋮</span>
                                                                   <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
                                                                   <strong>{card.title}</strong>
                                                                   <span>{card.taskGroup}</span>
                                                                   <small>{card.facility} · {card.zone} · {card.status === 'completed' ? 'Completed' : card.status === 'in-progress' ? 'In progress' : 'Pending'}</small>
                                                                 </div>
-                                                              ))}
+                                                              )})}
                                                             </div>
                                                           )}
                                                         </>
