@@ -268,18 +268,20 @@ export default function AllocationBoard({
 
                                           return (
                                             <>
-                                        <div className="hierarchy-box-title">
-                                          <strong>{group.groupName}</strong>
-                                          <span>{group.cards.length} cards</span>
-                                        </div>
+                                        <div className="hierarchy-group-row">
+                                          <div className="hierarchy-box-title hierarchy-group-label">
+                                            <strong>{group.groupName}</strong>
+                                            <span>{group.cards.length} cards</span>
+                                          </div>
 
-                                        <button className={`hierarchy-group-toggle ${progress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleGroup(groupKey)}>
-                                          <span className="hierarchy-group-progress-fill" style={{ width: `${progress.percent}%` }} />
-                                          <span className="hierarchy-group-toggle-copy">
-                                            <span>{isOpen ? 'Hide tasks' : 'Show tasks'}</span>
-                                            <strong>{progress.completed}/{progress.total} complete</strong>
-                                          </span>
-                                        </button>
+                                          <button className={`hierarchy-group-toggle ${progress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleGroup(groupKey)}>
+                                            <span className="hierarchy-group-progress-fill" style={{ width: `${progress.percent}%` }} />
+                                            <span className="hierarchy-group-toggle-copy">
+                                              <span>{isOpen ? 'Hide tasks' : 'Show tasks'}</span>
+                                              <strong>{progress.completed}/{progress.total} complete</strong>
+                                            </span>
+                                          </button>
+                                        </div>
 
                                         {isOpen && (
                                           <div className={`hierarchy-task-stack hierarchy-task-stack-${hierarchyMode}`}>

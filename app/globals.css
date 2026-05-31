@@ -886,6 +886,17 @@ code {
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
+.hierarchy-group-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  align-items: center;
+  gap: 12px;
+}
+
+.hierarchy-group-label {
+  min-width: 0;
+}
+
 .hierarchy-group-toggle {
   position: relative;
   overflow: hidden;
@@ -927,6 +938,12 @@ code {
 
 .hierarchy-group-toggle.complete {
   border-color: rgba(99,230,165,0.4);
+}
+
+@media (max-width: 900px) {
+  .hierarchy-group-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .daily-task-card {
