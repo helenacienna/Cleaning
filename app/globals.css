@@ -854,7 +854,7 @@ code {
 .facility-theme-cienna-north .hierarchy-facility-progress,
 .facility-theme-cienna-central .hierarchy-facility-progress,
 .facility-theme-cienna-south .hierarchy-facility-progress {
-  border-width: 2px;
+  border-width: 4px;
 }
 
 .hierarchy-facility-box-continuous {
@@ -960,7 +960,7 @@ code {
   min-width: 0;
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px solid rgba(15,23,42,0.10);
+  border: 3px solid rgba(15,23,42,0.16);
   background: rgba(255,255,255,0.9);
 }
 
