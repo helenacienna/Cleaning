@@ -62,6 +62,7 @@ export default function HomePage() {
             <a className="button primary" href="#schedule-builder">Start scheduling workflow</a>
             <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
             <Link className="button secondary" href="/scan/assignment-1">Open cleaner QR flow</Link>
+            <Link className="button secondary" href="/admin/manager">Open manager view</Link>
             <Link className="button secondary" href="/admin/task-cards">Task cards</Link>
           </div>
         </div>
@@ -115,9 +116,9 @@ export default function HomePage() {
         </div>
         <div className="workflow-card">
           <span className="badge">Step 3</span>
-          <strong>Review exceptions</strong>
-          <p className="muted">Check low scores, problem zones, and task-level exceptions before the shift runs.</p>
-          <Link className="button secondary" href="/admin/daily-hierarchy">Review hierarchy alerts</Link>
+          <strong>Manager oversight</strong>
+          <p className="muted">Track published shifts, live completion, low scores, and open exceptions.</p>
+          <Link className="button secondary" href="/admin/manager">Open manager view</Link>
         </div>
         <div className="workflow-card">
           <span className="badge">Step 4</span>
