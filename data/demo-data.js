@@ -313,8 +313,8 @@ const denseScoreDemoCards = Array.from({ length: 21 }, (_, index) => ({
   type: 'critical',
   groupId: 'group-dense-score-demo',
   groupName: 'Rooftop presentation',
-  auditScore: 1,
-  issueNote: 'Scored 1/5 on review and needs attention',
+  auditScore: index === 2 || index === 14 ? 1 : index % 5 === 0 ? 2 : index % 3 === 0 ? 3 : index % 2 === 0 ? 4 : 5,
+  issueNote: index === 2 || index === 14 ? 'Scored 1/5 on review and needs attention' : '',
   detached: false,
 }));
 
