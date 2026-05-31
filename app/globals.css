@@ -888,7 +888,7 @@ code {
 
 .hierarchy-group-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
   gap: 12px;
 }
