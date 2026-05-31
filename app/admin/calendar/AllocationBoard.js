@@ -125,9 +125,15 @@ function groupHierarchy(cards) {
   }));
 }
 
-export default function AllocationBoard({ board }) {
+export default function AllocationBoard({
+  board,
+  initialView = 'weekly',
+  lockView = false,
+  title = 'Task card allocation board',
+  description = 'Switch view to see every task card, including unallocated work. Drag cards between staff and days.',
+}) {
   const [cards, setCards] = useState(board.cards);
-  const [view, setView] = useState('weekly');
+  const [view, setView] = useState(initialView);
   const [selectedDay, setSelectedDay] = useState(board.days[0]);
   const [hierarchyMode, setHierarchyMode] = useState('nested');
   const [openGroups, setOpenGroups] = useState({});
@@ -162,15 +168,19 @@ export default function AllocationBoard({ board }) {
     <section className="card allocation-board-shell">
       <div className="admin-calendar-header">
         <div>
-          <h2>Task card allocation board</h2>
-          <p className="muted">Switch view to see every task card, including unallocated work. Drag cards between staff and days.</p>
+          <h2>{title}</h2>
+          <p className="muted">{description}</p>
         </div>
         <div className="admin-calendar-controls">
           <span className="badge">{cards.length} task cards</span>
           <span className="badge">{assignedCount} allocated</span>
           <span className="badge">{unallocatedCount} unallocated</span>
-          <button className={`button ${view === 'weekly' ? 'primary' : 'secondary'}`} type="button" onClick={() => setView('weekly')}>Weekly board</button>
-          <button className={`button ${view === 'daily' ? 'primary' : 'secondary'}`} type="button" onClick={() => setView('daily')}>Daily staff view</button>
+          {!lockView && (
+            <>
+              <button className={`button ${view === 'weekly' ? 'primary' : 'secondary'}`} type="button" onClick={() => setView('weekly')}>Weekly board</button>
+              <button className={`button ${view === 'daily' ? 'primary' : 'secondary'}`} type="button" onClick={() => setView('daily')}>Daily staff view</button>
+            </>
+          )}
           <span className="button primary">Save allocations</span>
         </div>
       </div>

@@ -27,11 +27,12 @@ export default function AdminCalendarPage() {
             <h2>Weekly task planner</h2>
             <p className="muted">Organise daily run sheets, see workload by facility and zone, and spot critical work before publishing.</p>
           </div>
-          <div className="admin-calendar-controls">
-            <a className="button secondary" href="#allocation-board">Task card board</a>
-            <Link className="button secondary" href="/admin/task-cards">Task card library</Link>
-            <span className="button secondary">Previous week</span>
-            <span className="badge">1–7 June 2026</span>
+        <div className="admin-calendar-controls">
+          <a className="button secondary" href="#allocation-board">Task card board</a>
+          <Link className="button secondary" href="/admin/daily-hierarchy">Open daily hierarchy</Link>
+          <Link className="button secondary" href="/admin/task-cards">Task card library</Link>
+          <span className="button secondary">Previous week</span>
+          <span className="badge">1–7 June 2026</span>
             <span className="button secondary">Next week</span>
             <span className="button primary">Publish schedule</span>
           </div>

@@ -62,6 +62,7 @@ export default function HomePage() {
             <Link className="button primary" href="/scan/zone-1">Open cleaner QR flow</Link>
             <a className="button secondary" href="#schedule-builder">Open schedule builder</a>
             <Link className="button secondary" href="/admin/calendar">Admin calendar</Link>
+            <Link className="button secondary" href="/admin/daily-hierarchy">Daily hierarchy</Link>
             <Link className="button secondary" href="/admin/task-cards">Task cards</Link>
           </div>
         </div>
