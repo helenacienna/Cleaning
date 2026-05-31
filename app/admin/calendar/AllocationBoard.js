@@ -6,23 +6,88 @@ function formatJobOrder(jobOrder) {
   return String(jobOrder).padStart(3, '0');
 }
 
-function getOrderLanes(cards, selectedDay) {
-  const dayOrders = cards
-    .filter((card) => card.day === selectedDay && card.staff !== 'Unallocated')
-    .map((card) => card.jobOrder);
+function parseShiftWindow(shiftWindow = '') {
+  const baseWindow = shiftWindow.split('·')[0].trim();
+  const [startText, endText] = baseWindow.split('–').map((part) => part?.trim());
+  return {
+    startMinutes: parseClockLabel(startText),
+    endMinutes: parseClockLabel(endText),
+  };
+}
 
-  const maxOrder = dayOrders.length ? Math.max(...dayOrders, 10) : 10;
-  const laneCount = Math.ceil(maxOrder / 10);
+function parseClockLabel(label = '') {
+  const match = label.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!match) {
+    return null;
+  }
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const meridiem = match[3].toUpperCase();
+
+  if (meridiem === 'PM' && hours !== 12) {
+    hours += 12;
+  }
+  if (meridiem === 'AM' && hours === 12) {
+    hours = 0;
+  }
+
+  return hours * 60 + minutes;
+}
+
+function formatMinutes(minutes) {
+  const safeMinutes = Math.max(0, minutes ?? 0);
+  let hours = Math.floor(safeMinutes / 60);
+  const mins = safeMinutes % 60;
+  const meridiem = hours >= 12 ? 'PM' : 'AM';
+  hours %= 12;
+  if (hours === 0) {
+    hours = 12;
+  }
+  return `${hours}:${String(mins).padStart(2, '0')} ${meridiem}`;
+}
+
+function getTimeLanes(staffMeta = {}) {
+  const parsedWindows = Object.values(staffMeta)
+    .map((meta) => parseShiftWindow(meta.shiftWindow))
+    .filter((window) => window.startMinutes !== null && window.endMinutes !== null);
+
+  const defaultStart = 6 * 60;
+  const defaultEnd = 17 * 60;
+  const startMinutes = parsedWindows.length ? Math.min(...parsedWindows.map((window) => window.startMinutes)) : defaultStart;
+  const endMinutes = parsedWindows.length ? Math.max(...parsedWindows.map((window) => window.endMinutes)) : defaultEnd;
+  const slotMinutes = 60;
+  const laneCount = Math.max(1, Math.ceil((endMinutes - startMinutes) / slotMinutes));
 
   return Array.from({ length: laneCount }, (_, index) => {
-    const start = index * 10 + 1;
-    const end = start + 9;
+    const laneStart = startMinutes + index * slotMinutes;
+    const laneEnd = Math.min(laneStart + slotMinutes, endMinutes);
     return {
-      key: `${start}-${end}`,
-      start,
-      end,
-      label: `Jobs ${formatJobOrder(start)}–${formatJobOrder(end)}`,
+      key: `${laneStart}-${laneEnd}`,
+      startMinutes: laneStart,
+      endMinutes: laneEnd,
+      label: `${formatMinutes(laneStart)} – ${formatMinutes(laneEnd)}`,
     };
+  });
+}
+
+function getCardsForTimeLane(allCards, lane, shiftMeta) {
+  const sortedCards = [...allCards].sort((a, b) => a.jobOrder - b.jobOrder);
+  if (!sortedCards.length) {
+    return [];
+  }
+
+  const shiftWindow = parseShiftWindow(shiftMeta?.shiftWindow);
+  const shiftStart = shiftWindow.startMinutes ?? lane.startMinutes;
+  const shiftEnd = shiftWindow.endMinutes ?? lane.endMinutes;
+  const shiftDuration = Math.max(60, shiftEnd - shiftStart);
+
+  return sortedCards.filter((card, index) => {
+    const startOffset = Math.floor((index / sortedCards.length) * shiftDuration);
+    const endOffset = Math.floor(((index + 1) / sortedCards.length) * shiftDuration);
+    const cardStart = shiftStart + startOffset;
+    const cardEnd = shiftStart + Math.max(endOffset, startOffset + 1);
+    return cardStart < lane.endMinutes && cardEnd > lane.startMinutes;
   });
 }
 
@@ -86,7 +151,7 @@ export default function AllocationBoard({ board }) {
   const assignedCount = cards.filter((card) => card.staff !== 'Unallocated').length;
   const unallocatedCount = cards.length - assignedCount;
   const dailyStaff = board.staff.filter((staff) => staff !== 'Unallocated');
-  const orderLanes = useMemo(() => getOrderLanes(cards, selectedDay), [cards, selectedDay]);
+  const timeLanes = useMemo(() => getTimeLanes(board.staffMeta), [board.staffMeta]);
 
   return (
     <section className="card allocation-board-shell">
@@ -110,7 +175,7 @@ export default function AllocationBoard({ board }) {
           <div className="daily-board-toolbar">
             <div>
               <h3>Daily hierarchy view</h3>
-              <p className="muted">Try a few nesting styles to see which hierarchy feels clearest for staff shift, facility, zone, task group, and task card.</p>
+              <p className="muted">Time lanes follow staff shift windows instead of fixed task times, while task order still shapes how work flows through the shift.</p>
             </div>
             <div className="daily-board-controls">
               <div className="view-switcher">
@@ -128,7 +193,7 @@ export default function AllocationBoard({ board }) {
 
           <div className="daily-timeline-scroll">
             <div className="daily-timeline-grid">
-              <div className="daily-time-head">Job order</div>
+              <div className="daily-time-head">Shift time</div>
               {dailyStaff.map((staff) => {
                 const staffCards = cards.filter((card) => card.staff === staff && card.day === selectedDay);
                 const shiftMeta = board.staffMeta?.[staff];
@@ -143,13 +208,15 @@ export default function AllocationBoard({ board }) {
                 );
               })}
 
-              {orderLanes.map((lane) => (
+              {timeLanes.map((lane) => (
                 <div className="daily-time-row" key={lane.key}>
                   <div className="daily-time-cell">{lane.label}</div>
                   {dailyStaff.map((staff) => {
-                    const laneCards = cards
-                      .filter((card) => card.staff === staff && card.day === selectedDay && card.jobOrder >= lane.start && card.jobOrder <= lane.end)
+                    const staffCards = cards
+                      .filter((card) => card.staff === staff && card.day === selectedDay)
                       .sort((a, b) => a.jobOrder - b.jobOrder);
+                    const shiftMeta = board.staffMeta?.[staff];
+                    const laneCards = getCardsForTimeLane(staffCards, lane, shiftMeta);
                     const facilities = groupHierarchy(laneCards);
 
                     return (
