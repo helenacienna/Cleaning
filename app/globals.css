@@ -794,15 +794,15 @@ code {
 }
 
 .hierarchy-cell {
-  min-height: 220px;
+  min-height: 152px;
   background: rgba(255,255,255,0.02);
 }
 
 .daily-timeline-cell {
-  min-height: 164px;
+  min-height: 120px;
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 6px;
   background: rgba(255,255,255,0.02);
 }
 
@@ -810,8 +810,8 @@ code {
 .hierarchy-zone-box,
 .hierarchy-group-box {
   display: grid;
-  gap: 10px;
-  border-radius: 18px;
+  gap: 6px;
+  border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.08);
 }
 
@@ -828,7 +828,7 @@ code {
 }
 
 .hierarchy-facility-box {
-  padding: 12px;
+  padding: 8px;
   background: rgba(255,255,255,0.04);
 }
 
@@ -865,11 +865,11 @@ code {
 .hierarchy-group-stack,
 .hierarchy-task-stack {
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 
 .hierarchy-zone-box {
-  padding: 10px;
+  padding: 8px;
   background: rgba(8,17,31,0.5);
 }
 
@@ -883,7 +883,7 @@ code {
 }
 
 .hierarchy-group-box {
-  padding: 10px;
+  padding: 8px;
   background: rgba(255,255,255,0.035);
 }
 
@@ -914,25 +914,14 @@ code {
 }
 
 .hierarchy-facility-title {
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 2px;
 }
 
 .hierarchy-facility-row,
 .hierarchy-zone-row,
-.hierarchy-group-row {
+.hierarchy-group-row,
+.hierarchy-section-progress {
   width: 100%;
-}
-
-.hierarchy-facility-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-}
-
-.hierarchy-facility-label {
-  min-width: 0;
 }
 
 .hierarchy-facility-progress {
@@ -944,8 +933,8 @@ code {
   gap: 10px;
   width: 100%;
   min-width: 0;
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
   border: 1px dashed rgba(255,255,255,0.14);
   background: rgba(255,255,255,0.025);
 }
@@ -964,11 +953,14 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
-.hierarchy-facility-progress span {
+.hierarchy-facility-progress span,
+.hierarchy-facility-progress strong,
+.hierarchy-zone-toggle strong,
+.hierarchy-group-toggle strong {
   color: var(--muted);
   font-size: 12px;
 }
@@ -978,25 +970,11 @@ code {
 }
 
 .hierarchy-group-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-}
-
-.hierarchy-group-label {
-  min-width: 0;
+  display: block;
 }
 
 .hierarchy-zone-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-}
-
-.hierarchy-zone-label {
-  min-width: 0;
+  display: block;
 }
 
 .hierarchy-zone-toggle {
@@ -1005,10 +983,10 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
   border: 1px dashed rgba(255,255,255,0.14);
   background: rgba(255,255,255,0.025);
   color: inherit;
@@ -1030,7 +1008,7 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -1049,10 +1027,10 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
   border: 1px dashed rgba(255,255,255,0.14);
   background: rgba(255,255,255,0.025);
   color: inherit;
@@ -1074,7 +1052,7 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -1088,10 +1066,11 @@ code {
 }
 
 @media (max-width: 900px) {
-  .hierarchy-facility-row,
-  .hierarchy-zone-row,
-  .hierarchy-group-row {
-    grid-template-columns: 1fr;
+  .hierarchy-facility-progress-copy,
+  .hierarchy-zone-toggle-copy,
+  .hierarchy-group-toggle-copy {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

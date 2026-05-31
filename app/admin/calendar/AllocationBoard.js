@@ -290,15 +290,11 @@ export default function AllocationBoard({
 
                       return (
                         <section className={`hierarchy-facility-box hierarchy-facility-box-continuous hierarchy-facility-${hierarchyMode}`} key={`${staff}-${facilityName}-${runIndex}`}>
-                          <div className="hierarchy-facility-row hierarchy-facility-title">
-                            <div className="hierarchy-box-title hierarchy-facility-label">
-                              <strong>{facilityName}</strong>
-                              <span>{runTaskCount} tasks in stop</span>
-                            </div>
-                            <div className={`hierarchy-facility-progress ${facilityProgress.percent === 100 ? 'complete' : ''}`}>
+                          <div className="hierarchy-facility-title">
+                            <div className={`hierarchy-facility-progress hierarchy-section-progress ${facilityProgress.percent === 100 ? 'complete' : ''}`}>
                               <span className="hierarchy-facility-progress-fill" style={{ width: `${facilityProgress.percent}%` }} />
                               <span className="hierarchy-facility-progress-copy">
-                                <span>Facility progress</span>
+                                <strong>{facilityName}</strong>
                                 <strong>{facilityProgress.completed}/{facilityProgress.total} complete</strong>
                               </span>
                             </div>
@@ -319,13 +315,10 @@ export default function AllocationBoard({
                                         return (
                                           <>
                                             <div className="hierarchy-zone-row">
-                                              <div className="hierarchy-box-title hierarchy-zone-label">
-                                                <strong>{zone.zoneName}</strong>
-                                              </div>
-                                              <button className={`hierarchy-zone-toggle ${zoneProgress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleZoneGroups(zoneKey)}>
+                                              <button className={`hierarchy-zone-toggle hierarchy-section-progress ${zoneProgress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleZoneGroups(zoneKey)}>
                                                 <span className="hierarchy-zone-progress-fill" style={{ width: `${zoneProgress.percent}%` }} />
                                                 <span className="hierarchy-zone-toggle-copy">
-                                                  <span>{zoneOpen ? 'Hide task groups' : 'Show task groups'}</span>
+                                                  <strong>{zone.zoneName}</strong>
                                                   <strong>{zoneProgress.completed}/{zoneProgress.total} complete</strong>
                                                 </span>
                                               </button>
@@ -343,14 +336,10 @@ export default function AllocationBoard({
                                                       return (
                                                         <>
                                                           <div className="hierarchy-group-row">
-                                                            <div className="hierarchy-box-title hierarchy-group-label">
-                                                              <strong>{group.groupName}</strong>
-                                                            </div>
-
-                                                            <button className={`hierarchy-group-toggle ${progress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleGroup(groupKey)}>
+                                                            <button className={`hierarchy-group-toggle hierarchy-section-progress ${progress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleGroup(groupKey)}>
                                                               <span className="hierarchy-group-progress-fill" style={{ width: `${progress.percent}%` }} />
                                                               <span className="hierarchy-group-toggle-copy">
-                                                                <span>{isOpen ? 'Hide tasks' : 'Show tasks'}</span>
+                                                                <strong>{group.groupName}</strong>
                                                                 <strong>{progress.completed}/{progress.total} complete</strong>
                                                               </span>
                                                             </button>
