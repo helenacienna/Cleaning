@@ -144,6 +144,7 @@ export default function AllocationBoard({
   const [selectedDay, setSelectedDay] = useState(board.days[0]);
   const [hierarchyMode, setHierarchyMode] = useState('nested');
   const [openGroups, setOpenGroups] = useState({});
+  const [openZoneGroups, setOpenZoneGroups] = useState({});
 
   function moveCard(cardId, staff, day) {
     setCards((existing) => existing.map((card) => (
@@ -164,6 +165,10 @@ export default function AllocationBoard({
 
   function toggleGroup(groupKey) {
     setOpenGroups((existing) => ({ ...existing, [groupKey]: !existing[groupKey] }));
+  }
+
+  function toggleZoneGroups(zoneKey) {
+    setOpenZoneGroups((existing) => ({ ...existing, [zoneKey]: !existing[zoneKey] }));
   }
 
   const assignedCount = cards.filter((card) => card.staff !== 'Unallocated').length;
@@ -253,11 +258,25 @@ export default function AllocationBoard({
                             <div className={`hierarchy-zone-stack hierarchy-zone-stack-${hierarchyMode}`}>
                               {facility.zones.map((zone) => (
                                 <article className={`hierarchy-zone-box hierarchy-zone-${hierarchyMode}`} key={`${facility.facilityName}-${zone.zoneName}`}>
-                                  <div className="hierarchy-box-title">
-                                    <strong>{zone.zoneName}</strong>
-                                    <span>{zone.groups.reduce((sum, group) => sum + group.cards.length, 0)} tasks</span>
+                                  {(() => {
+                                    const zoneKey = `${staff}-${lane.key}-${facility.facilityName}-${zone.zoneName}`;
+                                    const zoneOpen = openZoneGroups[zoneKey];
+                                    const zoneTaskCount = zone.groups.reduce((sum, group) => sum + group.cards.length, 0);
+
+                                    return (
+                                      <>
+                                  <div className="hierarchy-zone-row">
+                                    <div className="hierarchy-box-title hierarchy-zone-label">
+                                      <strong>{zone.zoneName}</strong>
+                                      <span>{zoneTaskCount} tasks</span>
+                                    </div>
+                                    <button className="hierarchy-zone-toggle" type="button" onClick={() => toggleZoneGroups(zoneKey)}>
+                                      <span>{zoneOpen ? 'Hide task groups' : 'Show task groups'}</span>
+                                      <strong>{zone.groups.length} groups</strong>
+                                    </button>
                                   </div>
 
+                                  {zoneOpen && (
                                   <div className={`hierarchy-group-stack hierarchy-group-stack-${hierarchyMode}`}>
                                     {zone.groups.map((group) => (
                                       <div className={`hierarchy-group-box hierarchy-group-${hierarchyMode}`} key={`${zone.zoneName}-${group.groupName}`}>
@@ -300,6 +319,10 @@ export default function AllocationBoard({
                                       </div>
                                     ))}
                                   </div>
+                                  )}
+                                      </>
+                                    );
+                                  })()}
                                 </article>
                               ))}
                             </div>

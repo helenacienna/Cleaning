@@ -897,6 +897,36 @@ code {
   min-width: 0;
 }
 
+.hierarchy-zone-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.hierarchy-zone-label {
+  min-width: 0;
+}
+
+.hierarchy-zone-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.025);
+  color: inherit;
+  cursor: pointer;
+}
+
+.hierarchy-zone-toggle span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .hierarchy-group-toggle {
   position: relative;
   overflow: hidden;
@@ -941,6 +971,7 @@ code {
 }
 
 @media (max-width: 900px) {
+  .hierarchy-zone-row,
   .hierarchy-group-row {
     grid-template-columns: 1fr;
   }
