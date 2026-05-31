@@ -45,7 +45,10 @@ export default async function CleanerZonePage({ params }) {
               <h1>{assignment.zone}</h1>
               <p className="muted">{assignment.location}</p>
             </div>
-            <Link className="button secondary" href="/">Admin view</Link>
+            <div className="workflow-banner-actions">
+              <Link className="button secondary" href="/admin/daily-hierarchy">Daily hierarchy</Link>
+              <Link className="button secondary" href="/admin/calendar">Weekly planner</Link>
+            </div>
           </div>
 
           <div className="cleaner-strip">
@@ -76,6 +79,17 @@ export default async function CleanerZonePage({ params }) {
         </section>
 
         <CleanerChecklistModal tasks={assignment.tasks} zoneName={assignment.zone} />
+
+        <section className="workflow-banner">
+          <div>
+            <span className="badge">Workflow</span>
+            <strong>Cleaner completes tasks here, while supervisors monitor progress from the hierarchy and planner views.</strong>
+          </div>
+          <div className="workflow-banner-actions">
+            <Link className="button secondary" href="/admin/daily-hierarchy">Open hierarchy monitor</Link>
+            <Link className="button secondary" href="/">Back to dashboard</Link>
+          </div>
+        </section>
 
         <section className="card issue-card">
           <div>

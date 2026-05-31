@@ -57,6 +57,47 @@ a { color: inherit; text-decoration: none; }
   gap: 10px;
 }
 
+.workflow-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 20px;
+}
+
+.workflow-card,
+.workflow-banner {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(15,23,42,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,250,252,0.96));
+  box-shadow: 0 12px 32px rgba(15,23,42,0.06);
+}
+
+.workflow-card strong,
+.workflow-banner strong {
+  line-height: 1.3;
+}
+
+.workflow-card p,
+.workflow-banner p {
+  margin: 0;
+}
+
+.workflow-banner {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.workflow-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .badge,
 .tab,
 .flag {
@@ -1823,6 +1864,7 @@ button.button {
 }
 
 @media (max-width: 1100px) {
+  .workflow-strip,
   .task-card-layout,
   .task-card-form-grid,
   .hero,
@@ -1841,6 +1883,14 @@ button.button {
   .filter-row {
     grid-template-columns: 1fr;
   }
+
+  .workflow-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-banner-actions {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1851,6 +1901,7 @@ button.button {
   .schedule-toolbar, .schedule-task, .instance-row, .task-card-header-card, .task-card-actions, .checkbox-row { align-items: flex-start; flex-direction: column; }
   .admin-calendar-header { align-items: flex-start; flex-direction: column; }
   .admin-calendar-controls { justify-content: flex-start; }
+  .workflow-banner-actions { justify-content: flex-start; }
   .task-card-chip-row { justify-content: flex-start; }
   .task-card-list { max-height: none; }
   .daily-board-toolbar, .daily-board-controls { align-items: flex-start; flex-direction: column; }

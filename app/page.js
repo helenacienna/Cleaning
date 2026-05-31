@@ -59,10 +59,10 @@ export default function HomePage() {
             </div>
           </div>
           <div className="cta-row">
-            <Link className="button primary" href="/scan/assignment-1">Open cleaner QR flow</Link>
-            <a className="button secondary" href="#schedule-builder">Open schedule builder</a>
+            <a className="button primary" href="#schedule-builder">Start scheduling workflow</a>
             <Link className="button secondary" href="/admin/calendar">Admin calendar</Link>
             <Link className="button secondary" href="/admin/daily-hierarchy">Daily hierarchy</Link>
+            <Link className="button secondary" href="/scan/assignment-1">Open cleaner QR flow</Link>
             <Link className="button secondary" href="/admin/task-cards">Task cards</Link>
           </div>
         </div>
@@ -98,6 +98,33 @@ export default function HomePage() {
               <strong className="tone-green">Ready</strong>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="workflow-strip">
+        <div className="workflow-card">
+          <span className="badge">Step 1</span>
+          <strong>Build the run</strong>
+          <p className="muted">Set task order, cleaner, and repeat pattern in the schedule builder.</p>
+          <a className="button secondary" href="#schedule-builder">Open schedule builder</a>
+        </div>
+        <div className="workflow-card">
+          <span className="badge">Step 2</span>
+          <strong>Review allocations</strong>
+          <p className="muted">Use the admin calendar to check workload, drag tasks, and publish the week.</p>
+          <Link className="button secondary" href="/admin/calendar">Open admin calendar</Link>
+        </div>
+        <div className="workflow-card">
+          <span className="badge">Step 3</span>
+          <strong>Check the day view</strong>
+          <p className="muted">See how the shift breaks down by facility, zone, group, and exceptions.</p>
+          <Link className="button secondary" href="/admin/daily-hierarchy">Open daily hierarchy</Link>
+        </div>
+        <div className="workflow-card">
+          <span className="badge">Step 4</span>
+          <strong>Run the cleaner flow</strong>
+          <p className="muted">Open the same checklist view the cleaner uses during the shift.</p>
+          <Link className="button secondary" href="/scan/assignment-1">Open cleaner checklist</Link>
         </div>
       </section>
 

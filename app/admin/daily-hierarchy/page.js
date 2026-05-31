@@ -21,6 +21,17 @@ export default function DailyHierarchyPage() {
         </div>
       </div>
 
+      <section className="workflow-banner no-top-gap">
+        <div>
+          <span className="badge">Workflow</span>
+          <strong>Review the shift here, then open a zone’s cleaner checklist to run the work on shift.</strong>
+        </div>
+        <div className="workflow-banner-actions">
+          <Link className="button secondary" href="/admin/calendar">Back to weekly planner</Link>
+          <Link className="button secondary" href="/scan/shift-mon-1-mia-thompson-cienna-north-rooftop">Open cleaner example</Link>
+        </div>
+      </section>
+
       <AllocationBoard
         board={scheduleBuilder.allocationBoard}
         initialView="daily"

@@ -22,6 +22,18 @@ export default function AdminCalendarPage() {
       </div>
 
       <section className="card admin-calendar-shell">
+        <div className="workflow-banner">
+          <div>
+            <span className="badge">Workflow</span>
+            <strong>Plan the week, then validate the day before opening the cleaner checklist.</strong>
+          </div>
+          <div className="workflow-banner-actions">
+            <Link className="button secondary" href="/admin/task-cards">Task card library</Link>
+            <Link className="button secondary" href="/admin/daily-hierarchy">Review daily hierarchy</Link>
+            <Link className="button secondary" href="/scan/shift-mon-1-mia-thompson-cienna-north-rooftop">Open cleaner example</Link>
+          </div>
+        </div>
+
         <div className="admin-calendar-header">
           <div>
             <h2>Weekly task planner</h2>
