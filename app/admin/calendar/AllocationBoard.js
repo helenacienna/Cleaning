@@ -63,6 +63,7 @@ function getTimeLanes(staffMeta = {}) {
     const laneStart = startMinutes + index * slotMinutes;
     const laneEnd = Math.min(laneStart + slotMinutes, endMinutes);
     return {
+      index,
       key: `${laneStart}-${laneEnd}`,
       startMinutes: laneStart,
       endMinutes: laneEnd,
@@ -75,6 +76,10 @@ function getCardsForTimeLane(allCards, lane, shiftMeta) {
   const sortedCards = [...allCards].sort((a, b) => a.jobOrder - b.jobOrder);
   if (!sortedCards.length) {
     return [];
+  }
+
+  if (sortedCards.some((card) => Number.isInteger(card.laneIndex))) {
+    return sortedCards.filter((card) => card.laneIndex === lane.index);
   }
 
   const shiftWindow = parseShiftWindow(shiftMeta?.shiftWindow);
@@ -130,6 +135,26 @@ function getCompletionStats(cards) {
   const total = cards.length;
   const percent = total ? Math.round((completed / total) * 100) : 0;
   return { completed, total, percent };
+}
+
+function buildFacilityRuns(staffCards, timeLanes, shiftMeta) {
+  const laneDetails = timeLanes.map((lane) => {
+    const laneCards = getCardsForTimeLane(staffCards, lane, shiftMeta);
+    const facilities = groupHierarchy(laneCards);
+    const facilityKey = facilities.map((facility) => facility.facilityName).join('|') || '__empty__';
+    return { lane, laneCards, facilities, facilityKey };
+  });
+
+  return laneDetails.reduce((runs, detail) => {
+    const lastRun = runs[runs.length - 1];
+    if (lastRun && lastRun.facilityKey === detail.facilityKey) {
+      lastRun.details.push(detail);
+      return runs;
+    }
+
+    runs.push({ facilityKey: detail.facilityKey, details: [detail] });
+    return runs;
+  }, []);
 }
 
 export default function AllocationBoard({
@@ -230,7 +255,7 @@ export default function AllocationBoard({
                       <strong>{staff}</strong>
                       <span>{shiftMeta?.shiftLabel ?? 'Flexible shift'}</span>
                     </div>
-                    <span>{shiftMeta?.shiftWindow ?? `${staffCards.length} tasks`}</span>
+                    <span>{shiftMeta?.routeLabel ?? shiftMeta?.shiftWindow ?? `${staffCards.length} tasks`}</span>
                   </div>
                 );
               })}
@@ -246,29 +271,38 @@ export default function AllocationBoard({
                   .filter((card) => card.staff === staff && card.day === selectedDay)
                   .sort((a, b) => a.jobOrder - b.jobOrder);
                 const shiftMeta = board.staffMeta?.[staff];
-                const facilityName = shiftMeta?.facility || staffCards[0]?.facility || 'Assigned facility';
+                const facilityRuns = buildFacilityRuns(staffCards, timeLanes, shiftMeta);
 
                 return (
                   <div className="daily-staff-column" key={`column-${staff}`}>
-                    <section className={`hierarchy-facility-box hierarchy-facility-box-continuous hierarchy-facility-${hierarchyMode}`}>
-                      <div className="hierarchy-box-title hierarchy-facility-title">
-                        <strong>{facilityName}</strong>
-                        <span>{staffCards.length} tasks this shift</span>
-                      </div>
+                    {facilityRuns.map((run, runIndex) => {
+                      if (run.facilityKey === '__empty__') {
+                        return run.details.map((detail) => (
+                          <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${staff}-empty-${detail.lane.key}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
+                            <span className="slot-empty">Drop</span>
+                          </div>
+                        ));
+                      }
 
-                      <div className="daily-staff-lane-stack">
-                        {timeLanes.map((lane) => {
-                          const laneCards = getCardsForTimeLane(staffCards, lane, shiftMeta);
-                          const facility = groupHierarchy(laneCards)[0];
+                      const facilityName = run.details[0].facilities[0]?.facilityName || 'Assigned facility';
+                      const runTaskCount = run.details.reduce((sum, detail) => sum + detail.laneCards.length, 0);
 
-                          return (
-                            <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${lane.key}-${staff}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
-                              {facility && (
-                                <div className={`hierarchy-zone-stack hierarchy-zone-stack-${hierarchyMode}`}>
-                                  {facility.zones.map((zone) => (
-                                    <article className={`hierarchy-zone-box hierarchy-zone-${hierarchyMode}`} key={`${facility.facilityName}-${lane.key}-${zone.zoneName}`}>
+                      return (
+                        <section className={`hierarchy-facility-box hierarchy-facility-box-continuous hierarchy-facility-${hierarchyMode}`} key={`${staff}-${facilityName}-${runIndex}`}>
+                          <div className="hierarchy-box-title hierarchy-facility-title">
+                            <strong>{facilityName}</strong>
+                            <span>{runTaskCount} tasks in stop</span>
+                          </div>
+
+                          <div className="daily-staff-lane-stack">
+                            {run.details.map((detail) => (
+                              <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${detail.lane.key}-${staff}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
+                                {detail.facilities.map((facility) => (
+                                  <div className={`hierarchy-zone-stack hierarchy-zone-stack-${hierarchyMode}`} key={`${facility.facilityName}-${detail.lane.key}`}>
+                                    {facility.zones.map((zone) => (
+                                      <article className={`hierarchy-zone-box hierarchy-zone-${hierarchyMode}`} key={`${facility.facilityName}-${detail.lane.key}-${zone.zoneName}`}>
                                       {(() => {
-                                        const zoneKey = `${staff}-${lane.key}-${facility.facilityName}-${zone.zoneName}`;
+                                        const zoneKey = `${staff}-${detail.lane.key}-${facility.facilityName}-${zone.zoneName}`;
                                         const zoneOpen = openZoneGroups[zoneKey];
                                         const zoneProgress = getCompletionStats(zone.groups.flatMap((group) => group.cards));
 
@@ -289,10 +323,10 @@ export default function AllocationBoard({
 
                                             {zoneOpen && (
                                               <div className={`hierarchy-group-stack hierarchy-group-stack-${hierarchyMode}`}>
-                                                {zone.groups.map((group) => (
-                                                  <div className={`hierarchy-group-box hierarchy-group-${hierarchyMode}`} key={`${zone.zoneName}-${group.groupName}`}>
-                                                    {(() => {
-                                                      const groupKey = `${staff}-${lane.key}-${zone.zoneName}-${group.groupName}`;
+                                                    {zone.groups.map((group) => (
+                                                      <div className={`hierarchy-group-box hierarchy-group-${hierarchyMode}`} key={`${zone.zoneName}-${group.groupName}`}>
+                                                        {(() => {
+                                                      const groupKey = `${staff}-${detail.lane.key}-${zone.zoneName}-${group.groupName}`;
                                                       const progress = getCompletionStats(group.cards);
                                                       const isOpen = openGroups[groupKey];
 
@@ -334,16 +368,16 @@ export default function AllocationBoard({
                                           </>
                                         );
                                       })()}
-                                    </article>
-                                  ))}
-                                </div>
-                              )}
-                              {!facility && <span className="slot-empty">Drop</span>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
+                                      </article>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      );
+                    })}
                   </div>
                 );
               })}

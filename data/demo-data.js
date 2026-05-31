@@ -94,11 +94,29 @@ const zoneBlueprints = [
 ];
 
 const allocationStaff = [
-  { name: 'Mia Thompson', facility: 'Cienna North', shiftLabel: 'Morning flexible shift', shiftWindow: '6:00 AM – 2:00 PM' },
-  { name: 'Leo Nguyen', facility: 'Cienna Central', shiftLabel: 'Day flexible shift', shiftWindow: '7:30 AM – 3:30 PM' },
-  { name: 'Ava Patel', facility: 'Cienna South', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM' },
+  { name: 'Mia Thompson', facility: 'Cienna North', shiftLabel: 'Morning flexible shift', shiftWindow: '6:00 AM – 2:00 PM', routeLabel: 'Cienna North → Cienna Central → Cienna North' },
+  { name: 'Leo Nguyen', facility: 'Cienna Central', shiftLabel: 'Day flexible shift', shiftWindow: '7:30 AM – 3:30 PM', routeLabel: 'Cienna Central → Cienna South → Cienna North' },
+  { name: 'Ava Patel', facility: 'Cienna South', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM', routeLabel: 'Cienna South → Cienna North → Cienna Central' },
 ];
 const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5'];
+
+const allocationRoutes = {
+  'Mia Thompson': [
+    { facility: 'Cienna North', zones: ['Rooftop', 'Lifts', 'Entry t4'], laneIndexes: [0, 1] },
+    { facility: 'Cienna Central', zones: ['Entry t3', 'Residents lounge', 'Pool area', 'Carparks'], laneIndexes: [2, 3, 4] },
+    { facility: 'Cienna North', zones: ['Gym', 'Mail room', 'Loading dock'], laneIndexes: [5, 6, 7] },
+  ],
+  'Leo Nguyen': [
+    { facility: 'Cienna Central', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [1, 2, 3] },
+    { facility: 'Cienna South', zones: ['Residents lounge', 'Pool area', 'Carparks'], laneIndexes: [4, 5, 6] },
+    { facility: 'Cienna North', zones: ['Gym', 'Mail room', 'Loading dock'], laneIndexes: [7, 8] },
+  ],
+  'Ava Patel': [
+    { facility: 'Cienna South', zones: ['Rooftop', 'Lifts', 'Entry t4'], laneIndexes: [3, 4] },
+    { facility: 'Cienna North', zones: ['Entry t3', 'Residents lounge', 'Pool area', 'Carparks'], laneIndexes: [5, 6, 7] },
+    { facility: 'Cienna Central', zones: ['Gym', 'Mail room', 'Loading dock'], laneIndexes: [8, 9, 10] },
+  ],
+};
 
 function makeTemplateId(index) {
   return `task_template_${String(index + 1).padStart(3, '0')}`;
@@ -224,26 +242,39 @@ export const reports = [
 ];
 
 const allocationCards = allocationDays.flatMap((day, dayIndex) => (
-  allocationStaff.flatMap((staff) => (
-    taskCatalog
-      .filter((template) => template.facility === staff.facility)
-      .map((template, index) => ({
-        id: `alloc-${dayIndex + 1}-${staff.name.replace(/\s+/g, '-').toLowerCase()}-${index + 1}`,
-        title: template.title,
-        templateId: template.templateId,
-        staff: staff.name,
-        day,
-        jobOrder: index + 1,
-        status: index % 5 < 3 ? 'completed' : index % 5 === 3 ? 'in-progress' : 'pending',
-        facility: template.facility,
-        zone: template.zone,
-        taskGroup: template.taskGroup,
-        type: template.frequencyType.toLowerCase(),
-        groupId: `group-${dayIndex + 1}-${template.zoneId}-${template.groupKey}`,
-        groupName: template.taskGroup,
-        detached: false,
-      }))
-  ))
+  allocationStaff.flatMap((staff) => {
+    const routeStops = allocationRoutes[staff.name] || [];
+    let jobOrder = 1;
+
+    return routeStops.flatMap((stop, stopIndex) => {
+      const stopTemplates = taskCatalog.filter((template) => template.facility === stop.facility && stop.zones.includes(template.zone));
+      const laneSpan = stop.laneIndexes.length;
+
+      return stopTemplates.map((template, templateIndex) => {
+        const laneIndex = stop.laneIndexes[Math.min(laneSpan - 1, Math.floor((templateIndex / stopTemplates.length) * laneSpan))];
+        const card = {
+          id: `alloc-${dayIndex + 1}-${staff.name.replace(/\s+/g, '-').toLowerCase()}-${jobOrder}`,
+          title: template.title,
+          templateId: template.templateId,
+          staff: staff.name,
+          day,
+          jobOrder,
+          laneIndex,
+          routeStopIndex: stopIndex,
+          status: jobOrder % 5 < 3 ? 'completed' : jobOrder % 5 === 3 ? 'in-progress' : 'pending',
+          facility: template.facility,
+          zone: template.zone,
+          taskGroup: template.taskGroup,
+          type: template.frequencyType.toLowerCase(),
+          groupId: `group-${dayIndex + 1}-${template.zoneId}-${template.groupKey}`,
+          groupName: template.taskGroup,
+          detached: false,
+        };
+        jobOrder += 1;
+        return card;
+      });
+    });
+  })
 ));
 
 const uniqueGroupKeys = Array.from(new Set(allocationCards.map((card) => `${card.day}:${card.groupId}:${card.staff}`)));
@@ -305,7 +336,7 @@ export const scheduleBuilder = {
   allocationBoard: {
     staff: [...allocationStaff.map((staff) => staff.name), 'Unallocated'],
     staffMeta: Object.fromEntries([
-      ...allocationStaff.map((staff) => [staff.name, { shiftLabel: staff.shiftLabel, shiftWindow: `${staff.shiftWindow} · ${staff.facility}`, facility: staff.facility }]),
+      ...allocationStaff.map((staff) => [staff.name, { shiftLabel: staff.shiftLabel, shiftWindow: `${staff.shiftWindow} · ${staff.routeLabel}`, facility: staff.facility, routeLabel: staff.routeLabel }]),
       ['Unallocated', { shiftLabel: 'Not assigned', shiftWindow: 'No shift yet', facility: 'Unallocated' }],
     ]),
     days: allocationDays,
