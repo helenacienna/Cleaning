@@ -905,8 +905,8 @@ code {
 .hierarchy-group-progress-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: linear-gradient(90deg, rgba(99,230,165,0.18), rgba(88,240,193,0.34));
-  border-right: 1px solid rgba(99,230,165,0.45);
+  background: linear-gradient(90deg, rgba(89,195,255,0.18), rgba(137,220,255,0.34));
+  border-right: 1px solid rgba(89,195,255,0.45);
   pointer-events: none;
 }
 
