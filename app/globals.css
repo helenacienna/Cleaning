@@ -832,6 +832,21 @@ code {
   background: rgba(255,255,255,0.04);
 }
 
+.facility-theme-cienna-north {
+  background: linear-gradient(180deg, rgba(89,195,255,0.12), rgba(255,255,255,0.04));
+  border-color: rgba(89,195,255,0.24);
+}
+
+.facility-theme-cienna-central {
+  background: linear-gradient(180deg, rgba(99,230,165,0.12), rgba(255,255,255,0.04));
+  border-color: rgba(99,230,165,0.24);
+}
+
+.facility-theme-cienna-south {
+  background: linear-gradient(180deg, rgba(255,202,106,0.12), rgba(255,255,255,0.04));
+  border-color: rgba(255,202,106,0.24);
+}
+
 .hierarchy-facility-box-continuous {
   height: 100%;
   align-content: start;

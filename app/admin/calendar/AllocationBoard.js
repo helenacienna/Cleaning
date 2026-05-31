@@ -6,6 +6,10 @@ function formatJobOrder(jobOrder) {
   return String(jobOrder).padStart(3, '0');
 }
 
+function slugifyFacility(name = '') {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function parseShiftWindow(shiftWindow = '') {
   const baseWindow = shiftWindow.split('·')[0].trim();
   const [startText, endText] = baseWindow.split('–').map((part) => part?.trim());
@@ -289,7 +293,7 @@ export default function AllocationBoard({
                       const facilityProgress = getCompletionStats(run.details.flatMap((detail) => detail.laneCards));
 
                       return (
-                        <section className={`hierarchy-facility-box hierarchy-facility-box-continuous hierarchy-facility-${hierarchyMode}`} key={`${staff}-${facilityName}-${runIndex}`}>
+                        <section className={`hierarchy-facility-box hierarchy-facility-box-continuous hierarchy-facility-${hierarchyMode} facility-theme-${slugifyFacility(facilityName)}`} key={`${staff}-${facilityName}-${runIndex}`}>
                           <div className="hierarchy-facility-title">
                             <div className={`hierarchy-facility-progress hierarchy-section-progress ${facilityProgress.percent === 100 ? 'complete' : ''}`}>
                               <span className="hierarchy-facility-progress-fill" style={{ width: `${facilityProgress.percent}%` }} />
