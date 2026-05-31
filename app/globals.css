@@ -833,18 +833,18 @@ code {
 }
 
 .facility-theme-cienna-north {
-  background: linear-gradient(180deg, rgba(89,195,255,0.12), rgba(255,255,255,0.04));
-  border-color: rgba(89,195,255,0.24);
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(89,195,255,0.08));
+  border-color: rgba(89,195,255,0.26);
 }
 
 .facility-theme-cienna-central {
-  background: linear-gradient(180deg, rgba(99,230,165,0.12), rgba(255,255,255,0.04));
-  border-color: rgba(99,230,165,0.24);
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(99,230,165,0.08));
+  border-color: rgba(99,230,165,0.26);
 }
 
 .facility-theme-cienna-south {
-  background: linear-gradient(180deg, rgba(255,202,106,0.12), rgba(255,255,255,0.04));
-  border-color: rgba(255,202,106,0.24);
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,202,106,0.08));
+  border-color: rgba(255,202,106,0.26);
 }
 
 .hierarchy-facility-box-continuous {
