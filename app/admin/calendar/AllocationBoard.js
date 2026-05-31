@@ -271,7 +271,6 @@ export default function AllocationBoard({
                                         <div className="hierarchy-group-row">
                                           <div className="hierarchy-box-title hierarchy-group-label">
                                             <strong>{group.groupName}</strong>
-                                            <span>{group.cards.length} cards</span>
                                           </div>
 
                                           <button className={`hierarchy-group-toggle ${progress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleGroup(groupKey)}>
