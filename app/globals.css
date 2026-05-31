@@ -1,23 +1,23 @@
 :root {
-  --bg: #08111f;
-  --panel: #0f1b2d;
-  --panel-2: #13233b;
-  --border: rgba(255, 255, 255, 0.08);
-  --text: #eef4ff;
-  --muted: #9eb0cd;
+  --bg: #f6f8fb;
+  --panel: #ffffff;
+  --panel-2: #f1f5fb;
+  --border: rgba(15, 23, 42, 0.10);
+  --text: #132033;
+  --muted: #64748b;
   --brand: #59c3ff;
-  --brand-2: #58f0c1;
-  --danger: #ff7b91;
-  --warn: #ffca6a;
-  --success: #63e6a5;
-  --shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+  --brand-2: #22c55e;
+  --danger: #e85d75;
+  --warn: #d97706;
+  --success: #16a34a;
+  --shadow: 0 18px 45px rgba(15, 23, 42, 0.10);
 }
 
 * { box-sizing: border-box; }
 html, body {
   padding: 0;
   margin: 0;
-  background: radial-gradient(circle at top, #11223e 0%, var(--bg) 55%);
+  background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -65,7 +65,7 @@ a { color: inherit; text-decoration: none; }
   gap: 8px;
   padding: 10px 14px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.92);
   border: 1px solid var(--border);
   color: var(--text);
 }
@@ -83,7 +83,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .card {
-  background: linear-gradient(180deg, rgba(19,35,59,0.96), rgba(11,21,36,0.98));
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,250,252,0.98));
   border: 1px solid var(--border);
   border-radius: 24px;
   padding: 22px;
@@ -149,8 +149,8 @@ a { color: inherit; text-decoration: none; }
   gap: 12px;
   padding: 14px;
   border-radius: 18px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(248,250,252,0.92);
+  border: 1px solid rgba(15,23,42,0.08);
 }
 
 .task-status {
@@ -171,7 +171,7 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
   height: 10px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(148,163,184,0.18);
   overflow: hidden;
   margin: 14px 0;
 }
@@ -218,8 +218,8 @@ a { color: inherit; text-decoration: none; }
   color: #03111f;
 }
 .button.secondary {
-  border-color: rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.03);
+  border-color: rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.92);
 }
 
 .qr-link-row {
@@ -747,8 +747,8 @@ code {
 .daily-time-cell,
 .daily-timeline-cell {
   padding: 12px;
-  border-right: 1px solid rgba(255,255,255,0.07);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-right: 1px solid rgba(15,23,42,0.08);
+  border-bottom: 1px solid rgba(15,23,42,0.08);
 }
 
 .daily-time-head,
@@ -756,7 +756,7 @@ code {
   position: sticky;
   top: 0;
   z-index: 3;
-  background: rgba(8,17,31,0.96);
+  background: rgba(255,255,255,0.96);
   backdrop-filter: blur(8px);
 }
 
@@ -766,7 +766,7 @@ code {
   z-index: 2;
   color: var(--muted);
   font-weight: 900;
-  background: rgba(8,17,31,0.86);
+  background: rgba(248,250,252,0.96);
 }
 
 .daily-time-head {
@@ -795,7 +795,7 @@ code {
 
 .hierarchy-cell {
   min-height: 152px;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255,255,255,0.6);
 }
 
 .daily-timeline-cell {
@@ -803,7 +803,7 @@ code {
   display: grid;
   align-content: start;
   gap: 6px;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255,255,255,0.6);
 }
 
 .hierarchy-facility-box,
@@ -812,7 +812,7 @@ code {
   display: grid;
   gap: 6px;
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(15,23,42,0.08);
 }
 
 .hierarchy-mode-compact .hierarchy-facility-box,
@@ -833,18 +833,18 @@ code {
 }
 
 .facility-theme-cienna-north {
-  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(89,195,255,0.08));
-  border-color: rgba(89,195,255,0.26);
+  background: linear-gradient(180deg, #ffffff 0%, #dff4ff 100%);
+  border-color: rgba(89,195,255,0.45);
 }
 
 .facility-theme-cienna-central {
-  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(99,230,165,0.08));
-  border-color: rgba(99,230,165,0.26);
+  background: linear-gradient(180deg, #ffffff 0%, #dcfce7 100%);
+  border-color: rgba(34,197,94,0.40);
 }
 
 .facility-theme-cienna-south {
-  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,202,106,0.08));
-  border-color: rgba(255,202,106,0.26);
+  background: linear-gradient(180deg, #ffffff 0%, #fef3c7 100%);
+  border-color: rgba(245,158,11,0.42);
 }
 
 .hierarchy-facility-box-continuous {
@@ -885,7 +885,7 @@ code {
 
 .hierarchy-zone-box {
   padding: 8px;
-  background: rgba(8,17,31,0.5);
+  background: rgba(255,255,255,0.72);
 }
 
 .hierarchy-zone-compact {
@@ -899,7 +899,7 @@ code {
 
 .hierarchy-group-box {
   padding: 8px;
-  background: rgba(255,255,255,0.035);
+  background: rgba(255,255,255,0.82);
 }
 
 .hierarchy-group-compact {
@@ -950,8 +950,8 @@ code {
   min-width: 0;
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px dashed rgba(255,255,255,0.14);
-  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.9);
 }
 
 .hierarchy-facility-progress-fill {
@@ -1002,8 +1002,8 @@ code {
   width: 100%;
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px dashed rgba(255,255,255,0.14);
-  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.9);
   color: inherit;
   cursor: pointer;
   min-width: 0;
@@ -1046,8 +1046,8 @@ code {
   width: 100%;
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px dashed rgba(255,255,255,0.14);
-  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.9);
   color: inherit;
   cursor: pointer;
   min-width: 0;
