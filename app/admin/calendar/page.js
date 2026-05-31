@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import AllocationBoard from './AllocationBoard';
 import ExceptionWorkflow from './ExceptionWorkflow';
 import { scheduleBuilder } from '../../../data/demo-data';
 
@@ -25,23 +24,22 @@ export default function AdminCalendarPage() {
         <div className="workflow-banner">
           <div>
             <span className="badge">Workflow</span>
-            <strong>Plan the week, then validate the day before opening the cleaner checklist.</strong>
+            <strong>This weekly planner is now secondary — the daily hierarchy is the main organiser surface.</strong>
           </div>
           <div className="workflow-banner-actions">
             <Link className="button secondary" href="/admin/task-cards">Task card library</Link>
-            <Link className="button secondary" href="/admin/daily-hierarchy">Review daily hierarchy</Link>
+            <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
             <Link className="button secondary" href="/scan/shift-mon-1-mia-thompson-cienna-north-rooftop">Open cleaner example</Link>
           </div>
         </div>
 
         <div className="admin-calendar-header">
           <div>
-            <h2>Weekly task planner</h2>
-            <p className="muted">Organise daily run sheets, see workload by facility and zone, and spot critical work before publishing.</p>
+            <h2>Secondary weekly planner</h2>
+            <p className="muted">Use this as a supporting overview only — daily hierarchy is now the primary place to organise task cards.</p>
           </div>
         <div className="admin-calendar-controls">
-          <a className="button secondary" href="#allocation-board">Task card board</a>
-          <Link className="button secondary" href="/admin/daily-hierarchy">Open daily hierarchy</Link>
+          <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
           <Link className="button secondary" href="/admin/task-cards">Task card library</Link>
           <span className="button secondary">Previous week</span>
           <span className="badge">1–7 June 2026</span>
@@ -91,10 +89,6 @@ export default function AdminCalendarPage() {
           ))}
         </div>
       </section>
-
-      <div id="allocation-board">
-        <AllocationBoard board={scheduleBuilder.allocationBoard} />
-      </div>
 
       <ExceptionWorkflow workflow={scheduleBuilder.exceptionWorkflow} />
     </main>

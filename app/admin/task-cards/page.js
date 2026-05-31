@@ -18,7 +18,7 @@ export default function TaskCardsPage() {
         </div>
         <div className="badge-row">
           <Link className="button secondary" href="/">Back to dashboard</Link>
-          <Link className="button secondary" href="/admin/calendar">Open allocation board</Link>
+          <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
           <span className="badge">Template management</span>
         </div>
       </div>

@@ -24,10 +24,11 @@ export default function DailyHierarchyPage() {
       <section className="workflow-banner no-top-gap">
         <div>
           <span className="badge">Workflow</span>
-          <strong>Review the shift here, then open a zone’s cleaner checklist to run the work on shift.</strong>
+          <strong>This is now the main organiser board — shape the shift here, then open a zone’s cleaner checklist to run the work on shift.</strong>
         </div>
         <div className="workflow-banner-actions">
-          <Link className="button secondary" href="/admin/calendar">Back to weekly planner</Link>
+          <Link className="button secondary" href="/admin/task-cards">Task card library</Link>
+          <Link className="button secondary" href="/admin/calendar">Open weekly overview</Link>
           <Link className="button secondary" href="/scan/shift-mon-1-mia-thompson-cienna-north-rooftop">Open cleaner example</Link>
         </div>
       </section>
@@ -36,8 +37,8 @@ export default function DailyHierarchyPage() {
         board={scheduleBuilder.allocationBoard}
         initialView="daily"
         lockView
-        title="Daily hierarchy view"
-        description="See the whole day by shift time, then drill into facilities, zones, and task groups only when needed."
+        title="Daily organiser board"
+        description="Organise the shift by time, facility, zone, and task group — then launch the cleaner checklist from the same structure."
       />
     </main>
   );
