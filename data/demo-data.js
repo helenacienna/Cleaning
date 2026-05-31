@@ -102,19 +102,19 @@ const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5'];
 
 const allocationRoutes = {
   'Mia Thompson': [
-    { facility: 'Cienna North', zones: ['Rooftop', 'Lifts', 'Entry t4'], laneIndexes: [0, 1] },
-    { facility: 'Cienna Central', zones: ['Entry t3', 'Residents lounge', 'Pool area', 'Carparks'], laneIndexes: [2, 3, 4] },
-    { facility: 'Cienna North', zones: ['Gym', 'Mail room', 'Loading dock'], laneIndexes: [5, 6, 7] },
+    { facility: 'Cienna North', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [0] },
+    { facility: 'Cienna Central', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [1, 2] },
+    { facility: 'Cienna North', zones: ['Mail room', 'Loading dock'], laneIndexes: [3] },
   ],
   'Leo Nguyen': [
-    { facility: 'Cienna Central', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [1, 2, 3] },
-    { facility: 'Cienna South', zones: ['Residents lounge', 'Pool area', 'Carparks'], laneIndexes: [4, 5, 6] },
-    { facility: 'Cienna North', zones: ['Gym', 'Mail room', 'Loading dock'], laneIndexes: [7, 8] },
+    { facility: 'Cienna Central', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3', 'Residents lounge'], laneIndexes: [1, 2] },
+    { facility: 'Cienna South', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
+    { facility: 'Cienna North', zones: ['Mail room', 'Loading dock'], laneIndexes: [4] },
   ],
   'Ava Patel': [
-    { facility: 'Cienna South', zones: ['Rooftop', 'Lifts', 'Entry t4'], laneIndexes: [3, 4] },
-    { facility: 'Cienna North', zones: ['Entry t3', 'Residents lounge', 'Pool area', 'Carparks'], laneIndexes: [5, 6, 7] },
-    { facility: 'Cienna Central', zones: ['Gym', 'Mail room', 'Loading dock'], laneIndexes: [8, 9, 10] },
+    { facility: 'Cienna South', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
+    { facility: 'Cienna North', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [4, 5] },
+    { facility: 'Cienna Central', zones: ['Mail room', 'Loading dock'], laneIndexes: [6] },
   ],
 };
 
