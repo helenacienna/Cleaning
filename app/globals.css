@@ -1124,6 +1124,24 @@ code {
   border-radius: 12px;
 }
 
+.hierarchy-drop-target {
+  transition: box-shadow 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.hierarchy-drop-target-active {
+  background: rgba(89,195,255,0.10);
+  box-shadow: inset 0 0 0 2px rgba(89,195,255,0.32);
+}
+
+.hierarchy-drop-hint {
+  display: block;
+  margin-top: 6px;
+  padding: 0 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .hierarchy-group-row:has(.hierarchy-group-toggle:hover),
 .hierarchy-task-stack:has(.hierarchy-task-card:hover) {
   transition: box-shadow 120ms ease, background 120ms ease;
@@ -1233,6 +1251,25 @@ code {
 .daily-task-card {
   grid-template-columns: 58px 1fr;
   align-items: start;
+}
+
+.hierarchy-task-card {
+  position: relative;
+  padding-left: 30px;
+}
+
+.hierarchy-drag-handle {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: var(--muted) !important;
+  font-size: 12px !important;
+  letter-spacing: -1px;
+  cursor: grab;
+}
+
+.hierarchy-task-card:active .hierarchy-drag-handle {
+  cursor: grabbing;
 }
 
 .hierarchy-task-card-compact {
