@@ -297,6 +297,27 @@ const taskGroups = uniqueGroupKeys.map((groupKey) => {
   };
 });
 
+const denseScoreDemoCards = Array.from({ length: 21 }, (_, index) => ({
+  id: `dense-score-demo-${index + 1}`,
+  title: `Follow-up presentation check ${index + 1}`,
+  templateId: `dense_score_demo_${String(index + 1).padStart(3, '0')}`,
+  staff: 'Mia Thompson',
+  day: 'Mon 1',
+  jobOrder: 200 + index,
+  laneIndex: 0,
+  routeStopIndex: 0,
+  status: index % 4 === 0 ? 'pending' : 'completed',
+  facility: 'Cienna North',
+  zone: 'Rooftop',
+  taskGroup: 'Rooftop presentation',
+  type: 'critical',
+  groupId: 'group-dense-score-demo',
+  groupName: 'Rooftop presentation',
+  auditScore: 1,
+  issueNote: 'Scored 1/5 on review and needs attention',
+  detached: false,
+}));
+
 const draftSelection = taskCardTemplates.filter((task) => task.facility === 'Cienna North' && task.zone === 'Entry t4').slice(0, 5);
 
 export const scheduleBuilder = {
@@ -344,6 +365,7 @@ export const scheduleBuilder = {
     days: allocationDays,
     cards: [
       ...allocationCards,
+      ...denseScoreDemoCards,
       { id: 'alloc-unassigned-1', title: 'Check dock spill kit', templateId: 'custom_001', staff: 'Unallocated', day: 'Mon 1', jobOrder: 61, status: 'pending', facility: 'Cienna North', zone: 'Loading dock', taskGroup: 'Back-of-house tidy', type: 'suggestive', groupId: 'group-unassigned-dock', groupName: 'Back-of-house tidy' },
       { id: 'alloc-unassigned-2', title: 'Recheck sauna entry mat', templateId: 'custom_002', staff: 'Unallocated', day: 'Wed 3', jobOrder: 62, status: 'in-progress', facility: 'Cienna Central', zone: 'Pool area', taskGroup: 'Amenities wipe-down', type: 'critical', groupId: 'group-unassigned-pool', groupName: 'Amenities wipe-down' },
       { id: 'alloc-unassigned-3', title: 'Inspect parcel overflow shelf', templateId: 'custom_003', staff: 'Unallocated', day: 'Fri 5', jobOrder: 63, status: 'pending', facility: 'Cienna South', zone: 'Mail room', taskGroup: 'Parcel room reset', type: 'suggestive', groupId: 'group-unassigned-mail', groupName: 'Parcel room reset' },
