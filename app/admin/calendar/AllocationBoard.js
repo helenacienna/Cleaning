@@ -336,7 +336,7 @@ export default function AllocationBoard({
                                                 {zoneNotifications.map((card) => (
                                                   <div className="hierarchy-zone-notification" key={`${card.id}-notification`}>
                                                     <strong>{card.title}</strong>
-                                                    <span>{card.issueNote || 'Scored 1/10 on review'}</span>
+                                                    <span>{card.issueNote || 'Scored 1/5 on review'}</span>
                                                   </div>
                                                 ))}
                                               </div>

@@ -268,8 +268,8 @@ const allocationCards = allocationDays.flatMap((day, dayIndex) => (
           type: template.frequencyType.toLowerCase(),
           groupId: `group-${dayIndex + 1}-${template.zoneId}-${template.groupKey}`,
           groupName: template.taskGroup,
-          auditScore: [4, 11, 18, 27].includes(jobOrder) ? 1 : jobOrder % 7 === 0 ? 4 : jobOrder % 3 === 0 ? 8 : 10,
-          issueNote: [4, 11, 18, 27].includes(jobOrder) ? 'Scored 1/10 on review and needs attention' : '',
+          auditScore: [4, 11, 18, 27].includes(jobOrder) ? 1 : jobOrder % 7 === 0 ? 2 : jobOrder % 3 === 0 ? 4 : 5,
+          issueNote: [4, 11, 18, 27].includes(jobOrder) ? 'Scored 1/5 on review and needs attention' : '',
           detached: false,
         };
         jobOrder += 1;
