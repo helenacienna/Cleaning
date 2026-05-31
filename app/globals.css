@@ -935,6 +935,31 @@ code {
   background: rgba(255,255,255,0.72);
 }
 
+.hierarchy-zone-notifications {
+  display: grid;
+  gap: 6px;
+}
+
+.hierarchy-zone-notification {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(220, 38, 38, 0.28);
+  background: #fdecec;
+}
+
+.hierarchy-zone-notification strong {
+  font-size: 12px;
+  line-height: 1.2;
+  color: #991b1b;
+}
+
+.hierarchy-zone-notification span {
+  font-size: 11px;
+  color: #b91c1c;
+}
+
 .hierarchy-zone-compact {
   padding: 8px;
   background: rgba(8,17,31,0.35);

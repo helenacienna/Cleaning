@@ -315,6 +315,9 @@ export default function AllocationBoard({
                                         const zoneKey = `${staff}-${detail.lane.key}-${facility.facilityName}-${zone.zoneName}`;
                                         const zoneOpen = openZoneGroups[zoneKey];
                                         const zoneProgress = getCompletionStats(zone.groups.flatMap((group) => group.cards));
+                                        const zoneNotifications = zone.groups
+                                          .flatMap((group) => group.cards)
+                                          .filter((card) => card.auditScore === 1);
 
                                         return (
                                           <>
@@ -327,6 +330,17 @@ export default function AllocationBoard({
                                                 </span>
                                               </button>
                                             </div>
+
+                                            {zoneNotifications.length > 0 && (
+                                              <div className="hierarchy-zone-notifications">
+                                                {zoneNotifications.map((card) => (
+                                                  <div className="hierarchy-zone-notification" key={`${card.id}-notification`}>
+                                                    <strong>{card.title}</strong>
+                                                    <span>{card.issueNote || 'Scored 1/10 on review'}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
 
                                             {zoneOpen && (
                                               <div className={`hierarchy-group-stack hierarchy-group-stack-${hierarchyMode}`}>
