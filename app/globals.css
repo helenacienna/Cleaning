@@ -918,6 +918,65 @@ code {
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
+.hierarchy-facility-row,
+.hierarchy-zone-row,
+.hierarchy-group-row {
+  width: 100%;
+}
+
+.hierarchy-facility-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.hierarchy-facility-label {
+  min-width: 0;
+}
+
+.hierarchy-facility-progress {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.025);
+}
+
+.hierarchy-facility-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, rgba(89,195,255,0.18), rgba(137,220,255,0.34));
+  border-right: 1px solid rgba(89,195,255,0.45);
+  pointer-events: none;
+}
+
+.hierarchy-facility-progress-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+.hierarchy-facility-progress span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.hierarchy-facility-progress.complete {
+  border-color: rgba(99,230,165,0.4);
+}
+
 .hierarchy-group-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -954,6 +1013,7 @@ code {
   background: rgba(255,255,255,0.025);
   color: inherit;
   cursor: pointer;
+  min-width: 0;
 }
 
 .hierarchy-zone-progress-fill {
@@ -997,6 +1057,7 @@ code {
   background: rgba(255,255,255,0.025);
   color: inherit;
   cursor: pointer;
+  min-width: 0;
 }
 
 .hierarchy-group-progress-fill {
@@ -1027,6 +1088,7 @@ code {
 }
 
 @media (max-width: 900px) {
+  .hierarchy-facility-row,
   .hierarchy-zone-row,
   .hierarchy-group-row {
     grid-template-columns: 1fr;

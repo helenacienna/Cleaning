@@ -286,12 +286,22 @@ export default function AllocationBoard({
 
                       const facilityName = run.details[0].facilities[0]?.facilityName || 'Assigned facility';
                       const runTaskCount = run.details.reduce((sum, detail) => sum + detail.laneCards.length, 0);
+                      const facilityProgress = getCompletionStats(run.details.flatMap((detail) => detail.laneCards));
 
                       return (
                         <section className={`hierarchy-facility-box hierarchy-facility-box-continuous hierarchy-facility-${hierarchyMode}`} key={`${staff}-${facilityName}-${runIndex}`}>
-                          <div className="hierarchy-box-title hierarchy-facility-title">
-                            <strong>{facilityName}</strong>
-                            <span>{runTaskCount} tasks in stop</span>
+                          <div className="hierarchy-facility-row hierarchy-facility-title">
+                            <div className="hierarchy-box-title hierarchy-facility-label">
+                              <strong>{facilityName}</strong>
+                              <span>{runTaskCount} tasks in stop</span>
+                            </div>
+                            <div className={`hierarchy-facility-progress ${facilityProgress.percent === 100 ? 'complete' : ''}`}>
+                              <span className="hierarchy-facility-progress-fill" style={{ width: `${facilityProgress.percent}%` }} />
+                              <span className="hierarchy-facility-progress-copy">
+                                <span>Facility progress</span>
+                                <strong>{facilityProgress.completed}/{facilityProgress.total} complete</strong>
+                              </span>
+                            </div>
                           </div>
 
                           <div className="daily-staff-lane-stack">
