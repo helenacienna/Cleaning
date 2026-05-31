@@ -352,7 +352,7 @@ export default function AllocationBoard({
                                                           {isOpen && (
                                                             <div className={`hierarchy-task-stack hierarchy-task-stack-${hierarchyMode}`}>
                                                               {group.cards.map((card) => (
-                                                                <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
+                                                                <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${card.status === 'completed' ? 'allocation-card-completed' : card.status === 'pending' ? 'allocation-card-issue' : 'allocation-card-active'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
                                                                   <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
                                                                   <strong>{card.title}</strong>
                                                                   <span>{card.taskGroup}</span>
@@ -415,7 +415,7 @@ export default function AllocationBoard({
                       <span>{criticalCount} critical</span>
                     </div>
                     {slotCards.map((card) => (
-                      <div className={`allocation-card ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
+                      <div className={`allocation-card ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${card.status === 'completed' ? 'allocation-card-completed' : card.status === 'pending' ? 'allocation-card-issue' : 'allocation-card-active'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
                         <strong>{card.title}</strong>
                         <span>#{formatJobOrder(card.jobOrder)} · {card.taskGroup}</span>
                         <small>{card.facility} · {card.zone}</small>
