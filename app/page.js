@@ -20,10 +20,17 @@ export default function HomePage() {
           <p>{appSummary.suiteLabel}</p>
           <h1>{appSummary.appName}</h1>
         </div>
-        <div className="badge-row">
-          <span className="badge">Mobile-first cleaner workflow</span>
-          <span className="badge">Railway-ready</span>
-          <span className="badge">Audit-grade history</span>
+        <div className="dashboard-top-right">
+          <div className="badge-row">
+            <span className="badge">Mobile-first cleaner workflow</span>
+            <span className="badge">Railway-ready</span>
+            <span className="badge">Audit-grade history</span>
+          </div>
+          <div className="dashboard-update-card">
+            <span className="muted">Last update</span>
+            <strong>1 Jun 2026 · 12:28 PM</strong>
+            <div className="muted">QR zone codes moved off the dashboard into a separate page.</div>
+          </div>
         </div>
       </div>
 
