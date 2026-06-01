@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import ManagerAlerts from './ManagerAlerts';
 import ManagerFilters from './ManagerFilters';
+import ManagerReporting from './ManagerReporting';
 import ManagerReviewActions from './ManagerReviewActions';
 import ManagerReviewHistory from './ManagerReviewHistory';
 import { getManagerOverviewData } from '../../../lib/manager-data';
@@ -23,6 +25,8 @@ export default async function ManagerOverviewPage() {
     exceptionTasks,
     facilitySummary,
     reviewHistory,
+    alertCards,
+    reportingCards,
     supervisorSnapshot,
     source,
   } = await getManagerOverviewData();
@@ -76,6 +80,7 @@ export default async function ManagerOverviewPage() {
         </div>
       </section>
 
+      <ManagerAlerts alertCards={alertCards} />
       <ManagerFilters exceptionTasks={exceptionTasks} lowScoreTasks={lowScoreTasks} />
 
       <section className="manager-layout">
@@ -105,6 +110,8 @@ export default async function ManagerOverviewPage() {
               ))}
             </div>
           </section>
+
+          <ManagerReporting reportingCards={reportingCards} facilitySummary={facilitySummary} />
 
           <section className="card">
             <div className="panel-title">
@@ -148,7 +155,7 @@ export default async function ManagerOverviewPage() {
             </div>
 
             <div className="task-list">
-              {exceptionTasks.slice(0, 8).map(({ id, title, status, shift, note, photoCount, photos, latestManagerAction }) => (
+              {exceptionTasks.slice(0, 8).map(({ id, title, status, shift, note, photoCount, photos, latestManagerAction, ageHours }) => (
                 <div className="task-row" key={id}>
                   <div>
                     <strong>{title}</strong>
@@ -173,6 +180,7 @@ export default async function ManagerOverviewPage() {
                     <span className="flag">{shift.staff}</span>
                     <span className={`task-status status-${status}`}>{status.replace('-', ' ')}</span>
                     <span className="flag">{latestManagerAction}</span>
+                    <span className="flag">{ageHours}h open</span>
                     <span className="flag">{photoCount} photos</span>
                   </div>
                 </div>

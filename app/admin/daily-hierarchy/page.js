@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import AllocationBoard from '../calendar/AllocationBoard';
+import OrganiserAlerts from './OrganiserAlerts';
 import { getOrganiserBoardData } from '../../../lib/app-data';
 
 export const metadata = {
@@ -34,6 +35,8 @@ export default async function DailyHierarchyPage() {
           <Link className="button secondary" href="/scan/shift-mon-1-mia-thompson-cienna-north-rooftop">Open cleaner example</Link>
         </div>
       </section>
+
+      <OrganiserAlerts board={board} />
 
       <AllocationBoard
         board={board}
