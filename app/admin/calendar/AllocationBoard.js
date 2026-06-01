@@ -199,7 +199,8 @@ export default function AllocationBoard({
   title = 'Task card organiser board',
   description = 'Switch view to see every task card, including unallocated work. Drag cards between staff, days, and groups.',
 }) {
-  const initialStoredState = typeof window !== 'undefined' ? (() => {
+  const useLocalDrafts = board.source !== 'prisma';
+  const initialStoredState = typeof window !== 'undefined' && useLocalDrafts ? (() => {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
       return stored ? JSON.parse(stored) : null;
@@ -223,7 +224,11 @@ export default function AllocationBoard({
   const [activeDropKey, setActiveDropKey] = useState('');
   const [history, setHistory] = useState([]);
   const [shiftState, setShiftState] = useState(initialStoredState?.shiftState || 'draft');
-  const [saveNotice, setSaveNotice] = useState(initialStoredState?.cards ? 'Loaded organiser draft' : 'Draft ready');
+  const [saveNotice, setSaveNotice] = useState(
+    useLocalDrafts
+      ? (initialStoredState?.cards ? 'Loaded organiser draft' : 'Draft ready')
+      : 'Live organiser board',
+  );
 
   function setCardsWithHistory(updater) {
     setCards((existing) => {
@@ -233,19 +238,44 @@ export default function AllocationBoard({
     });
   }
 
-  function persistCards(nextCards, message = 'Changes saved locally') {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ cards: nextCards, shiftState }));
+  async function syncRemoteBoard(nextCards, nextShiftState, fallbackMessage = 'Changes saved locally') {
+    if (useLocalDrafts) {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ cards: nextCards, shiftState: nextShiftState }));
+      }
+      setSaveNotice(fallbackMessage);
+      return;
     }
-    setSaveNotice(message);
+
+    setSaveNotice('Saving to live organiser board…');
+
+    try {
+      const response = await fetch('/api/organiser-board', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cards: nextCards, shiftState: nextShiftState }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to sync organiser board');
+      }
+
+      const result = await response.json();
+      setSaveNotice(result.message || 'Live organiser board saved');
+    } catch {
+      setSaveNotice('Live sync failed — showing local changes');
+    }
+  }
+
+  function persistCards(nextCards, message = 'Changes saved locally') {
+    void syncRemoteBoard(nextCards, shiftState, message);
   }
 
   function persistShiftState(nextShiftState, message) {
     setShiftState(nextShiftState);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ cards, shiftState: nextShiftState }));
-    }
-    setSaveNotice(message);
+    void syncRemoteBoard(cards, nextShiftState, message);
   }
 
   function moveCard(cardId, updates, targetCardId = null) {
@@ -272,11 +302,11 @@ export default function AllocationBoard({
   function resetBoard() {
     setHistory([]);
     setCards(board.cards);
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && useLocalDrafts) {
       window.localStorage.removeItem(STORAGE_KEY);
     }
     setShiftState('draft');
-    setSaveNotice('Reset to original demo layout');
+    void syncRemoteBoard(board.cards, 'draft', useLocalDrafts ? 'Reset to original demo layout' : 'Reset to seeded organiser layout');
   }
 
   function handleDragStart(event, cardId) {
