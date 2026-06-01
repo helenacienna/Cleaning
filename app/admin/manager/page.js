@@ -146,10 +146,14 @@ export default async function ManagerOverviewPage() {
                     <div className="muted">{shift.location} · {shift.zone}</div>
                     {note && <div className="muted">{note}</div>}
                     {photos?.length > 0 && (
-                      <div className="flag-row" style={{ marginTop: 8 }}>
-                        {photos.slice(0, 2).map((photo) => (
-                          <a key={photo.id} href={photo.photoUrl} target="_blank" rel="noreferrer" className="flag">
-                            {photo.photoType} photo
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                        {photos.slice(0, 3).map((photo) => (
+                          <a key={photo.id} href={photo.photoUrl} target="_blank" rel="noreferrer">
+                            <img
+                              src={photo.photoUrl}
+                              alt={`${title} ${photo.photoType}`}
+                              style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 12, border: '1px solid #d8dee8' }}
+                            />
                           </a>
                         ))}
                       </div>

@@ -170,11 +170,25 @@ export default function CleanerTaskFlow({ tasks }) {
                 </div>
               </div>
 
-              {(task.photoRequired || task.commentRequired) && (
+              {(task.photoRequired || task.commentRequired || localState.photoCount > 0) && (
                 <div className="compact-flags">
                   {task.photoRequired && <span className="flag required-flag">Forced photo</span>}
                   {task.commentRequired && <span className="flag">Comment required</span>}
                   <span className="flag">{localState.photoCount} photos</span>
+                </div>
+              )}
+
+              {task.photos?.length > 0 && (
+                <div className="flag-row" style={{ marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
+                  {task.photos.slice(0, 3).map((photo) => (
+                    <a key={photo.id} href={photo.photoUrl} target="_blank" rel="noreferrer">
+                      <img
+                        src={photo.photoUrl}
+                        alt={`${task.title} evidence`}
+                        style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 12, border: '1px solid #d8dee8' }}
+                      />
+                    </a>
+                  ))}
                 </div>
               )}
 
