@@ -150,8 +150,8 @@ export default function HomePage() {
           <div className="card" key={assignment.id}>
             <div className="panel-title">
               <div>
-                <h3>{assignment.zone}</h3>
-                <p className="muted">{assignment.location}</p>
+                <h3>{assignment.location}</h3>
+                <p className="muted">{(assignment.zones?.length ? assignment.zones : [assignment.zone]).join(' · ')}</p>
               </div>
               <span className="badge">{assignment.shift}</span>
             </div>

@@ -278,8 +278,8 @@ const allocationCards = allocationDays.flatMap((day, dayIndex) => (
           type: template.frequencyType.toLowerCase(),
           groupId: `group-${dayIndex + 1}-${template.zoneId}-${template.groupKey}`,
           groupName: template.taskGroup,
-          auditScore: [4, 11, 18, 27].includes(jobOrder) ? 1 : jobOrder % 7 === 0 ? 2 : jobOrder % 3 === 0 ? 4 : 5,
-          issueNote: [4, 11, 18, 27].includes(jobOrder) ? 'Scored 1/5 on review and needs attention' : '',
+          auditScore: jobOrder % 20 === 0 ? 2 : jobOrder % 3 === 0 ? 4 : 5,
+          issueNote: '',
           detached: false,
         };
         jobOrder += 1;
@@ -323,31 +323,33 @@ const denseScoreDemoCards = Array.from({ length: 21 }, (_, index) => ({
   type: 'critical',
   groupId: 'group-dense-score-demo',
   groupName: 'Rooftop presentation',
-  auditScore: index === 2 || index === 14 ? 1 : index % 5 === 0 ? 2 : index % 3 === 0 ? 3 : index % 2 === 0 ? 4 : 5,
-  issueNote: index === 2 || index === 14 ? 'Scored 1/5 on review and needs attention' : '',
+  auditScore: index % 20 === 0 ? 2 : index % 3 === 0 ? 3 : index % 2 === 0 ? 4 : 5,
+  issueNote: '',
   detached: false,
 }));
 
 export const cleanerShiftAssignments = Array.from(
   new Map(
     [...allocationCards, ...denseScoreDemoCards].map((card) => {
-      const key = `${card.staff}|${card.day}|${card.facility}|${card.zone}`;
+      const key = `${card.staff}|${card.day}|${card.facility}`;
       return [key, null];
     })
   ).keys()
 ).map((key) => {
-  const [staff, day, facility, zone] = key.split('|');
+  const [staff, day, facility] = key.split('|');
   const matchingCards = [...allocationCards, ...denseScoreDemoCards]
-    .filter((card) => card.staff === staff && card.day === day && card.facility === facility && card.zone === zone)
+    .filter((card) => card.staff === staff && card.day === day && card.facility === facility)
     .sort((a, b) => a.jobOrder - b.jobOrder);
   const shiftMeta = staffMetaByName[staff];
   const completed = matchingCards.filter((card) => card.status === 'completed').length;
   const photoRequired = matchingCards.filter((card) => card.type === 'critical').length;
+  const zones = [...new Set(matchingCards.map((card) => card.zone))];
 
   return {
-    id: makeCleanerShiftAssignmentId({ staff, day, facility, zone }),
+    id: makeCleanerShiftAssignmentId({ staff, day, facility, zone: 'facility' }),
     location: facility,
-    zone,
+    zone: zones[0],
+    zones,
     staff,
     day,
     shift: shiftMeta?.shiftLabel ?? 'Shift',
@@ -359,8 +361,9 @@ export const cleanerShiftAssignments = Array.from(
       title: card.title,
       status: card.status,
       photoRequired: card.type === 'critical',
-      commentRequired: card.auditScore === 1,
+      commentRequired: false,
       taskGroup: card.taskGroup,
+      zone: card.zone,
       score: card.auditScore,
     })),
   };

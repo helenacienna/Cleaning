@@ -466,6 +466,12 @@ export default function AllocationBoard({
                       const facilityName = run.details[0].facilities[0]?.facilityName || 'Assigned facility';
                       const runTaskCount = run.details.reduce((sum, detail) => sum + detail.laneCards.length, 0);
                       const facilityProgress = getCompletionStats(run.details.flatMap((detail) => detail.laneCards));
+                      const facilityChecklistId = makeCleanerShiftAssignmentId({
+                        staff,
+                        day: selectedDay,
+                        facility: facilityName,
+                        zone: 'facility',
+                      });
 
                       return (
                         <section className={`hierarchy-facility-box hierarchy-facility-box-continuous hierarchy-facility-${hierarchyMode} facility-theme-${slugifyFacility(facilityName)}`} key={`${staff}-${facilityName}-${runIndex}`}>
@@ -476,6 +482,11 @@ export default function AllocationBoard({
                                 <strong>{facilityName}</strong>
                                 <strong>{facilityProgress.completed}/{facilityProgress.total} complete</strong>
                               </span>
+                            </div>
+                            <div className="hierarchy-facility-link-row">
+                              <Link className="button secondary hierarchy-cleaner-link" href={`/scan/${facilityChecklistId}`}>
+                                Open cleaner checklist
+                              </Link>
                             </div>
                           </div>
 
@@ -490,15 +501,9 @@ export default function AllocationBoard({
                                         const zoneKey = `${staff}-${detail.lane.key}-${facility.facilityName}-${zone.zoneName}`;
                                         const zoneOpen = openZoneGroups[zoneKey];
                                         const zoneProgress = getCompletionStats(zone.groups.flatMap((group) => group.cards));
-                                        const cleanerAssignmentId = makeCleanerShiftAssignmentId({
-                                          staff,
-                                          day: selectedDay,
-                                          facility: facility.facilityName,
-                                          zone: zone.zoneName,
-                                        });
                                         const zoneNotifications = zone.groups
                                           .flatMap((group) => group.cards)
-                                          .filter((card) => card.reworkRequired || card.hasOpenIssue || (card.auditScore ?? 0) <= 2);
+                                          .filter((card) => card.reworkRequired || card.hasOpenIssue || (card.auditScore ?? 0) === 2);
 
                                         return (
                                           <>
@@ -511,13 +516,6 @@ export default function AllocationBoard({
                                                 </span>
                                               </button>
                                             </div>
-
-                                            <div className="hierarchy-zone-link-row">
-                                              <Link className="button secondary hierarchy-cleaner-link" href={`/scan/${cleanerAssignmentId}`}>
-                                                Open cleaner checklist
-                                              </Link>
-                                            </div>
-
                                             {zoneNotifications.length > 0 && (
                                               <div className="hierarchy-zone-notifications">
                                                 {zoneNotifications.map((card) => (

@@ -1038,6 +1038,12 @@ code {
   justify-content: flex-end;
 }
 
+.hierarchy-facility-link-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
 .hierarchy-cleaner-link {
   padding: 8px 12px;
   font-size: 12px;

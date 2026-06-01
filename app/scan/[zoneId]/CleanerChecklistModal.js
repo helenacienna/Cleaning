@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import CleanerTaskFlow from './CleanerTaskFlow';
 
-export default function CleanerChecklistModal({ tasks, zoneName }) {
+export default function CleanerChecklistModal({ tasks, label }) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -25,12 +25,12 @@ export default function CleanerChecklistModal({ tasks, zoneName }) {
       </section>
 
       {isOpen && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${zoneName} active checklist`}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${label} active checklist`}>
           <div className="fullscreen-checklist">
             <header className="modal-header compact-modal-header">
               <div>
                 <span className="badge">Active checklist</span>
-                <strong>{zoneName}</strong>
+                <strong>{label}</strong>
               </div>
               <div className="workflow-banner-actions">
                 <button className="button secondary" type="button" onClick={() => window.location.reload()}>

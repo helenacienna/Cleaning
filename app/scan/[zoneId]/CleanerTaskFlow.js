@@ -209,7 +209,7 @@ export default function CleanerTaskFlow({ tasks }) {
                 <div>
                   <h3>{task.title}</h3>
                   <div className="muted">
-                    {localState.saving
+                    {task.zone ? `${task.zone} · ` : ''}{localState.saving
                       ? 'Saving…'
                       : localState.saved || task.score
                         ? formatStatusLabel({ ...task, score: selectedGrade || task.score })

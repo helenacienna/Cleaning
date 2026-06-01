@@ -13,7 +13,7 @@ export async function generateMetadata({ params }) {
   const { zoneId } = await params;
   const { assignment } = await getCleanerAssignment(zoneId);
   return {
-    title: assignment ? `${assignment.zone} · Cleaner Tasks` : 'Cleaner Tasks',
+    title: assignment ? `${assignment.location} · Cleaner Tasks` : 'Cleaner Tasks',
   };
 }
 
@@ -36,6 +36,7 @@ export default async function CleanerZonePage({ params }) {
 
   const remaining = assignment.tasks.filter((task) => task.status !== 'completed' && !task.score).length;
   const firstOpenTask = assignment.tasks.find((task) => task.status !== 'completed') ?? assignment.tasks[0];
+  const zoneList = assignment.zones?.length ? assignment.zones.join(' · ') : assignment.zone;
 
   return (
     <main className="page compact-page">
@@ -44,8 +45,8 @@ export default async function CleanerZonePage({ params }) {
           <div className="scan-header">
             <div>
               <span className="badge">QR scan confirmed</span>
-              <h1>{assignment.zone}</h1>
-              <p className="muted">{assignment.location}</p>
+              <h1>{assignment.location}</h1>
+              <p className="muted">{zoneList}</p>
             </div>
             <div className="workflow-banner-actions">
               <Link className="button secondary" href="/admin/daily-hierarchy">Organiser board</Link>
@@ -81,7 +82,7 @@ export default async function CleanerZonePage({ params }) {
           </div>
         </section>
 
-        <CleanerChecklistModal tasks={assignment.tasks} zoneName={assignment.zone} />
+        <CleanerChecklistModal tasks={assignment.tasks} label={assignment.location} />
 
         <section className="workflow-banner">
           <div>

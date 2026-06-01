@@ -134,7 +134,11 @@ model NotificationEvent {
   identifier  String
   title       String
   tone        String
+  severity    String    @default("info")
+  audience    String    @default("manager")
   note        String?
+  isRead      Boolean   @default(false) @map("is_read")
+  readAt      DateTime? @map("read_at") @db.Timestamptz(6)
   delivered   Boolean   @default(false)
   channel     String?
   target      String?
@@ -145,6 +149,7 @@ model NotificationEvent {
   @@unique([scope, identifier])
   @@index([createdAt])
   @@index([delivered, createdAt])
+  @@index([audience, isRead, createdAt])
   @@map("notification_events")
 }
 

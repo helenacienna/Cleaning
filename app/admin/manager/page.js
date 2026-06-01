@@ -32,6 +32,7 @@ export default async function ManagerOverviewPage() {
     reviewHistory,
     alertCards,
     liveNotifications,
+    unreadNotifications,
     reportingCards,
     supervisorSnapshot,
     source,
@@ -87,7 +88,7 @@ export default async function ManagerOverviewPage() {
       </section>
 
       <ManagerAlerts alertCards={alertCards} />
-      <ManagerNotifications notifications={liveNotifications} />
+      <ManagerNotifications notifications={liveNotifications} unreadCount={unreadNotifications} />
       <ManagerFilters exceptionTasks={exceptionTasks} lowScoreTasks={lowScoreTasks} />
 
       <section className="manager-layout">
