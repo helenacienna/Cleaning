@@ -105,7 +105,7 @@ export async function POST(request) {
     timeout: 20000,
   });
 
-  recordNotification('manager-review', taskExecutionId, {
+  await recordNotification('manager-review', taskExecutionId, {
     title: `Manager action: ${managerAction}`,
     tone: managerAction === 'close' ? 'green' : managerAction === 'reassign' ? 'amber' : 'blue',
     note,

@@ -128,6 +128,26 @@ enum PhotoType {
   audit
 }
 
+model NotificationEvent {
+  id          String    @id @default(uuid()) @db.Uuid
+  scope       String
+  identifier  String
+  title       String
+  tone        String
+  note        String?
+  delivered   Boolean   @default(false)
+  channel     String?
+  target      String?
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(6)
+  lastError   String?   @map("last_error")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([scope, identifier])
+  @@index([createdAt])
+  @@index([delivered, createdAt])
+  @@map("notification_events")
+}
+
 model Facility {
   id           String   @id @default(uuid()) @db.Uuid
   facilityCode String   @unique @map("facility_code")

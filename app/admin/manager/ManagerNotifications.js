@@ -16,6 +16,8 @@ export default function ManagerNotifications({ notifications }) {
               <strong>{notification.title}</strong>
               <div className="muted">{notification.note}</div>
               <div className="muted">{notification.scope}</div>
+              {notification.delivered && <div className="muted">Delivered to {notification.channel}</div>}
+              {notification.lastError && <div className="muted">Delivery error: {notification.lastError}</div>}
             </div>
             <strong className={`tone-${notification.tone}`}>{notification.tone.toUpperCase()}</strong>
           </div>

@@ -15,7 +15,9 @@
     "db:format": "prisma format",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node prisma/seed.mjs",
-    "db:setup": "npm run db:migrate && npm run db:seed"
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "ops:maintenance": "node scripts/run-maintenance.mjs",
+    "ops:notify": "node scripts/run-notifications.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

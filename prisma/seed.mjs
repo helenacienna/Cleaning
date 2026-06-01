@@ -155,6 +155,7 @@ async function resetData(prisma) {
   await prisma.taskPhoto.deleteMany();
   await prisma.taskExecution.deleteMany();
   await prisma.taskAudit.deleteMany();
+  await prisma.notificationEvent.deleteMany();
   await prisma.taskTemplateStatus.deleteMany();
   await prisma.taskInstance.deleteMany();
   await prisma.taskTemplate.deleteMany();

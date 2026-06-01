@@ -81,7 +81,7 @@ export async function POST(request) {
     timeout: 20000,
   });
 
-  recordNotification('issue', taskInstanceId, {
+  await recordNotification('issue', taskInstanceId, {
     title: 'Cleaner raised issue',
     tone: 'red',
     note,
