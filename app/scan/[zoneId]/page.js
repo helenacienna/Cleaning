@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import CleanerChecklistModal from './CleanerChecklistModal';
+import CleanerInboxPanel from './CleanerInboxPanel';
 import IssueReportButton from './IssueReportButton';
 import { cleanerProfile } from '../../../data/demo-data';
 import { getCleanerAssignment, getCleanerAssignments } from '../../../lib/cleaner-data';
+import { getInboxWorkspaceData } from '../../../lib/inbox-data';
 
 export async function generateStaticParams() {
   const { assignments } = await getCleanerAssignments();
@@ -20,6 +22,7 @@ export async function generateMetadata({ params }) {
 export default async function CleanerZonePage({ params }) {
   const { zoneId } = await params;
   const { assignment, source } = await getCleanerAssignment(zoneId);
+  const cleanerInbox = await getInboxWorkspaceData(null, { audience: 'cleaner', limit: 6 });
 
   if (!assignment) {
     return (
@@ -90,10 +93,13 @@ export default async function CleanerZonePage({ params }) {
             <strong>Cleaner completes tasks here, while supervisors monitor progress from the organiser board and weekly overview.</strong>
           </div>
           <div className="workflow-banner-actions">
+            <Link className="button secondary" href="/admin/inbox?audience=cleaner">Open cleaner inbox</Link>
             <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
             <Link className="button secondary" href="/">Back to dashboard</Link>
           </div>
         </section>
+
+        <CleanerInboxPanel threads={cleanerInbox.threads.slice(0, 4)} unreadCount={cleanerInbox.unreadCount} />
 
         <section className="card issue-card">
           <div>

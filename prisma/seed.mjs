@@ -77,6 +77,8 @@ const boardDates = [
   '2026-06-04',
   '2026-06-05',
 ];
+const TARGET_TASKS_PER_SHIFT = 100;
+const COMPLETION_RATIO = 0.6;
 
 const cleanerBlueprints = staffBlueprints.filter((staff) => staff.role === 'cleaner');
 
@@ -161,16 +163,21 @@ function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60 * 1000);
 }
 
-function findStaffRoute(facilityName, zoneName) {
-  for (const staff of cleanerBlueprints) {
-    for (const route of staff.routes) {
-      if (route.facility === facilityName && route.zones.includes(zoneName)) {
-        return { staff, route };
-      }
-    }
-  }
+function buildCleanerRouteTaskPool(staff, templateRows, facilityById, zoneById) {
+  return staff.routes.flatMap((route, stopIndex) => {
+    const stopTemplates = templateRows.filter((template) => {
+      const facility = facilityById.get(template.facilityId);
+      const zone = zoneById.get(template.zoneId);
+      return facility?.name === route.facility && route.zones.includes(zone?.name);
+    });
 
-  return { staff: cleanerBlueprints[0], route: cleanerBlueprints[0].routes[0] };
+    const laneSpan = route.laneIndexes.length;
+    return stopTemplates.map((template, templateIndex) => ({
+      template,
+      stopIndex,
+      laneIndex: route.laneIndexes[Math.min(laneSpan - 1, Math.floor((templateIndex / stopTemplates.length) * laneSpan))] ?? route.laneIndexes[0] ?? 0,
+    }));
+  });
 }
 
 async function resetData(prisma) {
@@ -348,69 +355,71 @@ async function main() {
     const taskInstanceRows = [];
     const taskExecutionRows = [];
 
-    for (const template of templateRows) {
-      const facility = facilityById.get(template.facilityId);
-      const zone = zoneById.get(template.zoneId);
-      const taskGroup = groupById.get(template.taskGroupId);
-      const boardDate = boardDates[(template.defaultSequence - 1) % boardDates.length];
-      const { staff, route } = findStaffRoute(facility.name, zone.name);
-      const laneIndex = route.laneIndexes[(template.defaultSequence - 1) % route.laneIndexes.length] ?? 0;
-      const shiftRun = shiftRunLookup.get(`${staff.staffCode}:${boardDate}`);
-      const unallocated = template.defaultSequence % 17 === 0;
-      const scheduledForAt = unallocated ? null : addMinutes(shiftRun.shiftStartAt, laneIndex * 60);
-      const dueAtBase = scheduledForAt ?? addMinutes(parseTimeOnDate(boardDate, '09:00'), laneIndex * 15);
-      const dueAt = template.defaultSequence % 19 === 0 ? addMinutes(dueAtBase, -24 * 60) : dueAtBase;
-      const planningDueAt = addMinutes(dueAt, -24 * 60);
-      const status = unallocated
-        ? 'unscheduled'
-        : template.defaultSequence % 19 === 0
-          ? 'due'
-          : template.defaultSequence % 13 === 0
-            ? 'completed'
-            : template.defaultSequence % 11 === 0
-              ? 'in_progress'
-              : 'scheduled';
-      const instanceId = uuidFor(`instance:${template.taskTemplateCode}:${boardDate}`);
+    for (const boardDate of boardDates) {
+      for (const staff of cleanerBlueprints) {
+        const shiftRun = shiftRunLookup.get(`${staff.staffCode}:${boardDate}`);
+        const routePool = buildCleanerRouteTaskPool(staff, templateRows, facilityById, zoneById);
+        const completedTarget = Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO);
 
-      taskInstanceRows.push({
-        id: instanceId,
-        instanceCode: `${template.taskTemplateCode}-${boardDate.replace(/-/g, '')}`,
-        taskTemplateId: template.id,
-        shiftRunId: unallocated ? null : shiftRun.id,
-        facilityId: template.facilityId,
-        zoneId: template.zoneId,
-        taskGroupId: template.taskGroupId,
-        plannedFacilityId: template.facilityId,
-        plannedZoneId: template.zoneId,
-        plannedTaskGroupId: template.taskGroupId,
-        titleSnapshot: template.title,
-        descriptionSnapshot: template.description,
-        sourceType: 'auto_generated',
-        dueAt,
-        planningDueAt,
-        scheduledForAt,
-        assignedStaffId: unallocated ? null : uuidFor(`staff:${staff.staffCode}`),
-        sequence: template.defaultSequence,
-        status,
-        priority: template.priority,
-        evidenceRequirement: template.evidenceRequirement,
-        commentRequirement: template.commentRequirement,
-        estimatedMinutes: template.estimatedMinutes,
-        isExceptionTask: false,
-        manuallyCreated: false,
-      });
+        for (let index = 0; index < TARGET_TASKS_PER_SHIFT; index += 1) {
+          const poolItem = routePool[index % routePool.length];
+          const template = poolItem.template;
+          const facility = facilityById.get(template.facilityId);
+          const zone = zoneById.get(template.zoneId);
+          const unallocated = index > 0 && index % 29 === 0;
+          const scheduledForAt = unallocated ? null : addMinutes(shiftRun.shiftStartAt, Math.floor(index * 4.8));
+          const dueAt = scheduledForAt ?? addMinutes(parseTimeOnDate(boardDate, '09:00'), index * 5);
+          const planningDueAt = addMinutes(dueAt, -24 * 60);
+          const status = unallocated
+            ? 'unscheduled'
+            : index < completedTarget
+              ? 'completed'
+              : index === completedTarget
+                ? 'in_progress'
+                : 'scheduled';
+          const instanceId = uuidFor(`instance:${template.taskTemplateCode}:${boardDate}:${staff.staffCode}:${index + 1}`);
 
-      if (status === 'completed') {
-        taskExecutionRows.push({
-          id: uuidFor(`execution:${instanceId}`),
-          taskInstanceId: instanceId,
-          startedAt: addMinutes(dueAt, -15),
-          completedAt: addMinutes(dueAt, 10),
-          completedByStaffId: uuidFor(`staff:${staff.staffCode}`),
-          completionStatus: 'completed',
-          completionComment: 'Completed during seeded organiser run.',
-          issueRaised: false,
-        });
+          taskInstanceRows.push({
+            id: instanceId,
+            instanceCode: `${template.taskTemplateCode}-${boardDate.replace(/-/g, '')}-${staff.staffCode}-${String(index + 1).padStart(3, '0')}`,
+            taskTemplateId: template.id,
+            shiftRunId: unallocated ? null : shiftRun.id,
+            facilityId: template.facilityId,
+            zoneId: template.zoneId,
+            taskGroupId: template.taskGroupId,
+            plannedFacilityId: template.facilityId,
+            plannedZoneId: template.zoneId,
+            plannedTaskGroupId: template.taskGroupId,
+            titleSnapshot: template.title,
+            descriptionSnapshot: `${template.description} · Run item ${index + 1}`,
+            sourceType: 'auto_generated',
+            dueAt,
+            planningDueAt,
+            scheduledForAt,
+            assignedStaffId: unallocated ? null : uuidFor(`staff:${staff.staffCode}`),
+            sequence: index + 1,
+            status,
+            priority: template.priority,
+            evidenceRequirement: template.evidenceRequirement,
+            commentRequirement: template.commentRequirement,
+            estimatedMinutes: Math.max(4, Math.round((shiftRun.shiftEndAt.getTime() - shiftRun.shiftStartAt.getTime()) / (TARGET_TASKS_PER_SHIFT * 60000))),
+            isExceptionTask: false,
+            manuallyCreated: false,
+          });
+
+          if (status === 'completed') {
+            taskExecutionRows.push({
+              id: uuidFor(`execution:${instanceId}`),
+              taskInstanceId: instanceId,
+              startedAt: addMinutes(dueAt, -4),
+              completedAt: addMinutes(dueAt, 1),
+              completedByStaffId: uuidFor(`staff:${staff.staffCode}`),
+              completionStatus: 'completed',
+              completionComment: `Completed during seeded organiser run at ${facility.name} · ${zone.name}.`,
+              issueRaised: false,
+            });
+          }
+        }
       }
     }
 

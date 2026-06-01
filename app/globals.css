@@ -1983,10 +1983,123 @@ button.button {
   gap: 14px;
 }
 
+.inbox-sidebar-tools,
+.inbox-new-thread-card,
+.inbox-new-thread-grid,
+.inbox-picker-block,
+.inbox-attachment-block,
+.inbox-attachment-list {
+  display: grid;
+  gap: 12px;
+}
+
 .inbox-thread-list,
 .inbox-message-stream {
   max-height: 72vh;
   overflow: auto;
+}
+
+.inbox-search-field {
+  display: grid;
+  gap: 6px;
+}
+
+.inbox-search-field input,
+.inbox-search-field textarea,
+.inbox-field-compact select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+}
+
+.inbox-filter-row,
+.inbox-sidebar-actions,
+.inbox-participant-picker,
+.inbox-status-row,
+.cleaner-inbox-shell {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cleaner-inbox-shell {
+  flex-direction: column;
+}
+
+.cleaner-inbox-thread-list,
+.cleaner-inbox-detail,
+.cleaner-inbox-message-list {
+  display: grid;
+  gap: 12px;
+}
+
+.inbox-attachment-row,
+.inbox-message-attachments {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inbox-filter-chip,
+.inbox-picker-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.92);
+  color: var(--text);
+  font: inherit;
+}
+
+.inbox-filter-chip-active,
+.inbox-picker-chip-active {
+  border-color: rgba(89,195,255,0.42);
+  background: linear-gradient(180deg, rgba(89,195,255,0.14), rgba(255,255,255,0.98));
+}
+
+.inbox-new-thread-card {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(15,23,42,0.08);
+  background: rgba(248,250,252,0.92);
+}
+
+.inbox-attachment-row input {
+  flex: 1;
+  min-width: 180px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+}
+
+.inbox-attachment-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(89,195,255,0.25);
+  background: rgba(89,195,255,0.10);
+  color: var(--text);
+}
+
+.inbox-new-thread-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inbox-empty-list {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px dashed rgba(15,23,42,0.12);
+  background: rgba(248,250,252,0.6);
 }
 
 .inbox-thread-card,
@@ -2140,6 +2253,10 @@ button.button {
   }
 
   .workflow-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .inbox-new-thread-grid {
     grid-template-columns: 1fr;
   }
 

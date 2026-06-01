@@ -99,6 +99,8 @@ const allocationStaff = [
   { name: 'Ava Patel', facility: 'Cienna South', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM', routeLabel: 'Cienna South → Cienna North → Cienna Central' },
 ];
 const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5'];
+const TARGET_TASKS_PER_SHIFT = 100;
+const COMPLETION_RATIO = 0.6;
 
 function slugifyValue(value = '') {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -174,15 +176,30 @@ export const taskCardTemplates = buildTaskCatalog();
 const taskCatalog = taskCardTemplates;
 
 function buildAssignmentTasks(facilityName, zoneName) {
-  return taskCardTemplates
+  const zoneTasks = taskCardTemplates
     .filter((task) => task.facility === facilityName && task.zone === zoneName)
-    .map((task, index) => ({
-      id: `assignment-${facilityName}-${zoneName}-${index + 1}`,
+    .map((task) => ({
       title: task.title,
-      status: index < 2 ? 'completed' : index === 2 ? 'photo-required' : index === 3 ? 'pending' : index === 4 ? 'carried-forward' : 'pending',
       photoRequired: task.required === 'Random photo eligible',
       commentRequired: task.required === 'Comment on exception',
+      taskGroup: task.taskGroup,
+      zone: task.zone,
     }));
+
+  const completedTarget = Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO);
+
+  return Array.from({ length: TARGET_TASKS_PER_SHIFT }, (_, index) => {
+    const task = zoneTasks[index % zoneTasks.length];
+    return {
+      id: `assignment-${facilityName}-${zoneName}-${index + 1}`,
+      title: task.title,
+      status: index < completedTarget ? 'completed' : index === completedTarget ? 'in-progress' : (task.photoRequired && index % 7 === 0 ? 'photo-required' : 'pending'),
+      photoRequired: task.photoRequired,
+      commentRequired: task.commentRequired,
+      taskGroup: task.taskGroup,
+      zone: task.zone,
+    };
+  });
 }
 
 export const appSummary = {
@@ -201,8 +218,8 @@ export const cleanerAssignments = allocationStaff.map((staff, index) => ({
   location: staff.facility,
   zone: zoneBlueprints[index].zone,
   shift: staff.shiftLabel,
-  progress: index === 0 ? 75 : index === 1 ? 40 : 62,
-  stats: { total: 6, completed: index === 0 ? 3 : index === 1 ? 2 : 4, photoRequired: 2 },
+  progress: Math.round(COMPLETION_RATIO * 100),
+  stats: { total: TARGET_TASKS_PER_SHIFT, completed: Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO), photoRequired: Math.round(TARGET_TASKS_PER_SHIFT * 0.18) },
   tasks: buildAssignmentTasks(staff.facility, zoneBlueprints[index].zone),
 }));
 
@@ -251,40 +268,51 @@ export const reports = [
   ['Audits passed', '33 / 36'],
 ];
 
+function buildRouteTaskPool(staff) {
+  const routeStops = allocationRoutes[staff.name] || [];
+
+  return routeStops.flatMap((stop, stopIndex) => {
+    const stopTemplates = taskCatalog.filter((template) => template.facility === stop.facility && stop.zones.includes(template.zone));
+    const laneSpan = stop.laneIndexes.length;
+
+    return stopTemplates.map((template, templateIndex) => ({
+      template,
+      stopIndex,
+      laneIndex: stop.laneIndexes[Math.min(laneSpan - 1, Math.floor((templateIndex / stopTemplates.length) * laneSpan))],
+    }));
+  });
+}
+
 const allocationCards = allocationDays.flatMap((day, dayIndex) => (
   allocationStaff.flatMap((staff) => {
-    const routeStops = allocationRoutes[staff.name] || [];
-    let jobOrder = 1;
+    const routeTaskPool = buildRouteTaskPool(staff);
+    const completedTarget = Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO);
 
-    return routeStops.flatMap((stop, stopIndex) => {
-      const stopTemplates = taskCatalog.filter((template) => template.facility === stop.facility && stop.zones.includes(template.zone));
-      const laneSpan = stop.laneIndexes.length;
+    return Array.from({ length: TARGET_TASKS_PER_SHIFT }, (_, index) => {
+      const poolItem = routeTaskPool[index % routeTaskPool.length];
+      const template = poolItem.template;
+      const jobOrder = index + 1;
 
-      return stopTemplates.map((template, templateIndex) => {
-        const laneIndex = stop.laneIndexes[Math.min(laneSpan - 1, Math.floor((templateIndex / stopTemplates.length) * laneSpan))];
-        const card = {
-          id: `alloc-${dayIndex + 1}-${staff.name.replace(/\s+/g, '-').toLowerCase()}-${jobOrder}`,
-          title: template.title,
-          templateId: template.templateId,
-          staff: staff.name,
-          day,
-          jobOrder,
-          laneIndex,
-          routeStopIndex: stopIndex,
-          status: jobOrder % 5 < 3 ? 'completed' : jobOrder % 5 === 3 ? 'in-progress' : 'pending',
-          facility: template.facility,
-          zone: template.zone,
-          taskGroup: template.taskGroup,
-          type: template.frequencyType.toLowerCase(),
-          groupId: `group-${dayIndex + 1}-${template.zoneId}-${template.groupKey}`,
-          groupName: template.taskGroup,
-          auditScore: jobOrder % 20 === 0 ? 2 : jobOrder % 3 === 0 ? 4 : 5,
-          issueNote: '',
-          detached: false,
-        };
-        jobOrder += 1;
-        return card;
-      });
+      return {
+        id: `alloc-${dayIndex + 1}-${staff.name.replace(/\s+/g, '-').toLowerCase()}-${jobOrder}`,
+        title: template.title,
+        templateId: template.templateId,
+        staff: staff.name,
+        day,
+        jobOrder,
+        laneIndex: poolItem.laneIndex,
+        routeStopIndex: poolItem.stopIndex,
+        status: index < completedTarget ? 'completed' : index === completedTarget ? 'in-progress' : 'pending',
+        facility: template.facility,
+        zone: template.zone,
+        taskGroup: template.taskGroup,
+        type: template.frequencyType.toLowerCase(),
+        groupId: `group-${dayIndex + 1}-${template.zoneId}-${template.groupKey}`,
+        groupName: template.taskGroup,
+        auditScore: index < completedTarget ? (jobOrder % 4 === 0 ? 4 : 5) : null,
+        issueNote: '',
+        detached: false,
+      };
     });
   })
 ));
@@ -307,23 +335,23 @@ const taskGroups = uniqueGroupKeys.map((groupKey) => {
   };
 });
 
-const denseScoreDemoCards = Array.from({ length: 21 }, (_, index) => ({
+const denseScoreDemoCards = Array.from({ length: 6 }, (_, index) => ({
   id: `dense-score-demo-${index + 1}`,
   title: `Follow-up presentation check ${index + 1}`,
   templateId: `dense_score_demo_${String(index + 1).padStart(3, '0')}`,
   staff: 'Mia Thompson',
   day: 'Mon 1',
-  jobOrder: 200 + index,
+  jobOrder: TARGET_TASKS_PER_SHIFT + 20 + index,
   laneIndex: 0,
   routeStopIndex: 0,
-  status: index % 4 === 0 ? 'pending' : 'completed',
+  status: 'pending',
   facility: 'Cienna North',
   zone: 'Rooftop',
   taskGroup: 'Rooftop presentation',
   type: 'critical',
   groupId: 'group-dense-score-demo',
   groupName: 'Rooftop presentation',
-  auditScore: index % 20 === 0 ? 2 : index % 3 === 0 ? 3 : index % 2 === 0 ? 4 : 5,
+  auditScore: 4,
   issueNote: '',
   detached: false,
 }));

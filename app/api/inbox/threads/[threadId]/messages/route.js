@@ -14,6 +14,7 @@ export async function POST(request, { params }) {
   const body = await request.json().catch(() => null);
   const senderStaffCode = typeof body?.senderStaffCode === 'string' ? body.senderStaffCode : null;
   const messageBody = typeof body?.body === 'string' ? body.body : '';
+  const attachments = Array.isArray(body?.attachments) ? body.attachments : [];
 
   if (!messageBody.trim()) {
     return NextResponse.json({ error: 'Message body is required' }, { status: 400 });
@@ -24,6 +25,7 @@ export async function POST(request, { params }) {
       threadId: params.threadId,
       senderStaffCode,
       body: messageBody,
+      attachments,
     });
 
     return NextResponse.json({ ok: true, ...result });

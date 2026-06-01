@@ -33,6 +33,8 @@ export default async function ManagerOverviewPage() {
     alertCards,
     operationsInbox,
     unreadInboxCount,
+    supervisorInboxCount,
+    cleanerInboxCount,
     reportingCards,
     supervisorSnapshot,
     source,
@@ -60,6 +62,8 @@ export default async function ManagerOverviewPage() {
         </div>
         <div className="workflow-banner-actions">
           <Link className="button secondary" href="/admin/inbox">Open inbox</Link>
+          <Link className="button secondary" href="/admin/inbox?audience=supervisor">Supervisor inbox</Link>
+          <Link className="button secondary" href="/admin/inbox?audience=cleaner">Cleaner inbox</Link>
           <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
           <Link className="button secondary" href="/admin/calendar">Open weekly overview</Link>
         </div>
@@ -85,6 +89,16 @@ export default async function ManagerOverviewPage() {
           <span className="muted">Low score alerts</span>
           <strong className={`metric ${getStatusTone(lowScoreTasks.length)}`}>{lowScoreTasks.length}</strong>
           <div className="muted">Tasks with a 1-2/5 score needing review</div>
+        </div>
+        <div className="card">
+          <span className="muted">Supervisor inbox</span>
+          <strong className={`metric ${getStatusTone(supervisorInboxCount)}`}>{supervisorInboxCount}</strong>
+          <div className="muted">Unread supervisor threads and responses</div>
+        </div>
+        <div className="card">
+          <span className="muted">Cleaner inbox</span>
+          <strong className={`metric ${getStatusTone(cleanerInboxCount)}`}>{cleanerInboxCount}</strong>
+          <div className="muted">Unread cleaner-facing operational updates</div>
         </div>
       </section>
 
