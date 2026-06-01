@@ -500,7 +500,6 @@ export default function AllocationBoard({
                                                                 <strong>{progress.completed}/{progress.total} complete</strong>
                                                               </span>
                                                             </button>
-                                                            <span className="hierarchy-drop-hint">Drop task cards here to move them into this group</span>
                                                           </div>
 
                                                           {isOpen && (
