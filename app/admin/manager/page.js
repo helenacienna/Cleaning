@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import ManagerFilters from './ManagerFilters';
 import ManagerReviewActions from './ManagerReviewActions';
+import ManagerReviewHistory from './ManagerReviewHistory';
 import { getManagerOverviewData } from '../../../lib/manager-data';
 
 export const metadata = {
@@ -20,6 +22,7 @@ export default async function ManagerOverviewPage() {
     lowScoreTasks,
     exceptionTasks,
     facilitySummary,
+    reviewHistory,
     supervisorSnapshot,
     source,
   } = await getManagerOverviewData();
@@ -72,6 +75,8 @@ export default async function ManagerOverviewPage() {
           <div className="muted">Tasks with a 1-2/5 score needing review</div>
         </div>
       </section>
+
+      <ManagerFilters exceptionTasks={exceptionTasks} lowScoreTasks={lowScoreTasks} />
 
       <section className="manager-layout">
         <div className="manager-main-column">
@@ -128,6 +133,8 @@ export default async function ManagerOverviewPage() {
               ))}
             </div>
           </section>
+
+          <ManagerReviewHistory reviewHistory={reviewHistory} />
         </div>
 
         <div className="manager-side-column">

@@ -332,15 +332,18 @@ async function main() {
       const shiftRun = shiftRunLookup.get(`${staff.staffCode}:${boardDate}`);
       const unallocated = template.defaultSequence % 17 === 0;
       const scheduledForAt = unallocated ? null : addMinutes(shiftRun.shiftStartAt, laneIndex * 60);
-      const dueAt = scheduledForAt ?? addMinutes(parseTimeOnDate(boardDate, '09:00'), laneIndex * 15);
+      const dueAtBase = scheduledForAt ?? addMinutes(parseTimeOnDate(boardDate, '09:00'), laneIndex * 15);
+      const dueAt = template.defaultSequence % 19 === 0 ? addMinutes(dueAtBase, -24 * 60) : dueAtBase;
       const planningDueAt = addMinutes(dueAt, -24 * 60);
       const status = unallocated
         ? 'unscheduled'
-        : template.defaultSequence % 13 === 0
-          ? 'completed'
-          : template.defaultSequence % 11 === 0
-            ? 'in_progress'
-            : 'scheduled';
+        : template.defaultSequence % 19 === 0
+          ? 'due'
+          : template.defaultSequence % 13 === 0
+            ? 'completed'
+            : template.defaultSequence % 11 === 0
+              ? 'in_progress'
+              : 'scheduled';
       const instanceId = uuidFor(`instance:${template.taskTemplateCode}:${boardDate}`);
 
       taskInstanceRows.push({

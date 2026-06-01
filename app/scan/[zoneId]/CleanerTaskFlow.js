@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function formatStatusLabel(task) {
   if (task.score) {
@@ -229,19 +230,7 @@ export default function CleanerTaskFlow({ tasks }) {
                 </div>
               )}
 
-              {photos.length > 0 && (
-                <div className="flag-row" style={{ marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
-                  {photos.slice(0, 3).map((photo) => (
-                    <a key={photo.id} href={photo.photoUrl} target="_blank" rel="noreferrer">
-                      <img
-                        src={photo.photoUrl}
-                        alt={`${task.title} evidence`}
-                        style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 12, border: '1px solid #d8dee8' }}
-                      />
-                    </a>
-                  ))}
-                </div>
-              )}
+              {photos.length > 0 && <CleanerPhotoLightbox photos={photos} title={task.title} />}
 
               <div className="grade-panel compact-grade-panel">
                 <div>
