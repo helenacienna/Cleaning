@@ -139,12 +139,21 @@ export default async function ManagerOverviewPage() {
             </div>
 
             <div className="task-list">
-              {exceptionTasks.slice(0, 8).map(({ id, title, status, shift, note, photoCount }) => (
+              {exceptionTasks.slice(0, 8).map(({ id, title, status, shift, note, photoCount, photos }) => (
                 <div className="task-row" key={id}>
                   <div>
                     <strong>{title}</strong>
                     <div className="muted">{shift.location} · {shift.zone}</div>
                     {note && <div className="muted">{note}</div>}
+                    {photos?.length > 0 && (
+                      <div className="flag-row" style={{ marginTop: 8 }}>
+                        {photos.slice(0, 2).map((photo) => (
+                          <a key={photo.id} href={photo.photoUrl} target="_blank" rel="noreferrer" className="flag">
+                            {photo.photoType} photo
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="flag-row">
                     <span className="flag">{shift.staff}</span>

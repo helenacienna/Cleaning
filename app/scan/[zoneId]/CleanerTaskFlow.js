@@ -22,6 +22,7 @@ export default function CleanerTaskFlow({ tasks }) {
     note: task.note ?? '',
     saving: false,
     saved: Boolean(task.score),
+    photoCount: task.photoCount ?? 0,
   }])));
   const cardRefs = useRef([]);
   const listRef = useRef(null);
@@ -75,6 +76,33 @@ export default function CleanerTaskFlow({ tasks }) {
     }
   }
 
+  async function uploadPhoto(taskId, file) {
+    if (!file) return;
+
+    const current = taskState[taskId] || {};
+    updateTask(taskId, { saving: true });
+
+    try {
+      const formData = new FormData();
+      formData.append('taskInstanceId', taskId);
+      formData.append('photoType', 'completion');
+      formData.append('file', file);
+
+      const response = await fetch('/api/task-photos', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to upload photo');
+      }
+
+      updateTask(taskId, { photoCount: (current.photoCount ?? 0) + 1, saving: false, saved: true });
+    } catch {
+      updateTask(taskId, { saving: false });
+    }
+  }
+
   function trackManualScroll() {
     const list = listRef.current;
     if (!list) return;
@@ -110,7 +138,7 @@ export default function CleanerTaskFlow({ tasks }) {
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
-          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false };
+          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0 };
           const selectedGrade = localState.grade;
 
           return (
@@ -146,6 +174,7 @@ export default function CleanerTaskFlow({ tasks }) {
                 <div className="compact-flags">
                   {task.photoRequired && <span className="flag required-flag">Forced photo</span>}
                   {task.commentRequired && <span className="flag">Comment required</span>}
+                  <span className="flag">{localState.photoCount} photos</span>
                 </div>
               )}
 
@@ -183,9 +212,19 @@ export default function CleanerTaskFlow({ tasks }) {
               </label>
 
               <div className="task-actions compact-actions">
-                <button className={task.photoRequired ? 'button photo-required-button' : 'button secondary'} type="button" onClick={(event) => event.stopPropagation()}>
-                  {task.photoRequired ? 'Required photo' : 'Optional photo'}
-                </button>
+                <label className={task.photoRequired ? 'button photo-required-button' : 'button secondary'}>
+                  {task.photoRequired ? 'Upload required photo' : 'Upload photo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      void uploadPhoto(task.id, file);
+                      event.target.value = '';
+                    }}
+                  />
+                </label>
                 <button className="button secondary" type="button" onClick={(event) => event.stopPropagation()}>
                   {task.commentRequired ? 'Required note' : 'Optional note'}
                 </button>
