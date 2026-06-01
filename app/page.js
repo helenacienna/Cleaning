@@ -69,6 +69,7 @@ export default function HomePage() {
             <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
             <Link className="button secondary" href="/scan/assignment-1">Open cleaner QR flow</Link>
             <Link className="button secondary" href="/admin/manager">Open manager view</Link>
+            <Link className="button secondary" href="/admin/inbox">Open operations inbox</Link>
             <Link className="button secondary" href="/admin/task-cards">Task cards</Link>
             <Link className="button secondary" href="/qr-zones">QR zone codes</Link>
           </div>

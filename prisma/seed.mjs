@@ -7,6 +7,26 @@ const facilities = ['Cienna North', 'Cienna Central', 'Cienna South'];
 
 const staffBlueprints = [
   {
+    staffCode: 'MGR001',
+    fullName: 'Olivia Hart',
+    role: 'manager',
+    shiftLabel: 'Operations manager',
+    routeLabel: 'Portfolio oversight',
+    shiftStart: '06:00',
+    shiftEnd: '18:00',
+    routes: [],
+  },
+  {
+    staffCode: 'SUP001',
+    fullName: 'Daniel Price',
+    role: 'supervisor',
+    shiftLabel: 'Field supervisor',
+    routeLabel: 'Audit and support coverage',
+    shiftStart: '06:00',
+    shiftEnd: '16:00',
+    routes: [],
+  },
+  {
     staffCode: 'STF001',
     fullName: 'Mia Thompson',
     role: 'cleaner',
@@ -57,6 +77,8 @@ const boardDates = [
   '2026-06-04',
   '2026-06-05',
 ];
+
+const cleanerBlueprints = staffBlueprints.filter((staff) => staff.role === 'cleaner');
 
 const zoneBlueprints = [
   { code: 'Z01', zone: 'Rooftop', groups: [
@@ -140,7 +162,7 @@ function addMinutes(date, minutes) {
 }
 
 function findStaffRoute(facilityName, zoneName) {
-  for (const staff of staffBlueprints) {
+  for (const staff of cleanerBlueprints) {
     for (const route of staff.routes) {
       if (route.facility === facilityName && route.zones.includes(zoneName)) {
         return { staff, route };
@@ -148,10 +170,13 @@ function findStaffRoute(facilityName, zoneName) {
     }
   }
 
-  return { staff: staffBlueprints[0], route: staffBlueprints[0].routes[0] };
+  return { staff: cleanerBlueprints[0], route: cleanerBlueprints[0].routes[0] };
 }
 
 async function resetData(prisma) {
+  await prisma.inboxParticipant.deleteMany();
+  await prisma.inboxMessage.deleteMany();
+  await prisma.inboxThread.deleteMany();
   await prisma.taskPhoto.deleteMany();
   await prisma.taskExecution.deleteMany();
   await prisma.taskAudit.deleteMany();
@@ -295,7 +320,7 @@ async function main() {
     const shiftRunLookup = new Map();
 
     for (const dateText of boardDates) {
-      for (const staff of staffBlueprints) {
+      for (const staff of cleanerBlueprints) {
         const row = {
           id: uuidFor(`shift:${dateText}:${staff.staffCode}`),
           shiftCode: `SHIFT-${dateText}-${staff.staffCode}`,

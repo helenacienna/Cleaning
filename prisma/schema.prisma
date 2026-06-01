@@ -128,23 +128,48 @@ enum PhotoType {
   audit
 }
 
+enum InboxThreadType {
+  operational_alert
+  direct
+  group
+}
+
+enum InboxMessageKind {
+  note
+  alert
+  status
+  system
+}
+
+enum InboxParticipantRole {
+  owner
+  member
+  watcher
+  system
+}
+
 model NotificationEvent {
-  id          String    @id @default(uuid()) @db.Uuid
-  scope       String
-  identifier  String
-  title       String
-  tone        String
-  severity    String    @default("info")
-  audience    String    @default("manager")
-  note        String?
-  isRead      Boolean   @default(false) @map("is_read")
-  readAt      DateTime? @map("read_at") @db.Timestamptz(6)
-  delivered   Boolean   @default(false)
-  channel     String?
-  target      String?
-  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(6)
-  lastError   String?   @map("last_error")
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  id             String    @id @default(uuid()) @db.Uuid
+  scope          String
+  identifier     String
+  title          String
+  tone           String
+  severity       String    @default("info")
+  audience       String    @default("manager")
+  note           String?
+  isRead         Boolean   @default(false) @map("is_read")
+  readAt         DateTime? @map("read_at") @db.Timestamptz(6)
+  delivered      Boolean   @default(false)
+  channel        String?
+  target         String?
+  deliveredAt    DateTime? @map("delivered_at") @db.Timestamptz(6)
+  lastError      String?   @map("last_error")
+  inboxThreadId  String?   @map("inbox_thread_id") @db.Uuid
+  inboxMessageId String?   @map("inbox_message_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  inboxThread  InboxThread?  @relation(fields: [inboxThreadId], references: [id])
+  inboxMessage InboxMessage? @relation(fields: [inboxMessageId], references: [id])
 
   @@unique([scope, identifier])
   @@index([createdAt])
@@ -161,11 +186,12 @@ model Facility {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  zones         Zone[]
-  taskGroups    TaskGroup[]
-  taskTemplates TaskTemplate[]
+  zones                Zone[]
+  taskGroups           TaskGroup[]
+  taskTemplates        TaskTemplate[]
   taskInstances        TaskInstance[]
   plannedTaskInstances TaskInstance[] @relation("PlannedFacility")
+  inboxThreads         InboxThread[]
 
   @@map("facilities")
 }
@@ -181,11 +207,12 @@ model Zone {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  facility      Facility       @relation(fields: [facilityId], references: [id])
-  taskGroups    TaskGroup[]
+  facility             Facility       @relation(fields: [facilityId], references: [id])
+  taskGroups           TaskGroup[]
   taskTemplates        TaskTemplate[]
   taskInstances        TaskInstance[]
   plannedTaskInstances TaskInstance[] @relation("PlannedZone")
+  inboxThreads         InboxThread[]
 
   @@unique([facilityId, zoneCode])
   @@map("zones")
@@ -203,8 +230,8 @@ model TaskGroup {
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  facility      Facility       @relation(fields: [facilityId], references: [id])
-  zone          Zone           @relation(fields: [zoneId], references: [id])
+  facility             Facility       @relation(fields: [facilityId], references: [id])
+  zone                 Zone           @relation(fields: [zoneId], references: [id])
   taskTemplates        TaskTemplate[]
   taskInstances        TaskInstance[]
   plannedTaskInstances TaskInstance[] @relation("PlannedTaskGroup")
@@ -223,11 +250,13 @@ model Staff {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  assignedShiftRuns   ShiftRun[]      @relation("ShiftRunAssignedStaff")
-  publishedShiftRuns  ShiftRun[]      @relation("ShiftRunPublishedBy")
-  assignedTasks       TaskInstance[]  @relation("TaskAssignedStaff")
-  completedExecutions TaskExecution[] @relation("TaskExecutionCompletedBy")
-  audits              TaskAudit[]     @relation("TaskAuditByStaff")
+  assignedShiftRuns   ShiftRun[]         @relation("ShiftRunAssignedStaff")
+  publishedShiftRuns  ShiftRun[]         @relation("ShiftRunPublishedBy")
+  assignedTasks       TaskInstance[]     @relation("TaskAssignedStaff")
+  completedExecutions TaskExecution[]    @relation("TaskExecutionCompletedBy")
+  audits              TaskAudit[]        @relation("TaskAuditByStaff")
+  inboxParticipants   InboxParticipant[]
+  sentInboxMessages   InboxMessage[]     @relation("InboxMessageSender")
 
   @@map("staff")
 }
@@ -427,4 +456,83 @@ model TaskPhoto {
   taskExecution TaskExecution @relation(fields: [taskExecutionId], references: [id])
 
   @@map("task_photos")
+}
+
+model InboxThread {
+  id               String          @id @default(uuid()) @db.Uuid
+  threadKey        String?         @unique @map("thread_key")
+  type             InboxThreadType @default(group)
+  audience         String          @default("manager")
+  title            String
+  subtitle         String?
+  scope            String?
+  sourceIdentifier String?         @map("source_identifier")
+  status           String          @default("open")
+  facilityId       String?         @map("facility_id") @db.Uuid
+  zoneId           String?         @map("zone_id") @db.Uuid
+  taskInstanceId   String?         @map("task_instance_id") @db.Uuid
+  latestMessageId  String?         @unique @map("latest_message_id") @db.Uuid
+  lastMessageAt    DateTime?       @map("last_message_at") @db.Timestamptz(6)
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  facility           Facility?           @relation(fields: [facilityId], references: [id])
+  zone               Zone?               @relation(fields: [zoneId], references: [id])
+  latestMessage      InboxMessage?       @relation("InboxThreadLatestMessage", fields: [latestMessageId], references: [id])
+  participants       InboxParticipant[]
+  messages           InboxMessage[]      @relation("InboxThreadMessages")
+  notificationEvents NotificationEvent[]
+
+  @@index([audience, lastMessageAt])
+  @@index([type, lastMessageAt])
+  @@index([facilityId, zoneId])
+  @@map("inbox_threads")
+}
+
+model InboxParticipant {
+  id                String               @id @default(uuid()) @db.Uuid
+  threadId          String               @map("thread_id") @db.Uuid
+  staffId           String?              @map("staff_id") @db.Uuid
+  participantKey    String               @map("participant_key")
+  displayName       String               @map("display_name")
+  role              InboxParticipantRole @default(member)
+  notificationLevel String               @default("all") @map("notification_level")
+  unreadCount       Int                  @default(0) @map("unread_count")
+  lastReadAt        DateTime?            @map("last_read_at") @db.Timestamptz(6)
+  lastReadMessageId String?              @map("last_read_message_id") @db.Uuid
+  archivedAt        DateTime?            @map("archived_at") @db.Timestamptz(6)
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  thread          InboxThread   @relation(fields: [threadId], references: [id])
+  staff           Staff?        @relation(fields: [staffId], references: [id])
+  lastReadMessage InboxMessage? @relation("InboxParticipantLastReadMessage", fields: [lastReadMessageId], references: [id])
+
+  @@unique([threadId, participantKey])
+  @@index([staffId, archivedAt])
+  @@index([threadId, unreadCount])
+  @@map("inbox_participants")
+}
+
+model InboxMessage {
+  id            String           @id @default(uuid()) @db.Uuid
+  threadId      String           @map("thread_id") @db.Uuid
+  senderStaffId String?          @map("sender_staff_id") @db.Uuid
+  senderKey     String           @map("sender_key")
+  senderName    String           @map("sender_name")
+  kind          InboxMessageKind @default(note)
+  body          String
+  metadata      Json?
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  thread                 InboxThread         @relation("InboxThreadMessages", fields: [threadId], references: [id])
+  senderStaff            Staff?              @relation("InboxMessageSender", fields: [senderStaffId], references: [id])
+  latestForThread        InboxThread?        @relation("InboxThreadLatestMessage")
+  notificationEvents     NotificationEvent[]
+  lastReadByParticipants InboxParticipant[]  @relation("InboxParticipantLastReadMessage")
+
+  @@index([threadId, createdAt])
+  @@index([senderStaffId, createdAt])
+  @@map("inbox_messages")
 }

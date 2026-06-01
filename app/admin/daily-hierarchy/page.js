@@ -30,6 +30,7 @@ export default async function DailyHierarchyPage() {
           <strong>This is now the main organiser board — shape the shift here, then open a zone’s cleaner checklist to run the work on shift.</strong>
         </div>
         <div className="workflow-banner-actions">
+          <Link className="button secondary" href="/admin/inbox">Operations inbox</Link>
           <Link className="button secondary" href="/admin/task-cards">Task card library</Link>
           <Link className="button secondary" href="/admin/calendar">Open weekly overview</Link>
           <Link className="button secondary" href="/scan/shift-mon-1-mia-thompson-cienna-north-rooftop">Open cleaner example</Link>

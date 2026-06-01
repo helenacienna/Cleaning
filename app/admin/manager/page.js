@@ -31,8 +31,8 @@ export default async function ManagerOverviewPage() {
     cleanerTrendCards,
     reviewHistory,
     alertCards,
-    liveNotifications,
-    unreadNotifications,
+    operationsInbox,
+    unreadInboxCount,
     reportingCards,
     supervisorSnapshot,
     source,
@@ -59,6 +59,7 @@ export default async function ManagerOverviewPage() {
           <strong>See published work, track live completion, and focus on the exceptions that need intervention.</strong>
         </div>
         <div className="workflow-banner-actions">
+          <Link className="button secondary" href="/admin/inbox">Open inbox</Link>
           <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
           <Link className="button secondary" href="/admin/calendar">Open weekly overview</Link>
         </div>
@@ -88,7 +89,7 @@ export default async function ManagerOverviewPage() {
       </section>
 
       <ManagerAlerts alertCards={alertCards} />
-      <ManagerNotifications notifications={liveNotifications} unreadCount={unreadNotifications} />
+      <ManagerNotifications notifications={operationsInbox} unreadCount={unreadInboxCount} />
       <ManagerFilters exceptionTasks={exceptionTasks} lowScoreTasks={lowScoreTasks} />
 
       <section className="manager-layout">
