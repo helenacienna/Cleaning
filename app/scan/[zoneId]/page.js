@@ -1,16 +1,16 @@
 import Link from 'next/link';
 import CleanerChecklistModal from './CleanerChecklistModal';
-import { cleanerAssignments, cleanerProfile, cleanerShiftAssignments } from '../../../data/demo-data';
+import { cleanerProfile } from '../../../data/demo-data';
+import { getCleanerAssignment, getCleanerAssignments } from '../../../lib/cleaner-data';
 
-const allCleanerAssignments = [...cleanerAssignments, ...cleanerShiftAssignments];
-
-export function generateStaticParams() {
-  return allCleanerAssignments.map((assignment) => ({ zoneId: assignment.id }));
+export async function generateStaticParams() {
+  const { assignments } = await getCleanerAssignments();
+  return assignments.map((assignment) => ({ zoneId: assignment.id }));
 }
 
 export async function generateMetadata({ params }) {
   const { zoneId } = await params;
-  const assignment = allCleanerAssignments.find((item) => item.id === zoneId);
+  const { assignment } = await getCleanerAssignment(zoneId);
   return {
     title: assignment ? `${assignment.zone} · Cleaner Tasks` : 'Cleaner Tasks',
   };
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
 
 export default async function CleanerZonePage({ params }) {
   const { zoneId } = await params;
-  const assignment = allCleanerAssignments.find((item) => item.id === zoneId);
+  const { assignment, source } = await getCleanerAssignment(zoneId);
 
   if (!assignment) {
     return (
@@ -33,7 +33,7 @@ export default async function CleanerZonePage({ params }) {
     );
   }
 
-  const remaining = assignment.tasks.filter((task) => task.status !== 'completed').length;
+  const remaining = assignment.tasks.filter((task) => task.status !== 'completed' && !task.score).length;
 
   return (
     <main className="page compact-page">
@@ -66,6 +66,7 @@ export default async function CleanerZonePage({ params }) {
             <div className="stat-row">
               {assignment.day && <span className="flag">{assignment.day}</span>}
               {assignment.routeLabel && <span className="flag">{assignment.routeLabel}</span>}
+              <span className="flag">{source === 'prisma' ? 'Live runtime data' : 'Demo fallback'}</span>
             </div>
           )}
 
