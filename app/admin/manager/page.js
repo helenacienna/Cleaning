@@ -12,6 +12,8 @@ export const metadata = {
   title: 'Manager Overview · Cienna Cleaning',
 };
 
+export const dynamic = 'force-dynamic';
+
 function getStatusTone(value, warnAt = 1) {
   return value >= warnAt ? 'tone-red' : 'tone-green';
 }
