@@ -101,15 +101,18 @@ export async function POST(request) {
     });
 
   const shiftRunIds = shiftRuns.map((shiftRun) => shiftRun.id);
+  const chunkSize = 25;
 
-  await prisma.$transaction([
-    ...updates,
-    prisma.shiftRun.updateMany({
-      where: { id: { in: shiftRunIds } },
-      data: { organiserState: shiftState },
-    }),
-  ], {
-    timeout: 20000,
+  for (let index = 0; index < updates.length; index += chunkSize) {
+    const chunk = updates.slice(index, index + chunkSize);
+    await prisma.$transaction(chunk, {
+      timeout: 20000,
+    });
+  }
+
+  await prisma.shiftRun.updateMany({
+    where: { id: { in: shiftRunIds } },
+    data: { organiserState: shiftState },
   });
 
   return NextResponse.json({ ok: true, message: 'Live organiser board saved' });
