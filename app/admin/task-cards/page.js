@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import TaskCardManager from './TaskCardManager';
-import { taskCardTemplates } from '../../../data/demo-data';
-
-const zones = [...new Set(taskCardTemplates.map((card) => card.zone))].sort();
+import { getTaskCardLibraryData } from '../../../lib/app-data';
 
 export const metadata = {
   title: 'Task Cards · Cienna Cleaning',
 };
 
-export default function TaskCardsPage() {
+export default async function TaskCardsPage() {
+  const { cards, zones } = await getTaskCardLibraryData();
+
   return (
     <main className="page admin-calendar-page">
       <div className="topbar">
@@ -23,7 +23,7 @@ export default function TaskCardsPage() {
         </div>
       </div>
 
-      <TaskCardManager cards={taskCardTemplates} zones={zones} />
+      <TaskCardManager cards={cards} zones={zones} />
     </main>
   );
 }

@@ -4,7 +4,6 @@ import {
   supervisorCards,
   taskLibrary,
   reports,
-  qrZones,
   scheduleBuilder,
 } from '../data/demo-data';
 import Link from 'next/link';
@@ -64,6 +63,7 @@ export default function HomePage() {
             <Link className="button secondary" href="/scan/assignment-1">Open cleaner QR flow</Link>
             <Link className="button secondary" href="/admin/manager">Open manager view</Link>
             <Link className="button secondary" href="/admin/task-cards">Task cards</Link>
+            <Link className="button secondary" href="/qr-zones">QR zone codes</Link>
           </div>
         </div>
 
@@ -173,30 +173,6 @@ export default function HomePage() {
             </div>
           </div>
         ))}
-      </section>
-
-      <section className="card">
-        <div className="panel-title">
-          <div>
-            <h3>QR zone codes</h3>
-            <p className="muted">Print one code per physical cleaning zone. Scanning opens the cleaner&apos;s task list for that location.</p>
-          </div>
-          <span className="badge">Prototype links active</span>
-        </div>
-        <div className="qr-grid">
-          {qrZones.map((zone) => (
-            <Link className="qr-card" href={zone.qrUrl} key={zone.id}>
-              <div className="fake-qr" aria-hidden="true">
-                <span /><span /><span /><span /><span /><span /><span /><span /><span />
-              </div>
-              <div>
-                <strong>{zone.label}</strong>
-                <p className="muted">{zone.location}</p>
-                <span className="flag">{zone.code}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
       </section>
 
       <section className="card schedule-builder" id="schedule-builder">

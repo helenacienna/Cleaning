@@ -1,0 +1,393 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StaffRole {
+  cleaner
+  organiser
+  manager
+  supervisor
+}
+
+enum ServiceType {
+  routine
+  periodic
+  ad_hoc
+}
+
+enum RecurrenceType {
+  none
+  daily
+  weekly
+  monthly
+  custom
+}
+
+enum TimeWindow {
+  morning
+  afternoon
+  flexible
+}
+
+enum TaskPriority {
+  critical
+  standard
+  optional
+}
+
+enum EvidenceRequirement {
+  none
+  optional_photo
+  required_photo
+  multi_photo
+}
+
+enum CommentRequirement {
+  none
+  on_exception
+  always
+}
+
+enum MissedTaskPolicy {
+  carry_forward
+  stay_overdue
+  skip_and_regenerate
+  manager_review
+}
+
+enum TemplateStatusBucket {
+  upcoming
+  due
+  overdue
+  unscheduled
+  completed_recently
+}
+
+enum FacilityScope {
+  single_facility
+  multi_facility
+}
+
+enum OrganiserState {
+  draft
+  published
+  in_progress
+  closed
+}
+
+enum TaskSourceType {
+  scheduled
+  auto_generated
+  ad_hoc
+  exception
+  carry_forward
+}
+
+enum TaskInstanceStatus {
+  upcoming
+  due
+  unscheduled
+  scheduled
+  in_progress
+  completed
+  overdue
+  carried_forward
+  skipped
+  cancelled
+}
+
+enum CompletionStatus {
+  completed
+  skipped
+  failed
+  partial
+}
+
+enum AuditStatus {
+  pending
+  passed
+  failed
+  needs_followup
+}
+
+enum ManagerAction {
+  none
+  monitor
+  reassign
+  escalate
+  close
+}
+
+enum PhotoType {
+  completion
+  exception
+  audit
+}
+
+model Facility {
+  id           String   @id @default(uuid()) @db.Uuid
+  facilityCode String   @unique @map("facility_code")
+  name         String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  zones         Zone[]
+  taskGroups    TaskGroup[]
+  taskTemplates TaskTemplate[]
+  taskInstances TaskInstance[]
+
+  @@map("facilities")
+}
+
+model Zone {
+  id           String   @id @default(uuid()) @db.Uuid
+  facilityId   String   @map("facility_id") @db.Uuid
+  zoneCode     String   @map("zone_code")
+  fullZoneCode String   @unique @map("full_zone_code")
+  name         String
+  qrSlug       String   @unique @map("qr_slug")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  facility      Facility       @relation(fields: [facilityId], references: [id])
+  taskGroups    TaskGroup[]
+  taskTemplates TaskTemplate[]
+  taskInstances TaskInstance[]
+
+  @@unique([facilityId, zoneCode])
+  @@map("zones")
+}
+
+model TaskGroup {
+  id            String   @id @default(uuid()) @db.Uuid
+  facilityId    String   @map("facility_id") @db.Uuid
+  zoneId        String   @map("zone_id") @db.Uuid
+  groupCode     String   @map("group_code")
+  fullGroupCode String   @unique @map("full_group_code")
+  name          String
+  sequence      Int
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  facility      Facility       @relation(fields: [facilityId], references: [id])
+  zone          Zone           @relation(fields: [zoneId], references: [id])
+  taskTemplates TaskTemplate[]
+  taskInstances TaskInstance[]
+
+  @@unique([zoneId, groupCode])
+  @@map("task_groups")
+}
+
+model Staff {
+  id        String    @id @default(uuid()) @db.Uuid
+  staffCode String    @unique @map("staff_code")
+  fullName  String    @map("full_name")
+  role      StaffRole
+  phone     String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  assignedShiftRuns   ShiftRun[]      @relation("ShiftRunAssignedStaff")
+  publishedShiftRuns  ShiftRun[]      @relation("ShiftRunPublishedBy")
+  assignedTasks       TaskInstance[]  @relation("TaskAssignedStaff")
+  completedExecutions TaskExecution[] @relation("TaskExecutionCompletedBy")
+  audits              TaskAudit[]     @relation("TaskAuditByStaff")
+
+  @@map("staff")
+}
+
+model TaskTemplate {
+  id                            String              @id @default(uuid()) @db.Uuid
+  taskTemplateCode              String              @unique @map("task_template_code")
+  facilityId                    String              @map("facility_id") @db.Uuid
+  zoneId                        String              @map("zone_id") @db.Uuid
+  taskGroupId                   String              @map("task_group_id") @db.Uuid
+  title                         String
+  description                   String?
+  serviceType                   ServiceType         @map("service_type")
+  recurrenceType                RecurrenceType      @default(none) @map("recurrence_type")
+  recurrenceRule                Json?               @map("recurrence_rule")
+  targetDays                    Json?               @map("target_days")
+  preferredTimeWindow           TimeWindow?         @map("preferred_time_window")
+  defaultSequence               Int                 @map("default_sequence")
+  estimatedMinutes              Int?                @map("estimated_minutes")
+  priority                      TaskPriority
+  evidenceRequirement           EvidenceRequirement @map("evidence_requirement")
+  commentRequirement            CommentRequirement  @map("comment_requirement")
+  passCriteria                  String?             @map("pass_criteria")
+  safetyNotes                   String?             @map("safety_notes")
+  autoGenerateInstances         Boolean             @default(true) @map("auto_generate_instances")
+  requiresPlanning              Boolean             @default(true) @map("requires_planning")
+  canBeSplit                    Boolean             @default(false) @map("can_be_split")
+  canBeMovedBetweenStaff        Boolean             @default(true) @map("can_be_moved_between_staff")
+  requiresManagerApprovalToSkip Boolean             @default(false) @map("requires_manager_approval_to_skip")
+  missedTaskPolicy              MissedTaskPolicy    @map("missed_task_policy")
+  rescheduleWindowDays          Int?                @map("reschedule_window_days")
+  active                        Boolean             @default(true)
+  version                       Int                 @default(1)
+  createdAt                     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                     DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  facility      Facility            @relation(fields: [facilityId], references: [id])
+  zone          Zone                @relation(fields: [zoneId], references: [id])
+  taskGroup     TaskGroup           @relation(fields: [taskGroupId], references: [id])
+  status        TaskTemplateStatus?
+  taskInstances TaskInstance[]
+
+  @@map("task_templates")
+}
+
+model TaskTemplateStatus {
+  taskTemplateId           String               @id @map("task_template_id") @db.Uuid
+  lastCompletedAt          DateTime?            @map("last_completed_at") @db.Timestamptz(6)
+  lastCompletedInstanceId  String?              @unique @map("last_completed_instance_id") @db.Uuid
+  nextDueAt                DateTime?            @map("next_due_at") @db.Timestamptz(6)
+  nextPlanningDueAt        DateTime?            @map("next_planning_due_at") @db.Timestamptz(6)
+  overdueSinceAt           DateTime?            @map("overdue_since_at") @db.Timestamptz(6)
+  openInstanceCount        Int                  @default(0) @map("open_instance_count")
+  unscheduledInstanceCount Int                  @default(0) @map("unscheduled_instance_count")
+  statusBucket             TemplateStatusBucket @map("status_bucket")
+  updatedAt                DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  taskTemplate          TaskTemplate  @relation(fields: [taskTemplateId], references: [id])
+  lastCompletedInstance TaskInstance? @relation("LastCompletedInstance", fields: [lastCompletedInstanceId], references: [id])
+
+  @@map("task_template_status")
+}
+
+model ShiftRun {
+  id                 String         @id @default(uuid()) @db.Uuid
+  shiftCode          String         @unique @map("shift_code")
+  runDate            DateTime       @map("run_date") @db.Date
+  assignedStaffId    String?        @map("assigned_staff_id") @db.Uuid
+  facilityScope      FacilityScope  @map("facility_scope")
+  shiftLabel         String?        @map("shift_label")
+  routeLabel         String?        @map("route_label")
+  shiftStartAt       DateTime?      @map("shift_start_at") @db.Timestamptz(6)
+  shiftEndAt         DateTime?      @map("shift_end_at") @db.Timestamptz(6)
+  organiserState     OrganiserState @default(draft) @map("organiser_state")
+  publishedAt        DateTime?      @map("published_at") @db.Timestamptz(6)
+  publishedByStaffId String?        @map("published_by_staff_id") @db.Uuid
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  assignedStaff Staff?         @relation("ShiftRunAssignedStaff", fields: [assignedStaffId], references: [id])
+  publishedBy   Staff?         @relation("ShiftRunPublishedBy", fields: [publishedByStaffId], references: [id])
+  taskInstances TaskInstance[]
+
+  @@map("shift_runs")
+}
+
+model TaskInstance {
+  id                           String              @id @default(uuid()) @db.Uuid
+  instanceCode                 String              @unique @map("instance_code")
+  taskTemplateId               String?             @map("task_template_id") @db.Uuid
+  shiftRunId                   String?             @map("shift_run_id") @db.Uuid
+  facilityId                   String              @map("facility_id") @db.Uuid
+  zoneId                       String              @map("zone_id") @db.Uuid
+  taskGroupId                  String              @map("task_group_id") @db.Uuid
+  titleSnapshot                String              @map("title_snapshot")
+  descriptionSnapshot          String?             @map("description_snapshot")
+  sourceType                   TaskSourceType      @map("source_type")
+  dueAt                        DateTime            @map("due_at") @db.Timestamptz(6)
+  planningDueAt                DateTime?           @map("planning_due_at") @db.Timestamptz(6)
+  scheduledForAt               DateTime?           @map("scheduled_for_at") @db.Timestamptz(6)
+  assignedStaffId              String?             @map("assigned_staff_id") @db.Uuid
+  sequence                     Int?
+  status                       TaskInstanceStatus
+  priority                     TaskPriority
+  evidenceRequirement          EvidenceRequirement @map("evidence_requirement")
+  commentRequirement           CommentRequirement  @map("comment_requirement")
+  estimatedMinutes             Int?                @map("estimated_minutes")
+  rescheduledFromInstanceId    String?             @map("rescheduled_from_instance_id") @db.Uuid
+  carriedForwardFromInstanceId String?             @map("carried_forward_from_instance_id") @db.Uuid
+  parentInstanceId             String?             @map("parent_instance_id") @db.Uuid
+  isExceptionTask              Boolean             @default(false) @map("is_exception_task")
+  exceptionReason              String?             @map("exception_reason")
+  manuallyCreated              Boolean             @default(false) @map("manually_created")
+  createdAt                    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  taskTemplate               TaskTemplate?       @relation(fields: [taskTemplateId], references: [id])
+  shiftRun                   ShiftRun?           @relation(fields: [shiftRunId], references: [id])
+  facility                   Facility            @relation(fields: [facilityId], references: [id])
+  zone                       Zone                @relation(fields: [zoneId], references: [id])
+  taskGroup                  TaskGroup           @relation(fields: [taskGroupId], references: [id])
+  assignedStaff              Staff?              @relation("TaskAssignedStaff", fields: [assignedStaffId], references: [id])
+  execution                  TaskExecution?
+  audits                     TaskAudit[]
+  photosLastCompletedStatus  TaskTemplateStatus? @relation("LastCompletedInstance")
+  rescheduledFromInstance    TaskInstance?       @relation("RescheduledTaskInstances", fields: [rescheduledFromInstanceId], references: [id])
+  rescheduledToInstances     TaskInstance[]      @relation("RescheduledTaskInstances")
+  carriedForwardFromInstance TaskInstance?       @relation("CarriedForwardTaskInstances", fields: [carriedForwardFromInstanceId], references: [id])
+  carriedForwardToInstances  TaskInstance[]      @relation("CarriedForwardTaskInstances")
+  parentInstance             TaskInstance?       @relation("SplitTaskInstances", fields: [parentInstanceId], references: [id])
+  childInstances             TaskInstance[]      @relation("SplitTaskInstances")
+
+  @@index([status, dueAt])
+  @@index([assignedStaffId, dueAt])
+  @@index([shiftRunId, sequence])
+  @@map("task_instances")
+}
+
+model TaskExecution {
+  id                 String           @id @default(uuid()) @db.Uuid
+  taskInstanceId     String           @unique @map("task_instance_id") @db.Uuid
+  startedAt          DateTime?        @map("started_at") @db.Timestamptz(6)
+  completedAt        DateTime?        @map("completed_at") @db.Timestamptz(6)
+  completedByStaffId String?          @map("completed_by_staff_id") @db.Uuid
+  completionStatus   CompletionStatus @map("completion_status")
+  completionComment  String?          @map("completion_comment")
+  exceptionReason    String?          @map("exception_reason")
+  scanSource         String?          @map("scan_source")
+  issueRaised        Boolean          @default(false) @map("issue_raised")
+  issueId            String?          @map("issue_id") @db.Uuid
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  taskInstance     TaskInstance @relation(fields: [taskInstanceId], references: [id])
+  completedByStaff Staff?       @relation("TaskExecutionCompletedBy", fields: [completedByStaffId], references: [id])
+  photos           TaskPhoto[]
+
+  @@map("task_executions")
+}
+
+model TaskAudit {
+  id               String        @id @default(uuid()) @db.Uuid
+  taskInstanceId   String        @map("task_instance_id") @db.Uuid
+  auditedByStaffId String?       @map("audited_by_staff_id") @db.Uuid
+  auditScore       Int           @map("audit_score")
+  auditStatus      AuditStatus   @map("audit_status")
+  auditComment     String?       @map("audit_comment")
+  reworkRequired   Boolean       @default(false) @map("rework_required")
+  reworkReason     String?       @map("rework_reason")
+  managerAction    ManagerAction @default(none) @map("manager_action")
+  auditedAt        DateTime      @map("audited_at") @db.Timestamptz(6)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  taskInstance   TaskInstance @relation(fields: [taskInstanceId], references: [id])
+  auditedByStaff Staff?       @relation("TaskAuditByStaff", fields: [auditedByStaffId], references: [id])
+
+  @@index([taskInstanceId, auditedAt])
+  @@map("task_audits")
+}
+
+model TaskPhoto {
+  id              String    @id @default(uuid()) @db.Uuid
+  taskExecutionId String    @map("task_execution_id") @db.Uuid
+  photoUrl        String    @map("photo_url")
+  photoType       PhotoType @map("photo_type")
+  uploadedAt      DateTime  @default(now()) @map("uploaded_at") @db.Timestamptz(6)
+
+  taskExecution TaskExecution @relation(fields: [taskExecutionId], references: [id])
+
+  @@map("task_photos")
+}

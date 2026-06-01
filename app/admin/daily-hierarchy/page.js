@@ -1,12 +1,14 @@
 import Link from 'next/link';
 import AllocationBoard from '../calendar/AllocationBoard';
-import { scheduleBuilder } from '../../../data/demo-data';
+import { getOrganiserBoardData } from '../../../lib/app-data';
 
 export const metadata = {
   title: 'Organiser Board · Cienna Cleaning',
 };
 
-export default function DailyHierarchyPage() {
+export default async function DailyHierarchyPage() {
+  const { board } = await getOrganiserBoardData();
+
   return (
     <main className="page admin-calendar-page daily-hierarchy-page">
       <div className="topbar">
@@ -34,7 +36,7 @@ export default function DailyHierarchyPage() {
       </section>
 
       <AllocationBoard
-        board={scheduleBuilder.allocationBoard}
+        board={board}
         initialView="daily"
         lockView
         title="Daily organiser board"
