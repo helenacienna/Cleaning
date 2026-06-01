@@ -1,5 +1,7 @@
+import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../lib/prisma';
+import { saveTaskPhotoFile } from '../../../lib/task-photo-storage';
 
 function normalisePhotoType(value) {
   return ['completion', 'exception', 'audit'].includes(value) ? value : 'completion';
@@ -35,7 +37,15 @@ export async function POST(request) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const mimeType = file.type || 'application/octet-stream';
-  const dataUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
+  const photoId = crypto.randomUUID();
+  let photoUrl;
+
+  try {
+    photoUrl = await saveTaskPhotoFile({ photoId, buffer, mimeType });
+  } catch {
+    photoUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
+  }
+
   const now = new Date();
 
   const result = await prisma.$transaction(async (tx) => {
@@ -55,8 +65,9 @@ export async function POST(request) {
 
     const photo = await tx.taskPhoto.create({
       data: {
+        id: photoId,
         taskExecutionId: execution.id,
-        photoUrl: dataUrl,
+        photoUrl,
         photoType,
       },
     });
@@ -69,6 +80,7 @@ export async function POST(request) {
   return NextResponse.json({
     ok: true,
     photoId: result.id,
+    photoUrl: result.photoUrl,
     message: 'Photo uploaded',
   });
 }
