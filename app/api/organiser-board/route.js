@@ -16,11 +16,19 @@ function addMinutes(date, minutes) {
 }
 
 function getNextStatus(currentStatus, hasShiftRun) {
-  if (['completed', 'in_progress', 'cancelled', 'skipped', 'carried_forward'].includes(currentStatus)) {
+  if (['completed', 'in_progress', 'cancelled', 'skipped'].includes(currentStatus)) {
     return currentStatus;
   }
 
-  return hasShiftRun ? 'scheduled' : 'unscheduled';
+  if (hasShiftRun) {
+    return 'scheduled';
+  }
+
+  if (['carried_forward', 'overdue'].includes(currentStatus)) {
+    return currentStatus;
+  }
+
+  return 'unscheduled';
 }
 
 export async function POST(request) {

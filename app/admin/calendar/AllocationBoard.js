@@ -165,6 +165,35 @@ function buildFacilityRuns(staffCards, timeLanes, shiftMeta) {
   }, []);
 }
 
+function getCardStateClass(card) {
+  if (card.status === 'completed') {
+    return 'allocation-card-completed';
+  }
+  if (card.reworkRequired || card.hasOpenIssue || card.status === 'carried-forward') {
+    return 'allocation-card-issue';
+  }
+  return 'allocation-card-active';
+}
+
+function getCardStatusLabel(card) {
+  if (card.reworkRequired || card.managerAction === 'reassign') {
+    return 'Needs rework';
+  }
+  if (card.hasOpenIssue) {
+    return 'Issue raised';
+  }
+  if (card.status === 'completed') {
+    return 'Completed';
+  }
+  if (card.status === 'in-progress') {
+    return 'In progress';
+  }
+  if (card.status === 'carried-forward') {
+    return 'Carry forward';
+  }
+  return 'Pending';
+}
+
 function reorderCards(cards, cardId, updates, targetCardId = null) {
   const movingCard = cards.find((card) => card.id === cardId);
   if (!movingCard) {
@@ -337,7 +366,11 @@ export default function AllocationBoard({
 
   const assignedCount = cards.filter((card) => card.staff !== 'Unallocated').length;
   const unallocatedCount = cards.length - assignedCount;
-  const dailyStaff = board.staff.filter((staff) => staff !== 'Unallocated');
+  const reworkCount = cards.filter((card) => card.reworkRequired || card.managerAction === 'reassign' || card.status === 'carried-forward').length;
+  const dailyStaff = useMemo(
+    () => board.staff.filter((staff) => staff !== 'Unallocated' || cards.some((card) => card.staff === 'Unallocated' && card.day === selectedDay)),
+    [board.staff, cards, selectedDay],
+  );
   const timeLanes = useMemo(() => getTimeLanes(board.staffMeta), [board.staffMeta]);
 
   return (
@@ -351,6 +384,7 @@ export default function AllocationBoard({
           <span className="badge">{cards.length} task cards</span>
           <span className="badge">{assignedCount} allocated</span>
           <span className="badge">{unallocatedCount} unallocated</span>
+          <span className="badge">{reworkCount} rework</span>
           <span className={`badge ${shiftState === 'published' ? 'status-completed' : 'status-pending'}`}>{shiftState === 'published' ? 'Published shift' : 'Draft shift'}</span>
           <span className="badge">{saveNotice}</span>
           <button className="button secondary" type="button" onClick={undoLastMove} disabled={!history.length}>Undo</button>
@@ -464,7 +498,7 @@ export default function AllocationBoard({
                                         });
                                         const zoneNotifications = zone.groups
                                           .flatMap((group) => group.cards)
-                                          .filter((card) => card.auditScore === 1);
+                                          .filter((card) => card.reworkRequired || card.hasOpenIssue || (card.auditScore ?? 0) <= 2);
 
                                         return (
                                           <>
@@ -489,7 +523,7 @@ export default function AllocationBoard({
                                                 {zoneNotifications.map((card) => (
                                                   <div className="hierarchy-zone-notification" key={`${card.id}-notification`}>
                                                     <strong>{card.title}</strong>
-                                                    <span>{card.issueNote || 'Scored 1/5 on review'}</span>
+                                                    <span>{card.issueNote || getCardStatusLabel(card)}</span>
                                                   </div>
                                                 ))}
                                               </div>
@@ -545,7 +579,7 @@ export default function AllocationBoard({
                                                               {group.cards.map((card) => {
                                                                 const cardDropKey = `${dropKey}-${card.id}`;
                                                                 return (
-                                                                <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${card.status === 'completed' ? 'allocation-card-completed' : card.status === 'pending' ? 'allocation-card-issue' : 'allocation-card-active'} ${activeDropKey === cardDropKey ? 'hierarchy-card-drop-target-active' : ''}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} onDragOver={(event) => {
+                                                                <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${getCardStateClass(card)} ${activeDropKey === cardDropKey ? 'hierarchy-card-drop-target-active' : ''}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} onDragOver={(event) => {
                                                                   event.preventDefault();
                                                                   if (activeDropKey !== cardDropKey) setActiveDropKey(cardDropKey);
                                                                 }} onDragLeave={() => {
@@ -555,7 +589,7 @@ export default function AllocationBoard({
                                                                   <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
                                                                   <strong>{card.title}</strong>
                                                                   <span>{card.taskGroup}</span>
-                                                                  <small>{card.facility} · {card.zone} · {card.status === 'completed' ? 'Completed' : card.status === 'in-progress' ? 'In progress' : 'Pending'}</small>
+                                                                  <small>{card.facility} · {card.zone} · {getCardStatusLabel(card)}</small>
                                                                 </div>
                                                               )})}
                                                             </div>
@@ -614,10 +648,10 @@ export default function AllocationBoard({
                       <span>{criticalCount} critical</span>
                     </div>
                     {slotCards.map((card) => (
-                      <div className={`allocation-card ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${card.status === 'completed' ? 'allocation-card-completed' : card.status === 'pending' ? 'allocation-card-issue' : 'allocation-card-active'}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
+                      <div className={`allocation-card ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${getCardStateClass(card)}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
                         <strong>{card.title}</strong>
                         <span>#{formatJobOrder(card.jobOrder)} · {card.taskGroup}</span>
-                        <small>{card.facility} · {card.zone}</small>
+                        <small>{card.facility} · {card.zone} · {getCardStatusLabel(card)}</small>
                       </div>
                     ))}
                     {!slotCards.length && <span className="slot-empty">Drop here</span>}

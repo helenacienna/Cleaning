@@ -1,22 +1,27 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function IssueReportButton({ taskId }) {
+  const router = useRouter();
   const [note, setNote] = useState('');
   const [photoNote, setPhotoNote] = useState('');
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState('');
+  const [statusTone, setStatusTone] = useState('muted');
   const [saving, setSaving] = useState(false);
 
   async function submitIssue() {
     if (!note.trim()) {
       setStatus('Add an issue note first');
+      setStatusTone('tone-red');
       return;
     }
 
     setSaving(true);
     setStatus('Saving issue…');
+    setStatusTone('tone-amber');
 
     try {
       const response = await fetch('/api/cleaner-issue', {
@@ -35,12 +40,15 @@ export default function IssueReportButton({ taskId }) {
         throw new Error('Unable to save issue');
       }
 
-      setStatus('Issue reported');
+      setStatus('Issue reported for manager follow-up');
+      setStatusTone('tone-green');
       setOpen(false);
       setNote('');
       setPhotoNote('');
+      router.refresh();
     } catch {
       setStatus('Issue save failed');
+      setStatusTone('tone-red');
     } finally {
       setSaving(false);
     }
@@ -51,7 +59,7 @@ export default function IssueReportButton({ taskId }) {
       <button className="button secondary" type="button" onClick={() => setOpen((value) => !value)}>
         Report issue
       </button>
-      {status && <span className="muted">{status}</span>}
+      {status && <span className={statusTone}>{status}</span>}
       {open && (
         <div className="card">
           <label className="builder-field">

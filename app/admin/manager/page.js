@@ -141,7 +141,7 @@ export default async function ManagerOverviewPage() {
             </div>
 
             <div className="task-list">
-              {exceptionTasks.slice(0, 8).map(({ id, title, status, shift, note, photoCount, photos }) => (
+              {exceptionTasks.slice(0, 8).map(({ id, title, status, shift, note, photoCount, photos, latestManagerAction }) => (
                 <div className="task-row" key={id}>
                   <div>
                     <strong>{title}</strong>
@@ -165,6 +165,7 @@ export default async function ManagerOverviewPage() {
                   <div className="flag-row">
                     <span className="flag">{shift.staff}</span>
                     <span className={`task-status status-${status}`}>{status.replace('-', ' ')}</span>
+                    <span className="flag">{latestManagerAction}</span>
                     <span className="flag">{photoCount} photos</span>
                   </div>
                 </div>

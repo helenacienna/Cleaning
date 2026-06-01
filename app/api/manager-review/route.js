@@ -6,18 +6,32 @@ const ACTION_MAP = {
     managerAction: 'monitor',
     auditStatus: 'pending',
     taskStatus: 'in_progress',
+    issueRaised: true,
+    completionStatus: 'partial',
   },
   reassign: {
     managerAction: 'reassign',
     auditStatus: 'needs_followup',
     taskStatus: 'carried_forward',
+    issueRaised: true,
+    completionStatus: 'partial',
   },
   close: {
     managerAction: 'close',
     auditStatus: 'passed',
     taskStatus: 'completed',
+    issueRaised: false,
+    completionStatus: 'completed',
   },
 };
+
+function appendManagerNote(existingComment, reviewNote) {
+  if (!reviewNote) {
+    return existingComment;
+  }
+
+  return `${existingComment ?? ''}\n[manager] ${reviewNote}`.trim();
+}
 
 export async function POST(request) {
   const prisma = await getPrisma();
@@ -48,14 +62,17 @@ export async function POST(request) {
   }
 
   const now = new Date();
+  const note = reviewNote || `Manager marked action: ${managerAction}`;
 
   await prisma.$transaction(async (tx) => {
     await tx.taskExecution.update({
       where: { id: taskExecutionId },
       data: {
-        completionComment: reviewNote
-          ? `${execution.completionComment ?? ''}\n[manager] ${reviewNote}`.trim()
-          : execution.completionComment,
+        completionComment: appendManagerNote(execution.completionComment, reviewNote),
+        exceptionReason: actionConfig.managerAction === 'close' ? null : note,
+        issueRaised: actionConfig.issueRaised,
+        completionStatus: actionConfig.completionStatus,
+        completedAt: now,
       },
     });
 
@@ -63,6 +80,11 @@ export async function POST(request) {
       where: { id: execution.taskInstanceId },
       data: {
         status: actionConfig.taskStatus,
+        sourceType: actionConfig.managerAction === 'reassign' ? 'carry_forward' : execution.taskInstance.sourceType,
+        assignedStaffId: actionConfig.managerAction === 'reassign' ? null : execution.taskInstance.assignedStaffId,
+        shiftRunId: actionConfig.managerAction === 'reassign' ? null : execution.taskInstance.shiftRunId,
+        scheduledForAt: actionConfig.managerAction === 'reassign' ? null : execution.taskInstance.scheduledForAt,
+        exceptionReason: actionConfig.managerAction === 'close' ? null : note,
       },
     });
 
@@ -71,9 +93,9 @@ export async function POST(request) {
         taskInstanceId: execution.taskInstanceId,
         auditScore: actionConfig.managerAction === 'close' ? 5 : actionConfig.managerAction === 'monitor' ? 3 : 2,
         auditStatus: actionConfig.auditStatus,
-        auditComment: reviewNote || `Manager marked action: ${managerAction}`,
+        auditComment: note,
         reworkRequired: managerAction === 'reassign',
-        reworkReason: managerAction === 'reassign' ? reviewNote || 'Manager requested reassignment' : null,
+        reworkReason: managerAction === 'reassign' ? note : null,
         managerAction: actionConfig.managerAction,
         auditedAt: now,
       },
@@ -82,5 +104,10 @@ export async function POST(request) {
     timeout: 20000,
   });
 
-  return NextResponse.json({ ok: true, message: `Manager action saved: ${managerAction}` });
+  return NextResponse.json({
+    ok: true,
+    message: managerAction === 'reassign'
+      ? 'Task moved back into organiser rework queue'
+      : `Manager action saved: ${managerAction}`,
+  });
 }

@@ -15,15 +15,22 @@ function formatStatusLabel(task) {
   return 'Ready to complete';
 }
 
-export default function CleanerTaskFlow({ tasks }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [taskState, setTaskState] = useState(() => Object.fromEntries(tasks.map((task) => [task.id, {
+function createInitialTaskState(tasks) {
+  return Object.fromEntries(tasks.map((task) => [task.id, {
     grade: task.score ?? null,
     note: task.note ?? '',
     saving: false,
     saved: Boolean(task.score),
     photoCount: task.photoCount ?? 0,
-  }])));
+    photos: task.photos ?? [],
+    statusMessage: task.score ? 'Saved earlier' : '',
+    statusTone: task.score ? 'tone-green' : 'muted',
+  }]));
+}
+
+export default function CleanerTaskFlow({ tasks }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const cardRefs = useRef([]);
   const listRef = useRef(null);
 
@@ -47,7 +54,13 @@ export default function CleanerTaskFlow({ tasks }) {
 
   async function gradeTask(taskId, grade, index) {
     const current = taskState[taskId] || {};
-    updateTask(taskId, { grade, saving: true, saved: false });
+    updateTask(taskId, {
+      grade,
+      saving: true,
+      saved: false,
+      statusMessage: 'Saving task…',
+      statusTone: 'tone-amber',
+    });
 
     try {
       const response = await fetch('/api/cleaner-tasks', {
@@ -66,13 +79,26 @@ export default function CleanerTaskFlow({ tasks }) {
         throw new Error('Unable to save cleaner task');
       }
 
-      updateTask(taskId, { grade, saving: false, saved: true });
+      const result = await response.json();
+      updateTask(taskId, {
+        grade,
+        saving: false,
+        saved: true,
+        statusMessage: result.message || 'Task saved',
+        statusTone: 'tone-green',
+      });
       const nextIndex = Math.min(index + 1, tasks.length - 1);
       window.setTimeout(() => {
         focusJob(nextIndex);
       }, 120);
     } catch {
-      updateTask(taskId, { grade: current.grade ?? null, saving: false, saved: false });
+      updateTask(taskId, {
+        grade: current.grade ?? null,
+        saving: false,
+        saved: false,
+        statusMessage: 'Save failed — tap a grade to retry',
+        statusTone: 'tone-red',
+      });
     }
   }
 
@@ -80,7 +106,11 @@ export default function CleanerTaskFlow({ tasks }) {
     if (!file) return;
 
     const current = taskState[taskId] || {};
-    updateTask(taskId, { saving: true });
+    updateTask(taskId, {
+      saving: true,
+      statusMessage: 'Uploading photo…',
+      statusTone: 'tone-amber',
+    });
 
     try {
       const formData = new FormData();
@@ -97,9 +127,29 @@ export default function CleanerTaskFlow({ tasks }) {
         throw new Error('Unable to upload photo');
       }
 
-      updateTask(taskId, { photoCount: (current.photoCount ?? 0) + 1, saving: false, saved: true });
+      const result = await response.json();
+      const nextPhoto = result?.photoId
+        ? {
+            id: result.photoId,
+            photoType: 'completion',
+            photoUrl: `/api/task-photos/${result.photoId}`,
+          }
+        : null;
+
+      updateTask(taskId, {
+        photoCount: (current.photoCount ?? 0) + 1,
+        photos: nextPhoto ? [...(current.photos ?? []), nextPhoto] : (current.photos ?? []),
+        saving: false,
+        saved: true,
+        statusMessage: result.message || 'Photo uploaded',
+        statusTone: 'tone-green',
+      });
     } catch {
-      updateTask(taskId, { saving: false });
+      updateTask(taskId, {
+        saving: false,
+        statusMessage: 'Photo upload failed — try again',
+        statusTone: 'tone-red',
+      });
     }
   }
 
@@ -138,8 +188,9 @@ export default function CleanerTaskFlow({ tasks }) {
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
-          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0 };
+          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
           const selectedGrade = localState.grade;
+          const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
 
           return (
             <article
@@ -178,9 +229,9 @@ export default function CleanerTaskFlow({ tasks }) {
                 </div>
               )}
 
-              {task.photos?.length > 0 && (
+              {photos.length > 0 && (
                 <div className="flag-row" style={{ marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
-                  {task.photos.slice(0, 3).map((photo) => (
+                  {photos.slice(0, 3).map((photo) => (
                     <a key={photo.id} href={photo.photoUrl} target="_blank" rel="noreferrer">
                       <img
                         src={photo.photoUrl}
@@ -219,7 +270,7 @@ export default function CleanerTaskFlow({ tasks }) {
                 <span className="muted">Cleaner note</span>
                 <textarea
                   value={localState.note}
-                  onChange={(event) => updateTask(task.id, { note: event.target.value, saved: false })}
+                  onChange={(event) => updateTask(task.id, { note: event.target.value, saved: false, statusMessage: '' })}
                   placeholder={task.commentRequired ? 'Add the required note here' : 'Optional note'}
                   rows={3}
                 />
@@ -243,6 +294,12 @@ export default function CleanerTaskFlow({ tasks }) {
                   {task.commentRequired ? 'Required note' : 'Optional note'}
                 </button>
               </div>
+
+              {localState.statusMessage && (
+                <div className={localState.statusTone} style={{ marginTop: 10, fontSize: 14 }}>
+                  {localState.statusMessage}
+                </div>
+              )}
             </article>
           );
         })}

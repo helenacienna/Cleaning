@@ -1,15 +1,19 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function ManagerReviewActions({ taskExecutionId }) {
+  const router = useRouter();
   const [reviewNote, setReviewNote] = useState('');
   const [status, setStatus] = useState('');
+  const [statusTone, setStatusTone] = useState('muted');
   const [savingAction, setSavingAction] = useState('');
 
   async function submitAction(managerAction) {
     setSavingAction(managerAction);
     setStatus('Saving manager action…');
+    setStatusTone('tone-amber');
 
     try {
       const response = await fetch('/api/manager-review', {
@@ -30,9 +34,12 @@ export default function ManagerReviewActions({ taskExecutionId }) {
 
       const result = await response.json();
       setStatus(result.message || 'Manager action saved');
+      setStatusTone('tone-green');
       setReviewNote('');
+      router.refresh();
     } catch {
       setStatus('Manager action failed');
+      setStatusTone('tone-red');
     } finally {
       setSavingAction('');
     }
@@ -58,7 +65,7 @@ export default function ManagerReviewActions({ taskExecutionId }) {
           {savingAction === 'close' ? 'Saving…' : 'Close issue'}
         </button>
       </div>
-      {status && <span className="muted">{status}</span>}
+      {status && <span className={statusTone}>{status}</span>}
     </div>
   );
 }
