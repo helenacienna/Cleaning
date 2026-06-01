@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../lib/prisma';
+import { recordNotification } from '../../../lib/notification-center';
 
 export async function POST(request) {
   const prisma = await getPrisma();
@@ -78,6 +79,12 @@ export async function POST(request) {
     }
   }, {
     timeout: 20000,
+  });
+
+  recordNotification('issue', taskInstanceId, {
+    title: 'Cleaner raised issue',
+    tone: 'red',
+    note,
   });
 
   return NextResponse.json({ ok: true, message: 'Issue reported for manager follow-up' });

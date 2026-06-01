@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../lib/prisma';
+import { recordNotification } from '../../../lib/notification-center';
 
 const ACTION_MAP = {
   monitor: {
@@ -102,6 +103,12 @@ export async function POST(request) {
     });
   }, {
     timeout: 20000,
+  });
+
+  recordNotification('manager-review', taskExecutionId, {
+    title: `Manager action: ${managerAction}`,
+    tone: managerAction === 'close' ? 'green' : managerAction === 'reassign' ? 'amber' : 'blue',
+    note,
   });
 
   return NextResponse.json({

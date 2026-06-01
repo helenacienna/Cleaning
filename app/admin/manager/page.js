@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import CleanerTrendReport from './CleanerTrendReport';
 import ManagerAlerts from './ManagerAlerts';
 import ManagerFilters from './ManagerFilters';
+import ManagerNotifications from './ManagerNotifications';
 import ManagerReporting from './ManagerReporting';
 import ManagerReviewActions from './ManagerReviewActions';
 import ManagerReviewHistory from './ManagerReviewHistory';
@@ -24,8 +26,10 @@ export default async function ManagerOverviewPage() {
     lowScoreTasks,
     exceptionTasks,
     facilitySummary,
+    cleanerTrendCards,
     reviewHistory,
     alertCards,
+    liveNotifications,
     reportingCards,
     supervisorSnapshot,
     source,
@@ -81,6 +85,7 @@ export default async function ManagerOverviewPage() {
       </section>
 
       <ManagerAlerts alertCards={alertCards} />
+      <ManagerNotifications notifications={liveNotifications} />
       <ManagerFilters exceptionTasks={exceptionTasks} lowScoreTasks={lowScoreTasks} />
 
       <section className="manager-layout">
@@ -112,6 +117,7 @@ export default async function ManagerOverviewPage() {
           </section>
 
           <ManagerReporting reportingCards={reportingCards} facilitySummary={facilitySummary} />
+          <CleanerTrendReport cleanerTrendCards={cleanerTrendCards} />
 
           <section className="card">
             <div className="panel-title">
