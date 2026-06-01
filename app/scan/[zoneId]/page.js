@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import CleanerChecklistModal from './CleanerChecklistModal';
+import IssueReportButton from './IssueReportButton';
 import { cleanerProfile } from '../../../data/demo-data';
 import { getCleanerAssignment, getCleanerAssignments } from '../../../lib/cleaner-data';
 
@@ -34,6 +35,7 @@ export default async function CleanerZonePage({ params }) {
   }
 
   const remaining = assignment.tasks.filter((task) => task.status !== 'completed' && !task.score).length;
+  const firstOpenTask = assignment.tasks.find((task) => task.status !== 'completed') ?? assignment.tasks[0];
 
   return (
     <main className="page compact-page">
@@ -97,7 +99,7 @@ export default async function CleanerZonePage({ params }) {
             <h2>Something wrong?</h2>
             <p className="muted">Raise a site issue with photo proof so supervisors can review it.</p>
           </div>
-          <button className="button secondary" type="button">Report issue</button>
+          <IssueReportButton taskId={firstOpenTask?.id} />
         </section>
       </div>
     </main>

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { cleanerShiftAssignments, scheduleBuilder, supervisorCards } from '../../../data/demo-data';
+import { getManagerOverviewData } from '../../../lib/manager-data';
 
 export const metadata = {
   title: 'Manager Overview · Cienna Cleaning',
@@ -9,47 +9,19 @@ function getStatusTone(value, warnAt = 1) {
   return value >= warnAt ? 'tone-red' : 'tone-green';
 }
 
-export default function ManagerOverviewPage() {
-  const publishedDays = scheduleBuilder.generatedInstances.length;
-  const activeShifts = cleanerShiftAssignments.length;
-  const totalTasks = cleanerShiftAssignments.reduce((sum, shift) => sum + shift.stats.total, 0);
-  const completedTasks = cleanerShiftAssignments.reduce((sum, shift) => sum + shift.stats.completed, 0);
-  const completionRate = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-  const lowScoreTasks = cleanerShiftAssignments.flatMap((shift) =>
-    shift.tasks
-      .filter((task) => task.score === 1)
-      .map((task) => ({ ...task, shift }))
-  );
-
-  const exceptionTasks = cleanerShiftAssignments.flatMap((shift) =>
-    shift.tasks
-      .filter((task) => task.status === 'pending' || task.status === 'carried-forward')
-      .map((task) => ({ ...task, shift }))
-  );
-
-  const facilitySummary = Array.from(
-    cleanerShiftAssignments.reduce((map, shift) => {
-      const existing = map.get(shift.location) || {
-        location: shift.location,
-        zones: new Set(),
-        total: 0,
-        completed: 0,
-        lowScores: 0,
-      };
-
-      existing.zones.add(shift.zone);
-      existing.total += shift.stats.total;
-      existing.completed += shift.stats.completed;
-      existing.lowScores += shift.tasks.filter((task) => task.score === 1).length;
-      map.set(shift.location, existing);
-      return map;
-    }, new Map()).values()
-  ).map((facility) => ({
-    ...facility,
-    zoneCount: facility.zones.size,
-    completion: facility.total ? Math.round((facility.completed / facility.total) * 100) : 0,
-  }));
+export default async function ManagerOverviewPage() {
+  const {
+    publishedDays,
+    activeShifts,
+    totalTasks,
+    completedTasks,
+    completionRate,
+    lowScoreTasks,
+    exceptionTasks,
+    facilitySummary,
+    supervisorSnapshot,
+    source,
+  } = await getManagerOverviewData();
 
   return (
     <main className="page admin-calendar-page">
@@ -62,6 +34,7 @@ export default function ManagerOverviewPage() {
           <Link className="button secondary" href="/">Back to dashboard</Link>
           <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
           <span className="badge">Oversight view</span>
+          <span className="badge">{source === 'prisma' ? 'Live runtime data' : 'Demo fallback'}</span>
         </div>
       </div>
 
@@ -95,7 +68,7 @@ export default function ManagerOverviewPage() {
         <div className="card">
           <span className="muted">Low score alerts</span>
           <strong className={`metric ${getStatusTone(lowScoreTasks.length)}`}>{lowScoreTasks.length}</strong>
-          <div className="muted">Tasks with a 1/5 audit score needing review</div>
+          <div className="muted">Tasks with a 1-2/5 score needing review</div>
         </div>
       </section>
 
@@ -137,16 +110,17 @@ export default function ManagerOverviewPage() {
             </div>
 
             <div className="task-list">
-              {lowScoreTasks.slice(0, 8).map(({ id, title, taskGroup, shift }) => (
+              {lowScoreTasks.slice(0, 8).map(({ id, title, taskGroup, shift, score, note }) => (
                 <div className="task-row" key={id}>
                   <div>
                     <strong>{title}</strong>
                     <div className="muted">{shift.location} · {shift.zone} · {taskGroup}</div>
+                    {note && <div className="muted">{note}</div>}
                   </div>
                   <div className="flag-row">
                     <span className="flag">{shift.staff}</span>
                     <span className="flag">{shift.day}</span>
-                    <span className="task-status status-carried-forward">1/5 audit</span>
+                    <span className="task-status status-carried-forward">{score}/5 review</span>
                   </div>
                 </div>
               ))}
@@ -159,21 +133,23 @@ export default function ManagerOverviewPage() {
             <div className="panel-title">
               <div>
                 <h3>Exceptions queue</h3>
-                <p className="muted">Unfinished or carried-forward work likely to need reassignment.</p>
+                <p className="muted">Cleaner-reported issues and follow-up tasks likely to need reassignment.</p>
               </div>
               <span className="badge">{exceptionTasks.length} open</span>
             </div>
 
             <div className="task-list">
-              {exceptionTasks.slice(0, 8).map(({ id, title, status, shift }) => (
+              {exceptionTasks.slice(0, 8).map(({ id, title, status, shift, note, photoCount }) => (
                 <div className="task-row" key={id}>
                   <div>
                     <strong>{title}</strong>
                     <div className="muted">{shift.location} · {shift.zone}</div>
+                    {note && <div className="muted">{note}</div>}
                   </div>
                   <div className="flag-row">
                     <span className="flag">{shift.staff}</span>
                     <span className={`task-status status-${status}`}>{status.replace('-', ' ')}</span>
+                    <span className="flag">{photoCount} photos</span>
                   </div>
                 </div>
               ))}
@@ -184,12 +160,12 @@ export default function ManagerOverviewPage() {
             <div className="panel-title">
               <div>
                 <h3>Manager snapshot</h3>
-                <p className="muted">Fast readout of the operating picture across the sample portfolio.</p>
+                <p className="muted">Fast readout of the operating picture across the portfolio.</p>
               </div>
             </div>
 
             <div className="task-list">
-              {supervisorCards.map((card) => (
+              {supervisorSnapshot.map((card) => (
                 <div className="task-row" key={card.title}>
                   <div>
                     <strong>{card.title}</strong>
