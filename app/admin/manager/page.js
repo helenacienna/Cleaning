@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ManagerReviewActions from './ManagerReviewActions';
 import { getManagerOverviewData } from '../../../lib/manager-data';
 
 export const metadata = {
@@ -110,7 +111,7 @@ export default async function ManagerOverviewPage() {
             </div>
 
             <div className="task-list">
-              {lowScoreTasks.slice(0, 8).map(({ id, title, taskGroup, shift, score, note }) => (
+              {lowScoreTasks.slice(0, 8).map(({ id, title, taskGroup, shift, score, note, managerAction }) => (
                 <div className="task-row" key={id}>
                   <div>
                     <strong>{title}</strong>
@@ -121,6 +122,7 @@ export default async function ManagerOverviewPage() {
                     <span className="flag">{shift.staff}</span>
                     <span className="flag">{shift.day}</span>
                     <span className="task-status status-carried-forward">{score}/5 review</span>
+                    <span className="flag">{managerAction}</span>
                   </div>
                 </div>
               ))}
@@ -158,6 +160,7 @@ export default async function ManagerOverviewPage() {
                         ))}
                       </div>
                     )}
+                    <ManagerReviewActions taskExecutionId={id} />
                   </div>
                   <div className="flag-row">
                     <span className="flag">{shift.staff}</span>
