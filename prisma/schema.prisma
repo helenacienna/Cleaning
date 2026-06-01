@@ -139,7 +139,8 @@ model Facility {
   zones         Zone[]
   taskGroups    TaskGroup[]
   taskTemplates TaskTemplate[]
-  taskInstances TaskInstance[]
+  taskInstances        TaskInstance[]
+  plannedTaskInstances TaskInstance[] @relation("PlannedFacility")
 
   @@map("facilities")
 }
@@ -157,8 +158,9 @@ model Zone {
 
   facility      Facility       @relation(fields: [facilityId], references: [id])
   taskGroups    TaskGroup[]
-  taskTemplates TaskTemplate[]
-  taskInstances TaskInstance[]
+  taskTemplates        TaskTemplate[]
+  taskInstances        TaskInstance[]
+  plannedTaskInstances TaskInstance[] @relation("PlannedZone")
 
   @@unique([facilityId, zoneCode])
   @@map("zones")
@@ -178,8 +180,9 @@ model TaskGroup {
 
   facility      Facility       @relation(fields: [facilityId], references: [id])
   zone          Zone           @relation(fields: [zoneId], references: [id])
-  taskTemplates TaskTemplate[]
-  taskInstances TaskInstance[]
+  taskTemplates        TaskTemplate[]
+  taskInstances        TaskInstance[]
+  plannedTaskInstances TaskInstance[] @relation("PlannedTaskGroup")
 
   @@unique([zoneId, groupCode])
   @@map("task_groups")
@@ -301,6 +304,9 @@ model TaskInstance {
   planningDueAt                DateTime?           @map("planning_due_at") @db.Timestamptz(6)
   scheduledForAt               DateTime?           @map("scheduled_for_at") @db.Timestamptz(6)
   assignedStaffId              String?             @map("assigned_staff_id") @db.Uuid
+  plannedFacilityId            String?             @map("planned_facility_id") @db.Uuid
+  plannedZoneId                String?             @map("planned_zone_id") @db.Uuid
+  plannedTaskGroupId           String?             @map("planned_task_group_id") @db.Uuid
   sequence                     Int?
   status                       TaskInstanceStatus
   priority                     TaskPriority
@@ -322,6 +328,9 @@ model TaskInstance {
   zone                       Zone                @relation(fields: [zoneId], references: [id])
   taskGroup                  TaskGroup           @relation(fields: [taskGroupId], references: [id])
   assignedStaff              Staff?              @relation("TaskAssignedStaff", fields: [assignedStaffId], references: [id])
+  plannedFacility            Facility?           @relation("PlannedFacility", fields: [plannedFacilityId], references: [id])
+  plannedZone                Zone?               @relation("PlannedZone", fields: [plannedZoneId], references: [id])
+  plannedTaskGroup           TaskGroup?          @relation("PlannedTaskGroup", fields: [plannedTaskGroupId], references: [id])
   execution                  TaskExecution?
   audits                     TaskAudit[]
   photosLastCompletedStatus  TaskTemplateStatus? @relation("LastCompletedInstance")
@@ -335,6 +344,9 @@ model TaskInstance {
   @@index([status, dueAt])
   @@index([assignedStaffId, dueAt])
   @@index([shiftRunId, sequence])
+  @@index([plannedFacilityId])
+  @@index([plannedZoneId])
+  @@index([plannedTaskGroupId])
   @@map("task_instances")
 }
 

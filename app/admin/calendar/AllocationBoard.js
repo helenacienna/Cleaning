@@ -317,7 +317,7 @@ export default function AllocationBoard({
   function handleDrop(event, staff, day) {
     event.preventDefault();
     const cardId = event.dataTransfer.getData('text/plain');
-    moveCard(cardId, { staff, day });
+    moveCard(cardId, { staff, day, laneIndex: 0 });
   }
 
   function handleHierarchyDrop(event, updates, targetCardId = null) {
@@ -512,6 +512,9 @@ export default function AllocationBoard({
                                                         taskGroup: group.groupName,
                                                         groupName: group.groupName,
                                                         groupId: group.cards[0]?.groupId ?? `${staff}-${selectedDay}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`,
+                                                        plannedFacility: facility.facilityName,
+                                                        plannedZone: zone.zoneName,
+                                                        plannedTaskGroup: group.groupName,
                                                       };
                                                       const dropKey = `${staff}-${selectedDay}-${detail.lane.index}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`;
 

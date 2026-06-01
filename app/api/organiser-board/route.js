@@ -40,7 +40,7 @@ export async function POST(request) {
 
   const instanceIds = [...new Set(cards.map((card) => card?.id).filter(Boolean))];
 
-  const [instances, staffMembers, shiftRuns] = await Promise.all([
+  const [instances, staffMembers, shiftRuns, facilities, zones, taskGroups] = await Promise.all([
     prisma.taskInstance.findMany({
       where: { id: { in: instanceIds } },
       select: { id: true, status: true },
@@ -52,6 +52,15 @@ export async function POST(request) {
     prisma.shiftRun.findMany({
       include: { assignedStaff: true },
     }),
+    prisma.facility.findMany({
+      select: { id: true, name: true },
+    }),
+    prisma.zone.findMany({
+      select: { id: true, name: true, facilityId: true },
+    }),
+    prisma.taskGroup.findMany({
+      select: { id: true, name: true, zoneId: true, facilityId: true },
+    }),
   ]);
 
   const instanceMap = new Map(instances.map((instance) => [instance.id, instance]));
@@ -61,6 +70,9 @@ export async function POST(request) {
       .filter((shiftRun) => shiftRun.assignedStaff)
       .map((shiftRun) => [`${shiftRun.assignedStaff.fullName}::${formatBoardDay(shiftRun.runDate)}`, shiftRun]),
   );
+  const facilityMap = new Map(facilities.map((facility) => [facility.name, facility]));
+  const zoneMap = new Map(zones.map((zone) => [`${zone.facilityId}::${zone.name}`, zone]));
+  const taskGroupMap = new Map(taskGroups.map((taskGroup) => [`${taskGroup.zoneId}::${taskGroup.name}`, taskGroup]));
 
   const updates = cards
     .filter((card) => instanceMap.has(card.id))
@@ -69,12 +81,18 @@ export async function POST(request) {
       const assignedStaff = card.staff && card.staff !== 'Unallocated' ? staffMap.get(card.staff) : null;
       const shiftRun = assignedStaff ? shiftRunMap.get(`${assignedStaff.fullName}::${card.day}`) : null;
       const laneIndex = Number.isInteger(card.laneIndex) ? card.laneIndex : 0;
+      const plannedFacility = card.facility ? facilityMap.get(card.facility) : null;
+      const plannedZone = plannedFacility && card.zone ? zoneMap.get(`${plannedFacility.id}::${card.zone}`) : null;
+      const plannedTaskGroup = plannedZone && card.taskGroup ? taskGroupMap.get(`${plannedZone.id}::${card.taskGroup}`) : null;
 
       return prisma.taskInstance.update({
         where: { id: card.id },
         data: {
           assignedStaffId: assignedStaff?.id ?? null,
           shiftRunId: shiftRun?.id ?? null,
+          plannedFacilityId: plannedFacility?.id ?? null,
+          plannedZoneId: plannedZone?.id ?? null,
+          plannedTaskGroupId: plannedTaskGroup?.id ?? null,
           sequence: Number.isFinite(card.jobOrder) ? Number(card.jobOrder) : index + 1,
           scheduledForAt: shiftRun?.shiftStartAt ? addMinutes(new Date(shiftRun.shiftStartAt), laneIndex * 60) : null,
           status: getNextStatus(current.status, Boolean(shiftRun)),
