@@ -90,7 +90,9 @@ export async function POST(request) {
       where: { id: { in: shiftRunIds } },
       data: { organiserState: shiftState },
     }),
-  ]);
+  ], {
+    timeout: 20000,
+  });
 
   return NextResponse.json({ ok: true, message: 'Live organiser board saved' });
 }
