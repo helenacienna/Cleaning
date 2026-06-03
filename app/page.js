@@ -12,6 +12,8 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
 function statusClass(status) {
   return `task-status status-${status}`;
 }
@@ -76,6 +78,69 @@ function formatTaskNumber(task) {
     return String(task.jobOrderNumber).padStart(3, '0');
   }
   return '—';
+}
+
+function parseDemoDate(value) {
+  if (!value || value === '—' || value === 'As triggered') {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function diffInDays(targetDate, baseDate = new Date()) {
+  if (!targetDate) {
+    return null;
+  }
+
+  const target = new Date(targetDate);
+  target.setHours(0, 0, 0, 0);
+
+  const base = new Date(baseDate);
+  base.setHours(0, 0, 0, 0);
+
+  return Math.round((target.getTime() - base.getTime()) / DAY_IN_MS);
+}
+
+function formatLastCompletedAge(value) {
+  const days = diffInDays(parseDemoDate(value));
+
+  if (days === null) {
+    return 'Not completed yet';
+  }
+
+  if (days === 0) {
+    return 'Done today';
+  }
+
+  if (days < 0) {
+    return `${Math.abs(days)} days ago`;
+  }
+
+  return `In ${days} days`;
+}
+
+function formatNextScheduleTiming(value) {
+  const days = diffInDays(parseDemoDate(value));
+
+  if (days === null) {
+    return 'Triggered manually';
+  }
+
+  if (days === 0) {
+    return 'Due today';
+  }
+
+  if (days < 0) {
+    return `${Math.abs(days)} days overdue`;
+  }
+
+  return `Due in ${days} days`;
 }
 
 function getUnscheduledFacilityTasks(assignment) {
@@ -372,6 +437,9 @@ export default function HomePage() {
                         <div className="unscheduled-task-copy">
                           <strong>{task.title}</strong>
                           <span className="muted">{task.zone} · {task.taskGroup}</span>
+                          <span className="muted unscheduled-task-timing">
+                            Last done: {formatLastCompletedAge(task.lastCompleted)} · Next: {formatNextScheduleTiming(task.suggestedDue)}
+                          </span>
                         </div>
                       </div>
                       <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
