@@ -1,4 +1,4 @@
-const facilities = ['Cienna North', 'Cienna Central', 'Cienna South'];
+const facilities = ['Cienna', 'Boheme', 'Holidays'];
 
 const zoneBlueprints = [
   {
@@ -94,13 +94,41 @@ const zoneBlueprints = [
 ];
 
 const allocationStaff = [
-  { name: 'Mia Thompson', facility: 'Cienna North', shiftLabel: 'Morning flexible shift', shiftWindow: '6:00 AM – 2:00 PM', routeLabel: 'Cienna North → Cienna Central → Cienna North' },
-  { name: 'Leo Nguyen', facility: 'Cienna Central', shiftLabel: 'Day flexible shift', shiftWindow: '7:30 AM – 3:30 PM', routeLabel: 'Cienna Central → Cienna South → Cienna North' },
-  { name: 'Ava Patel', facility: 'Cienna South', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM', routeLabel: 'Cienna South → Cienna North → Cienna Central' },
+  { name: 'Tony', facility: 'Cienna', shiftLabel: 'Morning walk-through shift', shiftWindow: '6:00 AM – 2:00 PM', routeLabel: 'Rooftop → Tower 4 → Residents lounge → Pool → Carparks' },
+  { name: 'Leo Nguyen', facility: 'Boheme', shiftLabel: 'Day flexible shift', shiftWindow: '7:30 AM – 3:30 PM', routeLabel: 'Boheme → Holidays → Cienna' },
+  { name: 'Ava Patel', facility: 'Holidays', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM', routeLabel: 'Holidays → Cienna → Boheme' },
 ];
 const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5'];
-const TARGET_TASKS_PER_SHIFT = 100;
+const TARGET_TASKS_PER_SHIFT = 50;
 const COMPLETION_RATIO = 0.6;
+
+const supplementalTaskBlueprints = [
+  { category: 'annual', title: 'Pressure wash main entry paving', zone: 'Entry t4', taskGroup: 'Annual presentation works', required: 'Random photo eligible', frequency: 'Annual', frequencyType: 'Critical', estimatedMinutes: 60, lastCompleted: '12 Jun 2025', suggestedDue: '12 Jun 2026' },
+  { category: 'annual', title: 'Deep clean rooftop drainage channels', zone: 'Rooftop', taskGroup: 'Annual presentation works', required: 'Comment on exception', frequency: 'Annual', frequencyType: 'Critical', estimatedMinutes: 50, lastCompleted: '18 Jun 2025', suggestedDue: '18 Jun 2026' },
+  { category: 'annual', title: 'Strip and seal loading dock concrete edges', zone: 'Loading dock', taskGroup: 'Annual presentation works', required: 'Random photo eligible', frequency: 'Annual', frequencyType: 'Critical', estimatedMinutes: 75, lastCompleted: '24 Jun 2025', suggestedDue: '24 Jun 2026' },
+  { category: 'annual', title: 'High-level dusting around lift vents and bulkheads', zone: 'Lifts', taskGroup: 'Annual presentation works', required: 'Comment on exception', frequency: 'Annual', frequencyType: 'Critical', estimatedMinutes: 45, lastCompleted: '8 Jul 2025', suggestedDue: '8 Jul 2026' },
+  { category: 'annual', title: 'Emergency signage and fitting detail clean', zone: 'Carparks', taskGroup: 'Annual presentation works', required: 'Standard', frequency: 'Annual', frequencyType: 'Critical', estimatedMinutes: 40, lastCompleted: '30 Jul 2025', suggestedDue: '30 Jul 2026' },
+  { category: 'quarterly', title: 'Pressure wash pool deck and drain covers', zone: 'Pool area', taskGroup: 'Quarterly deep cleans', required: 'Random photo eligible', frequency: 'Quarterly', frequencyType: 'Critical', estimatedMinutes: 40, lastCompleted: '2 Mar 2026', suggestedDue: '2 Jun 2026' },
+  { category: 'quarterly', title: 'Machine scrub gym floor edges', zone: 'Gym', taskGroup: 'Quarterly deep cleans', required: 'Standard', frequency: 'Quarterly', frequencyType: 'Critical', estimatedMinutes: 35, lastCompleted: '6 Mar 2026', suggestedDue: '6 Jun 2026' },
+  { category: 'quarterly', title: 'Deep clean parcel locker fronts and surrounds', zone: 'Mail room', taskGroup: 'Quarterly deep cleans', required: 'Comment on exception', frequency: 'Quarterly', frequencyType: 'Critical', estimatedMinutes: 30, lastCompleted: '10 Mar 2026', suggestedDue: '10 Jun 2026' },
+  { category: 'quarterly', title: 'Polish lift doors and threshold trims', zone: 'Lifts', taskGroup: 'Quarterly deep cleans', required: 'Random photo eligible', frequency: 'Quarterly', frequencyType: 'Critical', estimatedMinutes: 30, lastCompleted: '14 Mar 2026', suggestedDue: '14 Jun 2026' },
+  { category: 'quarterly', title: 'Detail carpark line-marking edges', zone: 'Carparks', taskGroup: 'Quarterly deep cleans', required: 'Standard', frequency: 'Quarterly', frequencyType: 'Critical', estimatedMinutes: 35, lastCompleted: '18 Mar 2026', suggestedDue: '18 Jun 2026' },
+  { category: 'quarterly', title: 'Clean rooftop glass balustrades end-to-end', zone: 'Rooftop', taskGroup: 'Quarterly deep cleans', required: 'Random photo eligible', frequency: 'Quarterly', frequencyType: 'Critical', estimatedMinutes: 45, lastCompleted: '22 Mar 2026', suggestedDue: '22 Jun 2026' },
+  { category: 'quarterly', title: 'Descale shower and amenities fixtures', zone: 'Pool area', taskGroup: 'Quarterly deep cleans', required: 'Comment on exception', frequency: 'Quarterly', frequencyType: 'Critical', estimatedMinutes: 30, lastCompleted: '26 Mar 2026', suggestedDue: '26 Jun 2026' },
+  { category: 'quarterly', title: 'Steam clean lounge upholstery and rugs', zone: 'Residents lounge', taskGroup: 'Quarterly deep cleans', required: 'Random photo eligible', frequency: 'Quarterly', frequencyType: 'Critical', estimatedMinutes: 45, lastCompleted: '30 Mar 2026', suggestedDue: '30 Jun 2026' },
+  { category: 'quarterly', title: 'Deep clean roller door tracks and kickplates', zone: 'Loading dock', taskGroup: 'Quarterly deep cleans', required: 'Standard', frequency: 'Quarterly', frequencyType: 'Critical', estimatedMinutes: 35, lastCompleted: '3 Apr 2026', suggestedDue: '3 Jul 2026' },
+  { category: 'quarterly', title: 'Scrub tiled entry grout and corners', zone: 'Entry t3', taskGroup: 'Quarterly deep cleans', required: 'Comment on exception', frequency: 'Quarterly', frequencyType: 'Critical', estimatedMinutes: 30, lastCompleted: '7 Apr 2026', suggestedDue: '7 Jul 2026' },
+  { category: 'as-required', title: 'Spill response clean-up and signage reset', zone: 'Loading dock', taskGroup: 'Responsive works', required: 'Comment on exception', frequency: 'As required', frequencyType: 'Suggestive', estimatedMinutes: 20, lastCompleted: '—', suggestedDue: 'As triggered' },
+  { category: 'as-required', title: 'Graffiti removal touch-up', zone: 'Entry t4', taskGroup: 'Responsive works', required: 'Random photo eligible', frequency: 'As required', frequencyType: 'Suggestive', estimatedMinutes: 20, lastCompleted: '—', suggestedDue: 'As triggered' },
+  { category: 'as-required', title: 'Event setup reset and furniture recovery', zone: 'Residents lounge', taskGroup: 'Responsive works', required: 'Standard', frequency: 'As required', frequencyType: 'Suggestive', estimatedMinutes: 25, lastCompleted: '—', suggestedDue: 'As triggered' },
+  { category: 'as-required', title: 'Storm debris sweep and drain check', zone: 'Rooftop', taskGroup: 'Responsive works', required: 'Comment on exception', frequency: 'As required', frequencyType: 'Suggestive', estimatedMinutes: 25, lastCompleted: '—', suggestedDue: 'As triggered' },
+  { category: 'as-required', title: 'Broken glass isolation and clean', zone: 'Entry t3', taskGroup: 'Responsive works', required: 'Random photo eligible', frequency: 'As required', frequencyType: 'Critical', estimatedMinutes: 15, lastCompleted: '—', suggestedDue: 'As triggered' },
+  { category: 'as-required', title: 'Contractor access presentation touch-up', zone: 'Lifts', taskGroup: 'Responsive works', required: 'Standard', frequency: 'As required', frequencyType: 'Suggestive', estimatedMinutes: 15, lastCompleted: '—', suggestedDue: 'As triggered' },
+  { category: 'as-required', title: 'Parcel overflow tidy and re-stack', zone: 'Mail room', taskGroup: 'Responsive works', required: 'Comment on exception', frequency: 'As required', frequencyType: 'Suggestive', estimatedMinutes: 20, lastCompleted: '—', suggestedDue: 'As triggered' },
+  { category: 'as-required', title: 'Body corporate inspection presentation pass', zone: 'Entry t4', taskGroup: 'Responsive works', required: 'Random photo eligible', frequency: 'As required', frequencyType: 'Critical', estimatedMinutes: 20, lastCompleted: '—', suggestedDue: 'As triggered' },
+  { category: 'as-required', title: 'After-hours complaint touch-up clean', zone: 'Pool area', taskGroup: 'Responsive works', required: 'Comment on exception', frequency: 'As required', frequencyType: 'Suggestive', estimatedMinutes: 15, lastCompleted: '—', suggestedDue: 'As triggered' },
+  { category: 'as-required', title: 'Odour treatment at bin bay and surrounds', zone: 'Carparks', taskGroup: 'Responsive works', required: 'Standard', frequency: 'As required', frequencyType: 'Suggestive', estimatedMinutes: 20, lastCompleted: '—', suggestedDue: 'As triggered' },
+];
 
 function slugifyValue(value = '') {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -111,20 +139,20 @@ export function makeCleanerShiftAssignmentId({ staff, day, facility, zone }) {
 }
 
 const allocationRoutes = {
-  'Mia Thompson': [
-    { facility: 'Cienna North', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [0] },
-    { facility: 'Cienna Central', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [1, 2] },
-    { facility: 'Cienna North', zones: ['Mail room', 'Loading dock'], laneIndexes: [3] },
+  Tony: [
+    { facility: 'Cienna', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [0] },
+    { facility: 'Boheme', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [1, 2] },
+    { facility: 'Cienna', zones: ['Mail room', 'Loading dock'], laneIndexes: [3] },
   ],
   'Leo Nguyen': [
-    { facility: 'Cienna Central', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3', 'Residents lounge'], laneIndexes: [1, 2] },
-    { facility: 'Cienna South', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
-    { facility: 'Cienna North', zones: ['Mail room', 'Loading dock'], laneIndexes: [4] },
+    { facility: 'Boheme', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3', 'Residents lounge'], laneIndexes: [1, 2] },
+    { facility: 'Holidays', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
+    { facility: 'Cienna', zones: ['Mail room', 'Loading dock'], laneIndexes: [4] },
   ],
   'Ava Patel': [
-    { facility: 'Cienna South', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
-    { facility: 'Cienna North', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [4, 5] },
-    { facility: 'Cienna Central', zones: ['Mail room', 'Loading dock'], laneIndexes: [6] },
+    { facility: 'Holidays', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
+    { facility: 'Cienna', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [4, 5] },
+    { facility: 'Boheme', zones: ['Mail room', 'Loading dock'], laneIndexes: [6] },
   ],
 };
 
@@ -158,7 +186,7 @@ function buildTaskCatalog() {
             required: taskIndex === 0 ? 'Standard' : zoneIndex % 3 === 0 ? 'Random photo eligible' : 'Comment on exception',
             frequency: groupIndex === 0 ? 'Daily' : groupIndex === 1 ? 'Every 2 days' : 'Weekly',
             frequencyType: groupIndex === 2 ? 'Suggestive' : 'Critical',
-            estimatedEffort: taskIndex === 0 ? 'Quick check' : 'Standard pass',
+            estimatedMinutes: taskIndex === 0 ? 5 : 10,
             lastCompleted: taskIndex === 0 ? '30 May 2026' : '29 May 2026',
             suggestedDue: groupIndex === 2 ? '5 Jun 2026' : '1 Jun 2026',
             notes: `${group.name} · ${zoneBlueprint.zone} · ${facilityName}`,
@@ -169,22 +197,60 @@ function buildTaskCatalog() {
     });
   });
 
+  facilities.forEach((facilityName, facilityIndex) => {
+    supplementalTaskBlueprints.forEach((taskBlueprint, supplementalIndex) => {
+      const zoneBlueprint = zoneBlueprints.find((zone) => zone.zone === taskBlueprint.zone);
+      if (!zoneBlueprint) {
+        return;
+      }
+
+      const templateIndex = templates.length;
+      templates.push({
+        id: makeTaskCardId(templateIndex),
+        title: taskBlueprint.title,
+        taskGroup: taskBlueprint.taskGroup,
+        groupKey: `${taskBlueprint.category}-${slugifyValue(taskBlueprint.taskGroup)}`,
+        groupIndex: 10 + supplementalIndex,
+        zoneId: `${facilityIndex + 1}-${zoneBlueprint.id}`,
+        zone: taskBlueprint.zone,
+        facility: facilityName,
+        templateId: makeTemplateId(templateIndex),
+        jobOrderNumber: String(templateIndex + 1).padStart(3, '0'),
+        required: taskBlueprint.required,
+        frequency: taskBlueprint.frequency,
+        frequencyType: taskBlueprint.frequencyType,
+        estimatedMinutes: taskBlueprint.estimatedMinutes,
+        lastCompleted: taskBlueprint.lastCompleted,
+        suggestedDue: taskBlueprint.suggestedDue,
+        notes: `${taskBlueprint.taskGroup} · ${taskBlueprint.zone} · ${facilityName}`,
+        active: true,
+      });
+    });
+  });
+
   return templates;
 }
 
 export const taskCardTemplates = buildTaskCatalog();
 const taskCatalog = taskCardTemplates;
 
-function buildAssignmentTasks(facilityName, zoneName) {
-  const zoneTasks = taskCardTemplates
+function buildAssignmentTasks(facilityName, zoneName, customTasks = null) {
+  const zoneTasks = (customTasks ?? taskCardTemplates
     .filter((task) => task.facility === facilityName && task.zone === zoneName)
     .map((task) => ({
       title: task.title,
+      templateId: task.templateId,
+      jobOrderNumber: task.jobOrderNumber,
+      required: task.required,
+      frequency: task.frequency,
+      frequencyType: task.frequencyType,
+      estimatedMinutes: task.estimatedMinutes,
+      notes: task.notes,
       photoRequired: task.required === 'Random photo eligible',
       commentRequired: task.required === 'Comment on exception',
       taskGroup: task.taskGroup,
       zone: task.zone,
-    }));
+    })));
 
   const completedTarget = Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO);
 
@@ -193,6 +259,13 @@ function buildAssignmentTasks(facilityName, zoneName) {
     return {
       id: `assignment-${facilityName}-${zoneName}-${index + 1}`,
       title: task.title,
+      templateId: task.templateId,
+      jobOrderNumber: task.jobOrderNumber,
+      required: task.required,
+      frequency: task.frequency,
+      frequencyType: task.frequencyType,
+      estimatedMinutes: task.estimatedMinutes,
+      notes: task.notes,
       status: index < completedTarget ? 'completed' : index === completedTarget ? 'in-progress' : (task.photoRequired && index % 7 === 0 ? 'photo-required' : 'pending'),
       photoRequired: task.photoRequired,
       commentRequired: task.commentRequired,
@@ -201,6 +274,55 @@ function buildAssignmentTasks(facilityName, zoneName) {
     };
   });
 }
+
+const tonyPdfWalkthroughTasks = [
+  { title: 'Glass Clean', taskGroup: 'Rooftop', zone: 'Rooftop', photoRequired: false, commentRequired: false },
+  { title: 'Straighten all furniture and loungers', taskGroup: 'Rooftop', zone: 'Rooftop', photoRequired: false, commentRequired: false },
+  { title: 'Rooftop Bathroom Clean', taskGroup: 'Rooftop', zone: 'Rooftop', photoRequired: false, commentRequired: false },
+  { title: "Check BBQ's", taskGroup: 'Rooftop', zone: 'Rooftop', photoRequired: false, commentRequired: false },
+  { title: 'Check Binchute', taskGroup: 'Rooftop', zone: 'Rooftop', photoRequired: false, commentRequired: false },
+  { title: 'Gardens Tidy', taskGroup: 'Rooftop', zone: 'Rooftop', photoRequired: false, commentRequired: false },
+  { title: 'Lift 1 floor', taskGroup: 'Tower 4 Lifts', zone: 'Lifts', photoRequired: false, commentRequired: false },
+  { title: 'Lift 1 Walls', taskGroup: 'Tower 4 Lifts', zone: 'Lifts', photoRequired: false, commentRequired: false },
+  { title: 'Lift 2 floor', taskGroup: 'Tower 4 Lifts', zone: 'Lifts', photoRequired: false, commentRequired: false },
+  { title: 'Lift 2 Walls', taskGroup: 'Tower 4 Lifts', zone: 'Lifts', photoRequired: false, commentRequired: false },
+  { title: 'Floor', taskGroup: 'Tower 4 entry', zone: 'Entry t4', photoRequired: false, commentRequired: false },
+  { title: 'Furniture tidy', taskGroup: 'Tower 4 entry', zone: 'Entry t4', photoRequired: false, commentRequired: false },
+  { title: 'Glass doors', taskGroup: 'Tower 4 entry', zone: 'Entry t4', photoRequired: false, commentRequired: false },
+  { title: 'Visitor Bathroom', taskGroup: 'Tower 4 entry', zone: 'Entry t4', photoRequired: false, commentRequired: false },
+  { title: 'Toilet 1 Clean', taskGroup: 'Cafe Toilets', zone: 'Entry t4', photoRequired: false, commentRequired: false },
+  { title: 'Toilet 2 Clean', taskGroup: 'Cafe Toilets', zone: 'Entry t4', photoRequired: false, commentRequired: false },
+  { title: 'Floor infront of toilets all the way to the cafe clean', taskGroup: 'Cafe Toilets', zone: 'Entry t4', photoRequired: false, commentRequired: false },
+  { title: 'Floors clean', taskGroup: 'Residents Lounge', zone: 'Residents lounge', photoRequired: false, commentRequired: false },
+  { title: 'Furniture straightened', taskGroup: 'Residents Lounge', zone: 'Residents lounge', photoRequired: false, commentRequired: false },
+  { title: 'Glass clean', taskGroup: 'Residents Lounge', zone: 'Residents lounge', photoRequired: false, commentRequired: false },
+  { title: 'Fridge clean', taskGroup: 'Residents Lounge', zone: 'Residents lounge', photoRequired: false, commentRequired: false },
+  { title: 'Bin next to fridge emptied', taskGroup: 'Residents Lounge', zone: 'Residents lounge', photoRequired: false, commentRequired: false },
+  { title: 'Benches clean', taskGroup: 'Residents Lounge', zone: 'Residents lounge', photoRequired: false, commentRequired: false },
+  { title: 'Straighten Furniture', taskGroup: 'Pool Area', zone: 'Pool area', photoRequired: false, commentRequired: false },
+  { title: 'Blow Down and Collect Leaves', taskGroup: 'Pool Area', zone: 'Pool area', photoRequired: false, commentRequired: false },
+  { title: 'Pool Area Generally Clean and Tidy', taskGroup: 'Pool Area', zone: 'Pool area', photoRequired: false, commentRequired: false },
+  { title: 'BBQ and Bench Clean', taskGroup: 'BBQ 1 - Near Rec Room', zone: 'Pool area', photoRequired: false, commentRequired: false },
+  { title: 'Furniture Clean', taskGroup: 'BBQ 1 - Near Rec Room', zone: 'Pool area', photoRequired: false, commentRequired: false },
+  { title: 'Mens Bathroom Clean', taskGroup: 'Pool Toilets X 3', zone: 'Pool area', photoRequired: false, commentRequired: false },
+  { title: 'Disabled Toilet Clean', taskGroup: 'Pool Toilets X 3', zone: 'Pool area', photoRequired: false, commentRequired: false },
+  { title: "Woman's Toilet Clean", taskGroup: 'Pool Toilets X 3', zone: 'Pool area', photoRequired: false, commentRequired: false },
+  { title: 'Glass Clean', taskGroup: 'Tower 3 Entrance Foyer', zone: 'Entry t3', photoRequired: false, commentRequired: false },
+  { title: 'Furniture Tidy', taskGroup: 'Tower 3 Entrance Foyer', zone: 'Entry t3', photoRequired: false, commentRequired: false },
+  { title: 'Floors Clean', taskGroup: 'Tower 3 Entrance Foyer', zone: 'Entry t3', photoRequired: false, commentRequired: false },
+  { title: 'Lift 3 Clean', taskGroup: 'Tower 3 Entrance Foyer', zone: 'Entry t3', photoRequired: false, commentRequired: false },
+  { title: 'Lift 4 Clean', taskGroup: 'Tower 3 Entrance Foyer', zone: 'Entry t3', photoRequired: false, commentRequired: false },
+  { title: 'Building 3 Lift Foyer and Rubbish Bin', taskGroup: 'Carpark B1', zone: 'Carparks', photoRequired: false, commentRequired: false },
+  { title: 'Gym', taskGroup: 'Carpark B1', zone: 'Gym', photoRequired: false, commentRequired: false },
+  { title: 'Building 4 Lift Foyer and Rubbish Bin', taskGroup: 'Carpark B1', zone: 'Carparks', photoRequired: false, commentRequired: false },
+  { title: 'Building 4 Lift Foyer and Rubbish Bin', taskGroup: 'Carpark B2', zone: 'Carparks', photoRequired: false, commentRequired: false },
+  { title: 'Building 4 Mailbox Area', taskGroup: 'Carpark B2', zone: 'Mail room', photoRequired: false, commentRequired: false },
+  { title: 'General Carpark Clean', taskGroup: 'Carpark B2', zone: 'Carparks', photoRequired: false, commentRequired: false },
+  { title: 'Building 3 Lift Foyer and Rubbish Bin', taskGroup: 'Carpark B2', zone: 'Carparks', photoRequired: false, commentRequired: false },
+  { title: 'Building 3 Mailbox Area', taskGroup: 'Carpark B2', zone: 'Mail room', photoRequired: false, commentRequired: false },
+  { title: 'Litter in Carpark', taskGroup: 'Visitor Carpark', zone: 'Carparks', photoRequired: false, commentRequired: false },
+  { title: 'Parcel Locker Area Tidy', taskGroup: 'Visitor Carpark', zone: 'Mail room', photoRequired: false, commentRequired: false },
+];
 
 export const appSummary = {
   appName: 'Cienna Cleaning',
@@ -216,11 +338,17 @@ export const appSummary = {
 export const cleanerAssignments = allocationStaff.map((staff, index) => ({
   id: `assignment-${index + 1}`,
   location: staff.facility,
-  zone: zoneBlueprints[index].zone,
+  zone: staff.name === 'Tony' ? 'Rooftop' : zoneBlueprints[index].zone,
   shift: staff.shiftLabel,
   progress: Math.round(COMPLETION_RATIO * 100),
-  stats: { total: TARGET_TASKS_PER_SHIFT, completed: Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO), photoRequired: Math.round(TARGET_TASKS_PER_SHIFT * 0.18) },
-  tasks: buildAssignmentTasks(staff.facility, zoneBlueprints[index].zone),
+  stats: {
+    total: TARGET_TASKS_PER_SHIFT,
+    completed: Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO),
+    photoRequired: staff.name === 'Tony' ? 0 : Math.round(TARGET_TASKS_PER_SHIFT * 0.18),
+  },
+  tasks: staff.name === 'Tony'
+    ? buildAssignmentTasks(staff.facility, 'Rooftop', tonyPdfWalkthroughTasks)
+    : buildAssignmentTasks(staff.facility, zoneBlueprints[index].zone),
 }));
 
 const staffMetaByName = Object.fromEntries(allocationStaff.map((staff) => [staff.name, staff]));
@@ -236,9 +364,9 @@ export const qrZones = facilities.flatMap((facilityName, facilityIndex) => (
 ));
 
 export const cleanerProfile = {
-  name: 'Mia Thompson',
-  role: 'Morning cleaner',
-  nextShift: 'Today · Flexible run window',
+  name: 'Tony',
+  role: 'Morning walk-through cleaner',
+  nextShift: 'Today · PPM morning inspection run',
 };
 
 export const supervisorCards = [
@@ -345,7 +473,7 @@ const denseScoreDemoCards = Array.from({ length: 6 }, (_, index) => ({
   laneIndex: 0,
   routeStopIndex: 0,
   status: 'pending',
-  facility: 'Cienna North',
+  facility: 'Cienna',
   zone: 'Rooftop',
   taskGroup: 'Rooftop presentation',
   type: 'critical',
@@ -397,14 +525,14 @@ export const cleanerShiftAssignments = Array.from(
   };
 });
 
-const draftSelection = taskCardTemplates.filter((task) => task.facility === 'Cienna North' && task.zone === 'Entry t4').slice(0, 5);
+const draftSelection = taskCardTemplates.filter((task) => task.facility === 'Cienna' && task.zone === 'Entry t4').slice(0, 5);
 
 export const scheduleBuilder = {
-  selectedLocation: 'Cienna North',
+  selectedLocation: 'Cienna',
   selectedZone: 'Entry t4',
   frequency: 'Weekdays',
   shift: 'Flexible daily run · no fixed task times',
-  assignedCleaner: 'Mia Thompson',
+  assignedCleaner: 'Tony',
   repeatRule: 'Mon-Fri · generate daily task instances',
   randomPhotoRate: '30% of eligible tasks',
   draftTasks: draftSelection.map((task, index) => ({
@@ -427,12 +555,12 @@ export const scheduleBuilder = {
     ['Wed 3 Jun', '180 task instances', 'scheduled_cienna_2026-06-03'],
   ],
   calendarDays: [
-    { date: 'Mon 1', dayType: 'weekday', jobs: [{ jobOrderStart: '001', facility: 'Cienna North', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '061', facility: 'Cienna Central', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '121', facility: 'Cienna South', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }] },
-    { date: 'Tue 2', dayType: 'weekday', jobs: [{ jobOrderStart: '019', facility: 'Cienna North', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '079', facility: 'Cienna Central', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '139', facility: 'Cienna South', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }] },
-    { date: 'Wed 3', dayType: 'weekday', jobs: [{ jobOrderStart: '031', facility: 'Cienna North', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '091', facility: 'Cienna Central', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '151', facility: 'Cienna South', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }] },
-    { date: 'Thu 4', dayType: 'weekday', jobs: [{ jobOrderStart: '043', facility: 'Cienna North', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '103', facility: 'Cienna Central', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '163', facility: 'Cienna South', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }] },
-    { date: 'Fri 5', dayType: 'weekday', jobs: [{ jobOrderStart: '013', facility: 'Cienna North', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '073', facility: 'Cienna Central', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '133', facility: 'Cienna South', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }] },
-    { date: 'Sat 6', dayType: 'weekend', jobs: [{ jobOrderStart: '025', facility: 'Cienna North', zone: 'Carparks', groupName: 'Carpark round', count: 2, type: 'suggestive' }] },
+    { date: 'Mon 1', dayType: 'weekday', jobs: [{ jobOrderStart: '001', facility: 'Cienna', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '061', facility: 'Boheme', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '121', facility: 'Holidays', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }] },
+    { date: 'Tue 2', dayType: 'weekday', jobs: [{ jobOrderStart: '019', facility: 'Cienna', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '079', facility: 'Boheme', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '139', facility: 'Holidays', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }] },
+    { date: 'Wed 3', dayType: 'weekday', jobs: [{ jobOrderStart: '031', facility: 'Cienna', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '091', facility: 'Boheme', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '151', facility: 'Holidays', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }] },
+    { date: 'Thu 4', dayType: 'weekday', jobs: [{ jobOrderStart: '043', facility: 'Cienna', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '103', facility: 'Boheme', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '163', facility: 'Holidays', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }] },
+    { date: 'Fri 5', dayType: 'weekday', jobs: [{ jobOrderStart: '013', facility: 'Cienna', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '073', facility: 'Boheme', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '133', facility: 'Holidays', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }] },
+    { date: 'Sat 6', dayType: 'weekend', jobs: [{ jobOrderStart: '025', facility: 'Cienna', zone: 'Carparks', groupName: 'Carpark round', count: 2, type: 'suggestive' }] },
     { date: 'Sun 7', dayType: 'weekend', jobs: [] },
   ],
   allocationBoard: {
@@ -445,15 +573,15 @@ export const scheduleBuilder = {
     cards: [
       ...allocationCards,
       ...denseScoreDemoCards,
-      { id: 'alloc-unassigned-1', title: 'Check dock spill kit', templateId: 'custom_001', staff: 'Unallocated', day: 'Mon 1', jobOrder: 61, status: 'pending', facility: 'Cienna North', zone: 'Loading dock', taskGroup: 'Back-of-house tidy', type: 'suggestive', groupId: 'group-unassigned-dock', groupName: 'Back-of-house tidy' },
-      { id: 'alloc-unassigned-2', title: 'Recheck sauna entry mat', templateId: 'custom_002', staff: 'Unallocated', day: 'Wed 3', jobOrder: 62, status: 'in-progress', facility: 'Cienna Central', zone: 'Pool area', taskGroup: 'Amenities wipe-down', type: 'critical', groupId: 'group-unassigned-pool', groupName: 'Amenities wipe-down' },
-      { id: 'alloc-unassigned-3', title: 'Inspect parcel overflow shelf', templateId: 'custom_003', staff: 'Unallocated', day: 'Fri 5', jobOrder: 63, status: 'pending', facility: 'Cienna South', zone: 'Mail room', taskGroup: 'Parcel room reset', type: 'suggestive', groupId: 'group-unassigned-mail', groupName: 'Parcel room reset' },
+      { id: 'alloc-unassigned-1', title: 'Check dock spill kit', templateId: 'custom_001', staff: 'Unallocated', day: 'Mon 1', jobOrder: 61, status: 'pending', facility: 'Cienna', zone: 'Loading dock', taskGroup: 'Back-of-house tidy', type: 'suggestive', groupId: 'group-unassigned-dock', groupName: 'Back-of-house tidy' },
+      { id: 'alloc-unassigned-2', title: 'Recheck sauna entry mat', templateId: 'custom_002', staff: 'Unallocated', day: 'Wed 3', jobOrder: 62, status: 'in-progress', facility: 'Boheme', zone: 'Pool area', taskGroup: 'Amenities wipe-down', type: 'critical', groupId: 'group-unassigned-pool', groupName: 'Amenities wipe-down' },
+      { id: 'alloc-unassigned-3', title: 'Inspect parcel overflow shelf', templateId: 'custom_003', staff: 'Unallocated', day: 'Fri 5', jobOrder: 63, status: 'pending', facility: 'Holidays', zone: 'Mail room', taskGroup: 'Parcel room reset', type: 'suggestive', groupId: 'group-unassigned-mail', groupName: 'Parcel room reset' },
     ],
   },
   exceptionWorkflow: {
     groups: taskGroups.slice(0, 8),
     detachedTasks: [
-      { ...allocationCards[7], id: 'detached-demo-1', title: 'Extra mop up after spill', detached: true, day: 'Tue 2', jobOrder: 33, staff: 'Mia Thompson', reason: 'Incident clean-up required outside normal run' },
+      { ...allocationCards[7], id: 'detached-demo-1', title: 'Extra mop up after spill', detached: true, day: 'Tue 2', jobOrder: 33, staff: 'Tony', reason: 'Incident clean-up required outside normal run' },
       { ...allocationCards[80], id: 'detached-demo-2', title: 'Urgent litter sweep at entry', detached: true, day: 'Wed 3', jobOrder: 48, staff: 'Leo Nguyen', reason: 'Separated from group and rescheduled individually' },
     ],
   },

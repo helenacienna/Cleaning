@@ -194,6 +194,17 @@ function getCardStatusLabel(card) {
   return 'Pending';
 }
 
+function getCardDetailItems(card) {
+  return [
+    { label: 'Status', value: getCardStatusLabel(card) },
+    { label: 'Score', value: card.auditScore ? `${card.auditScore}/5` : 'Not scored yet' },
+    { label: 'Facility', value: card.facility },
+    { label: 'Zone', value: card.zone },
+    { label: 'Group', value: card.groupName || card.taskGroup },
+    { label: 'Type', value: card.type === 'critical' ? 'Critical' : 'Suggestive' },
+  ];
+}
+
 function reorderCards(cards, cardId, updates, targetCardId = null) {
   const movingCard = cards.find((card) => card.id === cardId);
   if (!movingCard) {
@@ -250,6 +261,7 @@ export default function AllocationBoard({
   const [hierarchyMode, setHierarchyMode] = useState('nested');
   const [openGroups, setOpenGroups] = useState({});
   const [openZoneGroups, setOpenZoneGroups] = useState({});
+  const [expandedCards, setExpandedCards] = useState({});
   const [activeDropKey, setActiveDropKey] = useState('');
   const [history, setHistory] = useState([]);
   const [shiftState, setShiftState] = useState(initialStoredState?.shiftState || 'draft');
@@ -362,6 +374,10 @@ export default function AllocationBoard({
 
   function toggleZoneGroups(zoneKey) {
     setOpenZoneGroups((existing) => ({ ...existing, [zoneKey]: !existing[zoneKey] }));
+  }
+
+  function toggleExpandedCard(cardId) {
+    setExpandedCards((existing) => ({ ...existing, [cardId]: !existing[cardId] }));
   }
 
   const assignedCount = cards.filter((card) => card.staff !== 'Unallocated').length;
@@ -503,7 +519,7 @@ export default function AllocationBoard({
                                         const zoneProgress = getCompletionStats(zone.groups.flatMap((group) => group.cards));
                                         const zoneNotifications = zone.groups
                                           .flatMap((group) => group.cards)
-                                          .filter((card) => card.reworkRequired || card.hasOpenIssue || (card.auditScore ?? 0) === 2);
+                                          .filter((card) => card.auditScore === 1);
 
                                         return (
                                           <>
@@ -576,18 +592,35 @@ export default function AllocationBoard({
                                                             }} onDrop={(event) => handleHierarchyDrop(event, groupDropUpdates)}>
                                                               {group.cards.map((card) => {
                                                                 const cardDropKey = `${dropKey}-${card.id}`;
+                                                                const isExpanded = expandedCards[card.id];
                                                                 return (
-                                                                <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${getCardStateClass(card)} ${activeDropKey === cardDropKey ? 'hierarchy-card-drop-target-active' : ''}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} onDragOver={(event) => {
+                                                                <div className={`allocation-card daily-task-card hierarchy-task-card hierarchy-task-card-${hierarchyMode} ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${getCardStateClass(card)} ${activeDropKey === cardDropKey ? 'hierarchy-card-drop-target-active' : ''} ${isExpanded ? 'allocation-card-expanded' : ''}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} onDragOver={(event) => {
                                                                   event.preventDefault();
                                                                   if (activeDropKey !== cardDropKey) setActiveDropKey(cardDropKey);
                                                                 }} onDragLeave={() => {
                                                                   if (activeDropKey === cardDropKey) setActiveDropKey('');
-                                                                }} onDrop={(event) => handleHierarchyDrop(event, groupDropUpdates, card.id)} key={card.id}>
+                                                                }} onDrop={(event) => handleHierarchyDrop(event, groupDropUpdates, card.id)} onClick={() => toggleExpandedCard(card.id)} onKeyDown={(event) => {
+                                                                  if (event.key === 'Enter' || event.key === ' ') {
+                                                                    event.preventDefault();
+                                                                    toggleExpandedCard(card.id);
+                                                                  }
+                                                                }} role="button" tabIndex={0} aria-expanded={isExpanded} key={card.id}>
                                                                   <span className="hierarchy-drag-handle" aria-hidden="true">⋮⋮</span>
                                                                   <span className="job-order-pill">#{formatJobOrder(card.jobOrder)}</span>
                                                                   <strong>{card.title}</strong>
                                                                   <span>{card.taskGroup}</span>
                                                                   <small>{card.facility} · {card.zone} · {getCardStatusLabel(card)}</small>
+                                                                  {isExpanded && (
+                                                                    <div className="allocation-card-details">
+                                                                      {getCardDetailItems(card).map((item) => (
+                                                                        <div className="allocation-card-detail-row" key={`${card.id}-${item.label}`}>
+                                                                          <span>{item.label}</span>
+                                                                          <strong>{item.value}</strong>
+                                                                        </div>
+                                                                      ))}
+                                                                      {card.issueNote ? <p className="allocation-card-note">{card.issueNote}</p> : null}
+                                                                    </div>
+                                                                  )}
                                                                 </div>
                                                               )})}
                                                             </div>
@@ -645,13 +678,32 @@ export default function AllocationBoard({
                       <strong>{slotCards.length}</strong>
                       <span>{criticalCount} critical</span>
                     </div>
-                    {slotCards.map((card) => (
-                      <div className={`allocation-card ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${getCardStateClass(card)}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} key={card.id}>
-                        <strong>{card.title}</strong>
-                        <span>#{formatJobOrder(card.jobOrder)} · {card.taskGroup}</span>
-                        <small>{card.facility} · {card.zone} · {getCardStatusLabel(card)}</small>
-                      </div>
-                    ))}
+                    {slotCards.map((card) => {
+                      const isExpanded = expandedCards[card.id];
+                      return (
+                        <div className={`allocation-card ${card.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'} ${getCardStateClass(card)} ${isExpanded ? 'allocation-card-expanded' : ''}`} draggable onDragStart={(event) => handleDragStart(event, card.id)} onClick={() => toggleExpandedCard(card.id)} onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            toggleExpandedCard(card.id);
+                          }
+                        }} role="button" tabIndex={0} aria-expanded={isExpanded} key={card.id}>
+                          <strong>{card.title}</strong>
+                          <span>#{formatJobOrder(card.jobOrder)} · {card.taskGroup}</span>
+                          <small>{card.facility} · {card.zone} · {getCardStatusLabel(card)}</small>
+                          {isExpanded && (
+                            <div className="allocation-card-details">
+                              {getCardDetailItems(card).map((item) => (
+                                <div className="allocation-card-detail-row" key={`${card.id}-${item.label}`}>
+                                  <span>{item.label}</span>
+                                  <strong>{item.value}</strong>
+                                </div>
+                              ))}
+                              {card.issueNote ? <p className="allocation-card-note">{card.issueNote}</p> : null}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                     {!slotCards.length && <span className="slot-empty">Drop here</span>}
                   </div>
                 );

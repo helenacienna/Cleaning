@@ -13,12 +13,20 @@ function buildInitialDraft(card) {
     frequency: card.frequency,
     frequencyType: card.frequencyType,
     required: card.required,
-    estimatedEffort: card.estimatedEffort,
+    estimatedMinutes: String(card.estimatedMinutes ?? ''),
     lastCompleted: card.lastCompleted,
     suggestedDue: card.suggestedDue,
     notes: card.notes,
     active: card.active,
   };
+}
+
+function formatEstimatedTimeRequired(estimatedMinutes) {
+  const minutes = Number(estimatedMinutes);
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    return '—';
+  }
+  return `${minutes} min`;
 }
 
 export default function TaskCardManager({ cards, zones }) {
@@ -123,6 +131,7 @@ export default function TaskCardManager({ cards, zones }) {
                 </div>
                 <span className="muted">#{card.jobOrderNumber} · {card.taskGroup}</span>
                 <span className="muted">{card.facility} · {card.zone}</span>
+                <span className="muted">Estimated time: {formatEstimatedTimeRequired(card.estimatedMinutes)}</span>
               </button>
             ))}
           </div>
@@ -138,6 +147,7 @@ export default function TaskCardManager({ cards, zones }) {
               <span className="badge">Job #{draft.jobOrderNumber}</span>
               <span className="badge">{draft.facility}</span>
               <span className="badge">{draft.zone}</span>
+              <span className="badge">{formatEstimatedTimeRequired(draft.estimatedMinutes)}</span>
             </div>
           </div>
 
@@ -189,12 +199,16 @@ export default function TaskCardManager({ cards, zones }) {
               </select>
             </label>
             <label className="field-label">
-              <span>Estimated effort</span>
-              <select value={draft.estimatedEffort} onChange={(event) => handleDraftChange('estimatedEffort', event.target.value)}>
-                <option>Quick check</option>
-                <option>Standard pass</option>
-                <option>Detailed pass</option>
-              </select>
+              <span>Estimated time required (minutes)</span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                value={draft.estimatedMinutes}
+                onChange={(event) => handleDraftChange('estimatedMinutes', event.target.value)}
+                placeholder="e.g. 12"
+              />
             </label>
             <label className="field-label">
               <span>Last completed</span>

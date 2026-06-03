@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import crypto from 'node:crypto';
 
-const facilities = ['Cienna North', 'Cienna Central', 'Cienna South'];
+const facilities = ['Cienna', 'Boheme', 'Holidays'];
 
 const staffBlueprints = [
   {
@@ -31,13 +31,13 @@ const staffBlueprints = [
     fullName: 'Mia Thompson',
     role: 'cleaner',
     shiftLabel: 'Morning flexible shift',
-    routeLabel: 'Cienna North → Cienna Central → Cienna North',
+    routeLabel: 'Cienna → Boheme → Cienna',
     shiftStart: '06:00',
     shiftEnd: '14:00',
     routes: [
-      { facility: 'Cienna North', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [0] },
-      { facility: 'Cienna Central', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [1, 2] },
-      { facility: 'Cienna North', zones: ['Mail room', 'Loading dock'], laneIndexes: [3] },
+      { facility: 'Cienna', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [0] },
+      { facility: 'Boheme', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [1, 2] },
+      { facility: 'Cienna', zones: ['Mail room', 'Loading dock'], laneIndexes: [3] },
     ],
   },
   {
@@ -45,13 +45,13 @@ const staffBlueprints = [
     fullName: 'Leo Nguyen',
     role: 'cleaner',
     shiftLabel: 'Day flexible shift',
-    routeLabel: 'Cienna Central → Cienna South → Cienna North',
+    routeLabel: 'Boheme → Holidays → Cienna',
     shiftStart: '07:30',
     shiftEnd: '15:30',
     routes: [
-      { facility: 'Cienna Central', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3', 'Residents lounge'], laneIndexes: [1, 2] },
-      { facility: 'Cienna South', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
-      { facility: 'Cienna North', zones: ['Mail room', 'Loading dock'], laneIndexes: [4] },
+      { facility: 'Boheme', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3', 'Residents lounge'], laneIndexes: [1, 2] },
+      { facility: 'Holidays', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
+      { facility: 'Cienna', zones: ['Mail room', 'Loading dock'], laneIndexes: [4] },
     ],
   },
   {
@@ -59,13 +59,13 @@ const staffBlueprints = [
     fullName: 'Ava Patel',
     role: 'cleaner',
     shiftLabel: 'Late flexible shift',
-    routeLabel: 'Cienna South → Cienna North → Cienna Central',
+    routeLabel: 'Holidays → Cienna → Boheme',
     shiftStart: '09:00',
     shiftEnd: '17:00',
     routes: [
-      { facility: 'Cienna South', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
-      { facility: 'Cienna North', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [4, 5] },
-      { facility: 'Cienna Central', zones: ['Mail room', 'Loading dock'], laneIndexes: [6] },
+      { facility: 'Holidays', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
+      { facility: 'Cienna', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [4, 5] },
+      { facility: 'Boheme', zones: ['Mail room', 'Loading dock'], laneIndexes: [6] },
     ],
   },
 ];

@@ -1,18 +1,107 @@
+'use client';
+
 import {
   appSummary,
   cleanerAssignments,
   supervisorCards,
+  taskCardTemplates,
   taskLibrary,
   reports,
   scheduleBuilder,
 } from '../data/demo-data';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 function statusClass(status) {
   return `task-status status-${status}`;
 }
 
+function formatTaskLabel(status = '') {
+  return status.replace('-', ' ');
+}
+
+function groupAssignmentTasks(tasks = []) {
+  const groups = new Map();
+
+  tasks.forEach((task, index) => {
+    const key = `${task.zone}__${task.taskGroup}`;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        zone: task.zone,
+        taskGroup: task.taskGroup,
+        tasks: [],
+      });
+    }
+
+    groups.get(key).tasks.push({ ...task, displayOrder: index + 1 });
+  });
+
+  return Array.from(groups.values()).map((group) => {
+    const completed = group.tasks.filter((task) => task.status === 'completed').length;
+    const total = group.tasks.length;
+    return {
+      ...group,
+      completed,
+      total,
+      progress: total ? Math.round((completed / total) * 100) : 0,
+    };
+  });
+}
+
+function formatRequirement(task) {
+  if (task.required) {
+    return task.required;
+  }
+  if (task.photoRequired) {
+    return 'Photo required';
+  }
+  if (task.commentRequired) {
+    return 'Comment required';
+  }
+  return 'Standard';
+}
+
+function formatEstimatedMinutes(task) {
+  if (!task.estimatedMinutes) {
+    return '—';
+  }
+  return `${task.estimatedMinutes} min`;
+}
+
+function formatTaskNumber(task) {
+  if (typeof task.displayOrder === 'number') {
+    return String(task.displayOrder).padStart(3, '0');
+  }
+  if (task.jobOrderNumber) {
+    return String(task.jobOrderNumber).padStart(3, '0');
+  }
+  return '—';
+}
+
+function getUnscheduledFacilityTasks(assignment) {
+  const scheduledTemplateIds = new Set(assignment.tasks.map((task) => task.templateId).filter(Boolean));
+
+  return taskCardTemplates
+    .filter((task) => task.facility === assignment.location && !scheduledTemplateIds.has(task.templateId))
+    .sort((a, b) => {
+      if (a.zone !== b.zone) {
+        return a.zone.localeCompare(b.zone);
+      }
+      if (a.taskGroup !== b.taskGroup) {
+        return a.taskGroup.localeCompare(b.taskGroup);
+      }
+      return a.title.localeCompare(b.title);
+    });
+}
+
 export default function HomePage() {
+  const [activeTaskCard, setActiveTaskCard] = useState(null);
+
+  useEffect(() => {
+    document.body.classList.toggle('modal-open', Boolean(activeTaskCard));
+    return () => document.body.classList.remove('modal-open');
+  }, [activeTaskCard]);
+
   return (
     <main className="page">
       <div className="topbar">
@@ -146,15 +235,26 @@ export default function HomePage() {
         ))}
       </section>
 
-      <section className="assignment-grid">
-        {cleanerAssignments.map((assignment) => (
+      <section>
+        <div className="panel-title">
+          <div>
+            <h3>Facility board</h3>
+            <p className="muted">Three live facility columns with grouped tasks, progress, and quick task-card access.</p>
+          </div>
+        </div>
+
+        <div className="assignment-grid">
+        {cleanerAssignments.map((assignment) => {
+          const unscheduledTasks = getUnscheduledFacilityTasks(assignment);
+
+          return (
           <div className="card" key={assignment.id}>
-            <div className="panel-title">
-              <div>
-                <h3>{assignment.location}</h3>
-                <p className="muted">{(assignment.zones?.length ? assignment.zones : [assignment.zone]).join(' · ')}</p>
-              </div>
-              <span className="badge">{assignment.shift}</span>
+            <div className="facility-card-header">
+              <Link className="button secondary facility-card-title-button" href={`/facility-board/${assignment.id}`}>
+                {assignment.location}
+              </Link>
+              <p className="muted facility-card-zones">{(assignment.zones?.length ? assignment.zones : [assignment.zone]).join(' · ')}</p>
+              <span className="badge facility-card-shift-badge">{assignment.shift}</span>
             </div>
             <div className="stat-row">
               <span className="flag">{assignment.stats.completed}/{assignment.stats.total} done</span>
@@ -165,23 +265,205 @@ export default function HomePage() {
               <Link className="button secondary" href={`/scan/${assignment.id}`}>Simulate QR scan</Link>
               <span className="muted">/{assignment.id}</span>
             </div>
-            <div className="task-list">
-              {assignment.tasks.map((task) => (
-                <div className="task-row" key={task.id}>
-                  <div>
-                    <strong>{task.title}</strong>
-                    <div className="flag-row">
-                      {task.photoRequired && <span className="flag">Photo required</span>}
-                      {task.commentRequired && <span className="flag">Comment required</span>}
+            <div className="task-list task-list-nested">
+              {groupAssignmentTasks(assignment.tasks).map((group) => (
+                <details className="task-group-disclosure" key={`${assignment.id}-${group.zone}-${group.taskGroup}`}>
+                  <summary className="task-group-summary">
+                    <div className="task-group-summary-copy">
+                      <strong>{group.taskGroup}</strong>
+                      <div className="muted">{group.zone} · {group.tasks.length} tasks</div>
+                      <div className="task-group-progress-row">
+                        <div className="task-group-progress"><span style={{ width: `${group.progress}%` }} /></div>
+                        <span className="task-group-progress-label">{group.completed}/{group.total}</span>
+                      </div>
                     </div>
+                    <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+                  </summary>
+                  <div className="task-group-body">
+                    {group.tasks.map((task) => {
+                      const taskCardDetails = {
+                        ...task,
+                        facility: assignment.location,
+                        shift: assignment.shift,
+                        assignmentId: assignment.id,
+                      };
+
+                      return (
+                      <details className="task-disclosure task-disclosure-compact" key={task.id}>
+                        <summary className="task-row task-row-disclosure task-row-disclosure-compact">
+                          <div className="task-inline-main">
+                            <button
+                              type="button"
+                              className="task-inline-order task-inline-order-button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setActiveTaskCard(taskCardDetails);
+                              }}
+                            >
+                              #{String(task.displayOrder).padStart(3, '0')}
+                            </button>
+                            <strong>{task.title}</strong>
+                          </div>
+                          <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+                            {task.photoRequired && <span className="flag task-inline-flag">Photo</span>}
+                            {task.commentRequired && <span className="flag task-inline-flag">Comment</span>}
+                            <span className={`${statusClass(task.status)} task-inline-status`}>{formatTaskLabel(task.status)}</span>
+                            <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+                          </div>
+                        </summary>
+                        <div className="task-disclosure-body">
+                          <div className="task-detail-grid">
+                            <div>
+                              <span className="muted">Task #</span>
+                              <strong>{String(task.displayOrder).padStart(3, '0')}</strong>
+                            </div>
+                            <div>
+                              <span className="muted">Group</span>
+                              <strong>{task.taskGroup}</strong>
+                            </div>
+                            <div>
+                              <span className="muted">Zone</span>
+                              <strong>{task.zone}</strong>
+                            </div>
+                            <div>
+                              <span className="muted">Status</span>
+                              <strong>{formatTaskLabel(task.status)}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      </details>
+                    );})}
                   </div>
-                  <span className={statusClass(task.status)}>{task.status.replace('-', ' ')}</span>
-                </div>
+                </details>
               ))}
             </div>
+            <details className="task-group-disclosure unscheduled-facility-disclosure">
+              <summary className="task-group-summary unscheduled-facility-summary">
+                <div className="task-group-summary-copy">
+                  <strong>Not scheduled today</strong>
+                  <div className="muted">All {assignment.location} tasks not included in this day&apos;s facility board</div>
+                  <div className="task-group-progress-row unscheduled-facility-meta-row">
+                    <span className="task-group-progress-label">{unscheduledTasks.length} tasks</span>
+                  </div>
+                </div>
+                <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div className="task-group-body unscheduled-facility-body">
+                {unscheduledTasks.length ? unscheduledTasks.map((task) => {
+                  const taskCardDetails = {
+                    ...task,
+                    facility: assignment.location,
+                    shift: assignment.shift,
+                    assignmentId: assignment.id,
+                    status: 'not scheduled',
+                  };
+
+                  return (
+                    <div className="task-row task-row-disclosure-compact unscheduled-task-row" key={`${assignment.id}-${task.templateId}`}>
+                      <div className="task-inline-main">
+                        <button
+                          type="button"
+                          className="task-inline-order task-inline-order-button"
+                          onClick={() => setActiveTaskCard(taskCardDetails)}
+                        >
+                          #{task.jobOrderNumber ?? '—'}
+                        </button>
+                        <div className="unscheduled-task-copy">
+                          <strong>{task.title}</strong>
+                          <span className="muted">{task.zone} · {task.taskGroup}</span>
+                        </div>
+                      </div>
+                      <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+                        <span className="flag task-inline-flag">{task.frequency}</span>
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <div className="task-row unscheduled-task-empty">
+                    <div>
+                      <strong>Everything for this facility is already scheduled</strong>
+                      <div className="muted">No extra facility tasks sitting outside today&apos;s run.</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </details>
           </div>
-        ))}
+          );
+        })}
+        </div>
       </section>
+
+      {activeTaskCard && (
+        <div className="modal-backdrop" role="presentation" onClick={() => setActiveTaskCard(null)}>
+          <div className="fullscreen-checklist task-card-modal" role="dialog" aria-modal="true" aria-labelledby="dashboard-task-card-modal-title" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header compact-modal-header">
+              <div>
+                <span className="badge">Task card details</span>
+                <h2 id="dashboard-task-card-modal-title">{activeTaskCard.title}</h2>
+                <strong>#{formatTaskNumber(activeTaskCard)} · {activeTaskCard.facility}</strong>
+              </div>
+              <button type="button" className="button secondary close-modal-button" onClick={() => setActiveTaskCard(null)}>Close</button>
+            </div>
+
+            <div className="task-card-modal-grid">
+              <div className="task-card-modal-section">
+                <span className="muted">Task card number</span>
+                <strong>{formatTaskNumber(activeTaskCard)}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Status</span>
+                <strong>{formatTaskLabel(activeTaskCard.status)}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Facility</span>
+                <strong>{activeTaskCard.facility}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Zone</span>
+                <strong>{activeTaskCard.zone}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Task group</span>
+                <strong>{activeTaskCard.taskGroup}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Shift</span>
+                <strong>{activeTaskCard.shift}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Template ID</span>
+                <strong>{activeTaskCard.templateId ?? '—'}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Job order</span>
+                <strong>{activeTaskCard.jobOrderNumber ? `#${activeTaskCard.jobOrderNumber}` : '—'}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Requirement</span>
+                <strong>{formatRequirement(activeTaskCard)}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Priority type</span>
+                <strong>{activeTaskCard.frequencyType ?? '—'}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Frequency</span>
+                <strong>{activeTaskCard.frequency ?? '—'}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Estimated time required</span>
+                <strong>{formatEstimatedMinutes(activeTaskCard)}</strong>
+              </div>
+              <div className="task-card-modal-section task-card-modal-section-span-2">
+                <span className="muted">Notes</span>
+                <strong>{activeTaskCard.notes ?? `${activeTaskCard.taskGroup} · ${activeTaskCard.zone} · ${activeTaskCard.facility}`}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="card schedule-builder" id="schedule-builder">
         <div className="panel-title">
