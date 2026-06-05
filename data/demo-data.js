@@ -98,7 +98,7 @@ const allocationStaff = [
   { name: 'Leo Nguyen', facility: 'Boheme', shiftLabel: 'Day flexible shift', shiftWindow: '7:30 AM – 3:30 PM', routeLabel: 'Boheme → Holidays → Cienna' },
   { name: 'Ava Patel', facility: 'Holidays', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM', routeLabel: 'Holidays → Cienna → Boheme' },
 ];
-const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5'];
+const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5', 'Sat 6', 'Sun 7', 'Mon 8', 'Tue 9', 'Wed 10'];
 const TARGET_TASKS_PER_SHIFT = 50;
 const COMPLETION_RATIO = 0.6;
 
