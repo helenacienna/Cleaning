@@ -184,7 +184,8 @@ function buildTaskCatalog() {
             templateId: makeTemplateId(templateIndex),
             jobOrderNumber: String(templateIndex + 1).padStart(3, '0'),
             required: taskIndex === 0 ? 'Standard' : zoneIndex % 3 === 0 ? 'Random photo eligible' : 'Comment on exception',
-            frequency: groupIndex === 0 ? 'Daily' : groupIndex === 1 ? 'Every 2 days' : 'Weekly',
+                frequency: groupIndex === 0 ? 'Daily' : groupIndex === 1 ? 'Every 2 days' : 'Weekly',
+            cadenceMode: groupIndex === 2 ? 'Anchored' : groupIndex === 1 ? 'Rolling' : 'Rolling',
             frequencyType: groupIndex === 2 ? 'Suggestive' : 'Critical',
             estimatedMinutes: taskIndex === 0 ? 5 : 10,
             lastCompleted: taskIndex === 0 ? '30 May 2026' : '29 May 2026',
@@ -409,6 +410,24 @@ function parseTemplateDateLabel(value) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
+function startOfDay(date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function addMonths(date, months) {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
+
 function diffCalendarDays(left, right) {
   const a = new Date(left);
   const b = new Date(right);
@@ -417,36 +436,66 @@ function diffCalendarDays(left, right) {
   return Math.round((a.getTime() - b.getTime()) / (24 * 60 * 60 * 1000));
 }
 
+function calculateDemoNextDueDate(template) {
+  const frequency = String(template.frequency || '').toLowerCase();
+  const cadenceMode = String(template.cadenceMode || 'Rolling').toLowerCase();
+  const lastCompleted = parseTemplateDateLabel(template.lastCompleted);
+  const suggestedDue = parseTemplateDateLabel(template.suggestedDue);
+
+  if (frequency === 'as required') {
+    return null;
+  }
+
+  if (frequency === 'daily') {
+    return suggestedDue ?? (lastCompleted ? addDays(startOfDay(lastCompleted), 1) : null);
+  }
+
+  if (frequency === 'every 2 days') {
+    return cadenceMode === 'rolling'
+      ? (lastCompleted ? addDays(startOfDay(lastCompleted), 2) : suggestedDue)
+      : suggestedDue;
+  }
+
+  if (frequency === 'weekly') {
+    return cadenceMode === 'rolling'
+      ? (lastCompleted ? addDays(startOfDay(lastCompleted), 7) : suggestedDue)
+      : suggestedDue;
+  }
+
+  if (frequency === 'monthly') {
+    return cadenceMode === 'rolling'
+      ? (lastCompleted ? addMonths(startOfDay(lastCompleted), 1) : suggestedDue)
+      : suggestedDue;
+  }
+
+  if (frequency === 'quarterly') {
+    return cadenceMode === 'rolling'
+      ? (lastCompleted ? addMonths(startOfDay(lastCompleted), 3) : suggestedDue)
+      : suggestedDue;
+  }
+
+  if (frequency === 'annual') {
+    return cadenceMode === 'rolling'
+      ? (lastCompleted ? addMonths(startOfDay(lastCompleted), 12) : suggestedDue)
+      : suggestedDue;
+  }
+
+  return suggestedDue;
+}
+
 function isTemplateScheduledOnBoardDay(template, boardDate) {
   const frequency = String(template.frequency || '').toLowerCase();
-  const suggestedDue = parseTemplateDateLabel(template.suggestedDue);
+  const nextDue = calculateDemoNextDueDate(template);
 
   if (frequency === 'daily') {
     return true;
   }
 
-  if (frequency === 'every 2 days') {
-    if (!suggestedDue) return false;
-    const diff = diffCalendarDays(boardDate, suggestedDue);
-    return diff >= 0 && diff % 2 === 0;
-  }
-
-  if (frequency === 'weekly') {
-    if (!suggestedDue) return false;
-    const diff = diffCalendarDays(boardDate, suggestedDue);
-    return diff >= 0 && diff % 7 === 0;
-  }
-
-  if (['monthly', 'quarterly', 'annual'].includes(frequency)) {
-    if (!suggestedDue) return false;
-    return diffCalendarDays(boardDate, suggestedDue) === 0;
-  }
-
-  if (frequency === 'as required') {
+  if (!nextDue) {
     return false;
   }
 
-  return true;
+  return diffCalendarDays(boardDate, nextDue) === 0;
 }
 
 function buildRouteTaskPool(staff, boardDate) {
