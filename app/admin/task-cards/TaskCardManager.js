@@ -12,6 +12,7 @@ function buildInitialDraft(card) {
     facility: card.facility,
     frequency: card.frequency,
     frequencyType: card.frequencyType,
+    cadenceMode: card.cadenceMode,
     required: card.required,
     estimatedMinutes: String(card.estimatedMinutes ?? ''),
     lastCompleted: card.lastCompleted,
@@ -132,6 +133,7 @@ export default function TaskCardManager({ cards, zones }) {
                 <span className="muted">#{card.jobOrderNumber} · {card.taskGroup}</span>
                 <span className="muted">{card.facility} · {card.zone}</span>
                 <span className="muted">Estimated time: {formatEstimatedTimeRequired(card.estimatedMinutes)}</span>
+                {card.frequency === 'weekly' && <span className="muted">Cadence: {card.cadenceMode}</span>}
               </button>
             ))}
           </div>
@@ -148,6 +150,7 @@ export default function TaskCardManager({ cards, zones }) {
               <span className="badge">{draft.facility}</span>
               <span className="badge">{draft.zone}</span>
               <span className="badge">{formatEstimatedTimeRequired(draft.estimatedMinutes)}</span>
+              {draft.frequency === 'weekly' && <span className="badge">{draft.cadenceMode}</span>}
             </div>
           </div>
 
@@ -189,6 +192,15 @@ export default function TaskCardManager({ cards, zones }) {
                 <option>Suggestive</option>
               </select>
             </label>
+            {draft.frequency === 'weekly' && (
+              <label className="field-label">
+                <span>Weekly cadence</span>
+                <select value={draft.cadenceMode} onChange={(event) => handleDraftChange('cadenceMode', event.target.value)}>
+                  <option>Anchored</option>
+                  <option>Rolling</option>
+                </select>
+              </label>
+            )}
             <label className="field-label">
               <span>Requirement</span>
               <select value={draft.required} onChange={(event) => handleDraftChange('required', event.target.value)}>
