@@ -735,7 +735,14 @@ export const reports = [
 ];
 
 function parseBoardDateLabel(day) {
-  return new Date(`${day.replace(/^(\w{3})\s(\d{1,2})$/, '2026-06-$2')}T00:00:00`);
+  const match = String(day).match(/^(\w{3})\s(\d{1,2})$/);
+  if (!match) {
+    return new Date(Number.NaN);
+  }
+
+  const [, , dayNumber] = match;
+  const paddedDay = String(dayNumber).padStart(2, '0');
+  return new Date(`2026-06-${paddedDay}T00:00:00`);
 }
 
 function parseTemplateDateLabel(value) {
