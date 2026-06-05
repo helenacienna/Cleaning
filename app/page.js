@@ -627,7 +627,13 @@ export default function HomePage() {
             if (current && boardDays.includes(current)) {
               return current;
             }
-            return boardDays.find((day) => day === todayBoardDay) ?? boardDays[0] ?? null;
+
+            const todayIndex = boardDays.indexOf(todayBoardDay);
+            if (todayIndex !== -1) {
+              return boardDays[todayIndex];
+            }
+
+            return boardDays[boardDays.length - 1] ?? boardDays[0] ?? null;
           });
         }
       })
