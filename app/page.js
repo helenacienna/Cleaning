@@ -22,7 +22,7 @@ function formatTaskLabel(status = '') {
   return status.replace('-', ' ');
 }
 
-function groupAssignmentTasks(tasks = []) {
+function buildTaskGroupCollection(tasks = []) {
   const groups = new Map();
 
   tasks.forEach((task, index) => {
@@ -48,6 +48,56 @@ function groupAssignmentTasks(tasks = []) {
       progress: total ? Math.round((completed / total) * 100) : 0,
     };
   });
+}
+
+function groupAssignmentTasks(tasks = []) {
+  const taskGroups = buildTaskGroupCollection(tasks);
+  const dailyTaskGroups = [];
+  const otherTaskGroups = [];
+
+  taskGroups.forEach((group) => {
+    const allDaily = group.tasks.every((task) => !task.frequency || String(task.frequency).toLowerCase() === 'daily');
+    if (allDaily) {
+      dailyTaskGroups.push(group);
+    } else {
+      otherTaskGroups.push(group);
+    }
+  });
+
+  const zoneMap = new Map();
+  dailyTaskGroups.forEach((group) => {
+    if (!zoneMap.has(group.zone)) {
+      zoneMap.set(group.zone, {
+        zone: group.zone,
+        taskGroups: [],
+      });
+    }
+    zoneMap.get(group.zone).taskGroups.push(group);
+  });
+
+  const dailyZones = Array.from(zoneMap.values()).map((zoneEntry) => {
+    const completed = zoneEntry.taskGroups.reduce((sum, group) => sum + group.completed, 0);
+    const total = zoneEntry.taskGroups.reduce((sum, group) => sum + group.total, 0);
+    return {
+      ...zoneEntry,
+      completed,
+      total,
+      progress: total ? Math.round((completed / total) * 100) : 0,
+    };
+  });
+
+  const dailyCompleted = dailyZones.reduce((sum, zone) => sum + zone.completed, 0);
+  const dailyTotal = dailyZones.reduce((sum, zone) => sum + zone.total, 0);
+
+  return {
+    dailyZones,
+    otherTaskGroups,
+    dailySummary: {
+      completed: dailyCompleted,
+      total: dailyTotal,
+      progress: dailyTotal ? Math.round((dailyCompleted / dailyTotal) * 100) : 0,
+    },
+  };
 }
 
 function formatRequirement(task) {
@@ -206,7 +256,7 @@ function buildAssignmentPresentationData(assignments, options = {}) {
   return assignments.map((assignment) => ({
     ...assignment,
     showProgress,
-    groupedTasks: groupAssignmentTasks(assignment.tasks),
+    taskGroups: groupAssignmentTasks(assignment.tasks),
     unscheduledTasks: getUnscheduledFacilityTasks(assignment),
   }));
 }
@@ -290,11 +340,138 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
         <span className="muted">/{assignment.sourceDay ?? activeBoardDay ?? 'board'}</span>
       </div>
       <div className="task-list task-list-nested">
-        {assignment.groupedTasks.map((group) => (
+        <details className="task-group-disclosure">
+          <summary className="task-group-summary">
+            <div className="task-group-summary-copy">
+              <strong>Daily tasks</strong>
+              <div className="muted">Core daily run for {assignment.location}</div>
+              {assignment.showProgress ? (
+                <div className="task-group-progress-row">
+                  <div className="task-group-progress"><span style={{ width: `${assignment.taskGroups.dailySummary.progress}%` }} /></div>
+                  <span className="task-group-progress-label">{assignment.taskGroups.dailySummary.completed}/{assignment.taskGroups.dailySummary.total}</span>
+                </div>
+              ) : (
+                <div className="task-group-progress-row">
+                  <span className="task-group-progress-label">Not started yet</span>
+                </div>
+              )}
+            </div>
+            <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+          </summary>
+          <div className="task-group-body">
+            {assignment.taskGroups.dailyZones.length ? assignment.taskGroups.dailyZones.map((zone) => (
+              <details className="task-disclosure" key={`${assignment.id}-${zone.zone}`}>
+                <summary className="task-row task-row-disclosure">
+                  <div>
+                    <strong>{zone.zone}</strong>
+                    <div className="muted">{zone.taskGroups.length} task groups</div>
+                  </div>
+                  <div className="task-disclosure-summary-right">
+                    {assignment.showProgress ? (
+                      <>
+                        <div className="task-group-progress"><span style={{ width: `${zone.progress}%` }} /></div>
+                        <span className="task-group-progress-label">{zone.completed}/{zone.total}</span>
+                      </>
+                    ) : (
+                      <span className="task-group-progress-label">Not started yet</span>
+                    )}
+                    <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+                  </div>
+                </summary>
+                <div className="task-group-body">
+                  {zone.taskGroups.map((group) => (
+                    <details className="task-disclosure task-disclosure-compact" key={`${assignment.id}-${zone.zone}-${group.taskGroup}`}>
+                      <summary className="task-row task-row-disclosure task-row-disclosure-compact">
+                        <div className="task-inline-main">
+                          <strong>{group.taskGroup}</strong>
+                        </div>
+                        <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+                          {assignment.showProgress ? (
+                            <span className="task-group-progress-label">{group.completed}/{group.total}</span>
+                          ) : (
+                            <span className="task-group-progress-label">Not started yet</span>
+                          )}
+                          <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+                        </div>
+                      </summary>
+                      <div className="task-disclosure-body">
+                        {group.tasks.map((task) => {
+                          const taskCardDetails = {
+                            ...task,
+                            facility: assignment.location,
+                            shift: assignment.shift,
+                            assignmentId: assignment.id,
+                          };
+
+                          return (
+                            <details className="task-disclosure task-disclosure-compact" key={task.id}>
+                              <summary className="task-row task-row-disclosure task-row-disclosure-compact">
+                                <div className="task-inline-main">
+                                  <button
+                                    type="button"
+                                    className="task-inline-order task-inline-order-button"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      onOpenTaskCard(taskCardDetails);
+                                    }}
+                                  >
+                                    #{String(task.displayOrder).padStart(3, '0')}
+                                  </button>
+                                  <strong>{task.title}</strong>
+                                </div>
+                                <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+                                  {task.photoRequired && <span className="flag task-inline-flag">Photo</span>}
+                                  {task.commentRequired && <span className="flag task-inline-flag">Comment</span>}
+                                  <span className={`${statusClass(task.status)} task-inline-status`}>{formatTaskLabel(task.status)}</span>
+                                  <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+                                </div>
+                              </summary>
+                              <div className="task-disclosure-body">
+                                <div className="task-detail-grid">
+                                  <div>
+                                    <span className="muted">Task #</span>
+                                    <strong>{String(task.displayOrder).padStart(3, '0')}</strong>
+                                  </div>
+                                  <div>
+                                    <span className="muted">Group</span>
+                                    <strong>{task.taskGroup}</strong>
+                                  </div>
+                                  <div>
+                                    <span className="muted">Zone</span>
+                                    <strong>{task.zone}</strong>
+                                  </div>
+                                  <div>
+                                    <span className="muted">Status</span>
+                                    <strong>{formatTaskLabel(task.status)}</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            </details>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              </details>
+            )) : (
+              <div className="task-row unscheduled-task-empty">
+                <div>
+                  <strong>No daily tasks in this facility run</strong>
+                  <div className="muted">This date only has non-daily work scheduled here.</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </details>
+
+        {assignment.taskGroups.otherTaskGroups.map((group) => (
           <details className="task-group-disclosure" key={`${assignment.id}-${group.zone}-${group.taskGroup}`}>
             <summary className="task-group-summary">
               <div className="task-group-summary-copy">
                 <strong>{group.taskGroup}</strong>
+                <div className="muted">{group.zone} · {group.tasks[0]?.frequency ?? 'Other frequency'}</div>
                 {assignment.showProgress ? (
                   <div className="task-group-progress-row">
                     <div className="task-group-progress"><span style={{ width: `${group.progress}%` }} /></div>
