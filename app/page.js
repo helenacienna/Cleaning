@@ -154,6 +154,22 @@ function getTodayBoardDayKey() {
   }).replace(',', '');
 }
 
+function isFutureBoardDay(dayKey, boardDays) {
+  if (!dayKey || !Array.isArray(boardDays) || !boardDays.length) {
+    return false;
+  }
+
+  const todayKey = getTodayBoardDayKey();
+  const todayIndex = boardDays.indexOf(todayKey);
+  const activeIndex = boardDays.indexOf(dayKey);
+
+  if (todayIndex === -1 || activeIndex === -1) {
+    return false;
+  }
+
+  return activeIndex > todayIndex;
+}
+
 function getLastCompletedSortValue(task) {
   const days = diffInDays(parseDemoDate(task.lastCompleted));
 
@@ -184,9 +200,12 @@ function getUnscheduledFacilityTasks(assignment) {
     });
 }
 
-function buildAssignmentPresentationData(assignments) {
+function buildAssignmentPresentationData(assignments, options = {}) {
+  const showProgress = options.showProgress !== false;
+
   return assignments.map((assignment) => ({
     ...assignment,
+    showProgress,
     groupedTasks: groupAssignmentTasks(assignment.tasks),
     unscheduledTasks: getUnscheduledFacilityTasks(assignment),
   }));
@@ -276,10 +295,16 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
             <summary className="task-group-summary">
               <div className="task-group-summary-copy">
                 <strong>{group.taskGroup}</strong>
-                <div className="task-group-progress-row">
-                  <div className="task-group-progress"><span style={{ width: `${group.progress}%` }} /></div>
-                  <span className="task-group-progress-label">{group.completed}/{group.total}</span>
-                </div>
+                {assignment.showProgress ? (
+                  <div className="task-group-progress-row">
+                    <div className="task-group-progress"><span style={{ width: `${group.progress}%` }} /></div>
+                    <span className="task-group-progress-label">{group.completed}/{group.total}</span>
+                  </div>
+                ) : (
+                  <div className="task-group-progress-row">
+                    <span className="task-group-progress-label">Not started yet</span>
+                  </div>
+                )}
               </div>
               <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
             </summary>
@@ -447,9 +472,10 @@ export default function HomePage() {
       : []
   ), [dashboardBoard, activeBoardDay]);
   const visibleAssignments = dashboardAssignments.length ? dashboardAssignments : cleanerAssignments;
+  const showingFutureBoardDay = isFutureBoardDay(activeBoardDay, boardDays);
   const assignmentPresentationData = useMemo(
-    () => buildAssignmentPresentationData(visibleAssignments),
-    [visibleAssignments],
+    () => buildAssignmentPresentationData(visibleAssignments, { showProgress: !showingFutureBoardDay }),
+    [visibleAssignments, showingFutureBoardDay],
   );
 
   return (
