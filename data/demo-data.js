@@ -483,6 +483,30 @@ function calculateDemoNextDueDate(template) {
   return suggestedDue;
 }
 
+function hasDayIntervalOccurrence(boardDate, firstDueDate, intervalDays) {
+  if (!firstDueDate) {
+    return false;
+  }
+
+  const diff = diffCalendarDays(boardDate, firstDueDate);
+  return diff >= 0 && diff % intervalDays === 0;
+}
+
+function hasMonthIntervalOccurrence(boardDate, firstDueDate, intervalMonths) {
+  if (!firstDueDate) {
+    return false;
+  }
+
+  const board = startOfDay(boardDate);
+  const first = startOfDay(firstDueDate);
+  if (board < first) {
+    return false;
+  }
+
+  const monthDiff = (board.getFullYear() - first.getFullYear()) * 12 + (board.getMonth() - first.getMonth());
+  return monthDiff >= 0 && monthDiff % intervalMonths === 0 && board.getDate() === first.getDate();
+}
+
 function isTemplateScheduledOnBoardDay(template, boardDate) {
   const frequency = String(template.frequency || '').toLowerCase();
   const nextDue = calculateDemoNextDueDate(template);
@@ -491,11 +515,31 @@ function isTemplateScheduledOnBoardDay(template, boardDate) {
     return true;
   }
 
-  if (!nextDue) {
+  if (frequency === 'every 2 days') {
+    return hasDayIntervalOccurrence(boardDate, nextDue, 2);
+  }
+
+  if (frequency === 'weekly') {
+    return hasDayIntervalOccurrence(boardDate, nextDue, 7);
+  }
+
+  if (frequency === 'monthly') {
+    return hasMonthIntervalOccurrence(boardDate, nextDue, 1);
+  }
+
+  if (frequency === 'quarterly') {
+    return hasMonthIntervalOccurrence(boardDate, nextDue, 3);
+  }
+
+  if (frequency === 'annual') {
+    return hasMonthIntervalOccurrence(boardDate, nextDue, 12);
+  }
+
+  if (frequency === 'as required') {
     return false;
   }
 
-  return diffCalendarDays(boardDate, nextDue) === 0;
+  return nextDue ? diffCalendarDays(boardDate, nextDue) === 0 : false;
 }
 
 function buildRouteTaskPool(staff, boardDate) {
