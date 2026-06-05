@@ -396,11 +396,68 @@ export const reports = [
   ['Audits passed', '33 / 36'],
 ];
 
-function buildRouteTaskPool(staff) {
+function parseBoardDateLabel(day) {
+  return new Date(`${day.replace(/^(\w{3})\s(\d{1,2})$/, '2026-06-$2')}T00:00:00`);
+}
+
+function parseTemplateDateLabel(value) {
+  if (!value || value === '—' || value === 'As triggered') {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function diffCalendarDays(left, right) {
+  const a = new Date(left);
+  const b = new Date(right);
+  a.setHours(0, 0, 0, 0);
+  b.setHours(0, 0, 0, 0);
+  return Math.round((a.getTime() - b.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+function isTemplateScheduledOnBoardDay(template, boardDate) {
+  const frequency = String(template.frequency || '').toLowerCase();
+  const suggestedDue = parseTemplateDateLabel(template.suggestedDue);
+
+  if (frequency === 'daily') {
+    return true;
+  }
+
+  if (frequency === 'every 2 days') {
+    if (!suggestedDue) return false;
+    const diff = diffCalendarDays(boardDate, suggestedDue);
+    return diff >= 0 && diff % 2 === 0;
+  }
+
+  if (frequency === 'weekly') {
+    if (!suggestedDue) return false;
+    const diff = diffCalendarDays(boardDate, suggestedDue);
+    return diff >= 0 && diff % 7 === 0;
+  }
+
+  if (['monthly', 'quarterly', 'annual'].includes(frequency)) {
+    if (!suggestedDue) return false;
+    return diffCalendarDays(boardDate, suggestedDue) === 0;
+  }
+
+  if (frequency === 'as required') {
+    return false;
+  }
+
+  return true;
+}
+
+function buildRouteTaskPool(staff, boardDate) {
   const routeStops = allocationRoutes[staff.name] || [];
 
   return routeStops.flatMap((stop, stopIndex) => {
-    const stopTemplates = taskCatalog.filter((template) => template.facility === stop.facility && stop.zones.includes(template.zone));
+    const stopTemplates = taskCatalog.filter((template) => (
+      template.facility === stop.facility
+      && stop.zones.includes(template.zone)
+      && isTemplateScheduledOnBoardDay(template, boardDate)
+    ));
     const laneSpan = stop.laneIndexes.length;
 
     return stopTemplates.map((template, templateIndex) => ({
@@ -413,10 +470,14 @@ function buildRouteTaskPool(staff) {
 
 const allocationCards = allocationDays.flatMap((day, dayIndex) => (
   allocationStaff.flatMap((staff) => {
-    const routeTaskPool = buildRouteTaskPool(staff);
-    const completedTarget = Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO);
+    const routeTaskPool = buildRouteTaskPool(staff, parseBoardDateLabel(day));
+    if (!routeTaskPool.length) {
+      return [];
+    }
+    const taskCount = Math.min(TARGET_TASKS_PER_SHIFT, routeTaskPool.length);
+    const completedTarget = Math.round(taskCount * COMPLETION_RATIO);
 
-    return Array.from({ length: TARGET_TASKS_PER_SHIFT }, (_, index) => {
+    return Array.from({ length: taskCount }, (_, index) => {
       const poolItem = routeTaskPool[index % routeTaskPool.length];
       const template = poolItem.template;
       const jobOrder = index + 1;
