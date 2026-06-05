@@ -278,7 +278,7 @@ async function main() {
               description: `${groupBlueprint.name} · ${zoneBlueprint.zone} · ${facility.name}`,
               serviceType: 'routine',
               recurrenceType,
-              recurrenceRule: recurrenceType === 'weekly' ? { cadenceMode: 'anchored' } : null,
+              recurrenceRule: recurrenceType === 'weekly' ? { cadenceMode: 'anchored', designatedDay: 'mon' } : null,
               targetDays: recurrenceType === 'weekly' ? ['mon'] : ['mon', 'tue', 'wed', 'thu', 'fri'],
               preferredTimeWindow: 'flexible',
               defaultSequence: templateCounter,

@@ -13,6 +13,7 @@ function buildInitialDraft(card) {
     frequency: card.frequency,
     frequencyType: card.frequencyType,
     cadenceMode: card.cadenceMode,
+    designatedDay: card.designatedDay,
     required: card.required,
     estimatedMinutes: String(card.estimatedMinutes ?? ''),
     lastCompleted: card.lastCompleted,
@@ -133,7 +134,7 @@ export default function TaskCardManager({ cards, zones }) {
                 <span className="muted">#{card.jobOrderNumber} · {card.taskGroup}</span>
                 <span className="muted">{card.facility} · {card.zone}</span>
                 <span className="muted">Estimated time: {formatEstimatedTimeRequired(card.estimatedMinutes)}</span>
-                {card.frequency === 'weekly' && <span className="muted">Cadence: {card.cadenceMode}</span>}
+                {card.frequency === 'weekly' && <span className="muted">Cadence: {card.cadenceMode} · Day: {card.designatedDay}</span>}
               </button>
             ))}
           </div>
@@ -150,7 +151,7 @@ export default function TaskCardManager({ cards, zones }) {
               <span className="badge">{draft.facility}</span>
               <span className="badge">{draft.zone}</span>
               <span className="badge">{formatEstimatedTimeRequired(draft.estimatedMinutes)}</span>
-              {draft.frequency === 'weekly' && <span className="badge">{draft.cadenceMode}</span>}
+              {draft.frequency === 'weekly' && <span className="badge">{draft.cadenceMode} · {draft.designatedDay}</span>}
             </div>
           </div>
 
@@ -193,13 +194,27 @@ export default function TaskCardManager({ cards, zones }) {
               </select>
             </label>
             {draft.frequency === 'weekly' && (
-              <label className="field-label">
-                <span>Weekly cadence</span>
-                <select value={draft.cadenceMode} onChange={(event) => handleDraftChange('cadenceMode', event.target.value)}>
-                  <option>Anchored</option>
-                  <option>Rolling</option>
-                </select>
-              </label>
+              <>
+                <label className="field-label">
+                  <span>Weekly cadence</span>
+                  <select value={draft.cadenceMode} onChange={(event) => handleDraftChange('cadenceMode', event.target.value)}>
+                    <option>Anchored</option>
+                    <option>Rolling</option>
+                  </select>
+                </label>
+                <label className="field-label">
+                  <span>Designated day</span>
+                  <select value={draft.designatedDay} onChange={(event) => handleDraftChange('designatedDay', event.target.value)}>
+                    <option>MON</option>
+                    <option>TUE</option>
+                    <option>WED</option>
+                    <option>THU</option>
+                    <option>FRI</option>
+                    <option>SAT</option>
+                    <option>SUN</option>
+                  </select>
+                </label>
+              </>
             )}
             <label className="field-label">
               <span>Requirement</span>
