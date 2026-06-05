@@ -10,7 +10,7 @@ import {
   scheduleBuilder,
 } from '../data/demo-data';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -184,6 +184,14 @@ function getUnscheduledFacilityTasks(assignment) {
     });
 }
 
+function buildAssignmentPresentationData(assignments) {
+  return assignments.map((assignment) => ({
+    ...assignment,
+    groupedTasks: groupAssignmentTasks(assignment.tasks),
+    unscheduledTasks: getUnscheduledFacilityTasks(assignment),
+  }));
+}
+
 function buildDashboardAssignmentsFromBoard(board, selectedDay) {
   if (!board?.cards?.length || !selectedDay) {
     return [];
@@ -249,6 +257,150 @@ function formatBoardStatusForDashboard(status) {
   }
 }
 
+const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBoardDay, onOpenTaskCard }) {
+  return (
+    <div className="card">
+      <div className="facility-card-header">
+        <Link className="button secondary facility-card-title-button" href={`/facility-board/${assignment.id}`}>
+          {assignment.location}
+        </Link>
+        <span className="badge facility-card-shift-badge">{assignment.shift}</span>
+      </div>
+      <div className="qr-link-row">
+        <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
+        <span className="muted">/{assignment.sourceDay ?? activeBoardDay ?? 'board'}</span>
+      </div>
+      <div className="task-list task-list-nested">
+        {assignment.groupedTasks.map((group) => (
+          <details className="task-group-disclosure" key={`${assignment.id}-${group.zone}-${group.taskGroup}`}>
+            <summary className="task-group-summary">
+              <div className="task-group-summary-copy">
+                <strong>{group.taskGroup}</strong>
+                <div className="task-group-progress-row">
+                  <div className="task-group-progress"><span style={{ width: `${group.progress}%` }} /></div>
+                  <span className="task-group-progress-label">{group.completed}/{group.total}</span>
+                </div>
+              </div>
+              <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div className="task-group-body">
+              {group.tasks.map((task) => {
+                const taskCardDetails = {
+                  ...task,
+                  facility: assignment.location,
+                  shift: assignment.shift,
+                  assignmentId: assignment.id,
+                };
+
+                return (
+                  <details className="task-disclosure task-disclosure-compact" key={task.id}>
+                    <summary className="task-row task-row-disclosure task-row-disclosure-compact">
+                      <div className="task-inline-main">
+                        <button
+                          type="button"
+                          className="task-inline-order task-inline-order-button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onOpenTaskCard(taskCardDetails);
+                          }}
+                        >
+                          #{String(task.displayOrder).padStart(3, '0')}
+                        </button>
+                        <strong>{task.title}</strong>
+                      </div>
+                      <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+                        {task.photoRequired && <span className="flag task-inline-flag">Photo</span>}
+                        {task.commentRequired && <span className="flag task-inline-flag">Comment</span>}
+                        <span className={`${statusClass(task.status)} task-inline-status`}>{formatTaskLabel(task.status)}</span>
+                        <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+                      </div>
+                    </summary>
+                    <div className="task-disclosure-body">
+                      <div className="task-detail-grid">
+                        <div>
+                          <span className="muted">Task #</span>
+                          <strong>{String(task.displayOrder).padStart(3, '0')}</strong>
+                        </div>
+                        <div>
+                          <span className="muted">Group</span>
+                          <strong>{task.taskGroup}</strong>
+                        </div>
+                        <div>
+                          <span className="muted">Zone</span>
+                          <strong>{task.zone}</strong>
+                        </div>
+                        <div>
+                          <span className="muted">Status</span>
+                          <strong>{formatTaskLabel(task.status)}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
+          </details>
+        ))}
+      </div>
+      <details className="task-group-disclosure unscheduled-facility-disclosure">
+        <summary className="task-group-summary unscheduled-facility-summary">
+          <div className="task-group-summary-copy">
+            <strong>Not scheduled today</strong>
+            <div className="muted">All {assignment.location} tasks not included in this day&apos;s facility board</div>
+            <div className="task-group-progress-row unscheduled-facility-meta-row">
+              <span className="task-group-progress-label">{assignment.unscheduledTasks.length} tasks</span>
+            </div>
+          </div>
+          <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+        </summary>
+        <div className="task-group-body unscheduled-facility-body">
+          {assignment.unscheduledTasks.length ? assignment.unscheduledTasks.map((task) => {
+            const taskCardDetails = {
+              ...task,
+              facility: assignment.location,
+              shift: assignment.shift,
+              assignmentId: assignment.id,
+              status: 'not scheduled',
+            };
+
+            return (
+              <div className="task-row task-row-disclosure-compact unscheduled-task-row" key={`${assignment.id}-${task.templateId}`}>
+                <div className="task-inline-main">
+                  <button
+                    type="button"
+                    className="task-inline-order task-inline-order-button"
+                    onClick={() => onOpenTaskCard(taskCardDetails)}
+                  >
+                    #{task.jobOrderNumber ?? '—'}
+                  </button>
+                  <div className="unscheduled-task-copy">
+                    <strong>{task.title}</strong>
+                    <span className="muted">{task.zone} · {task.taskGroup}</span>
+                    <span className="muted unscheduled-task-timing">
+                      Last done: {formatLastCompletedAge(task.lastCompleted)} · Next: {formatNextScheduleTiming(task.suggestedDue)}
+                    </span>
+                  </div>
+                </div>
+                <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+                  <span className="flag task-inline-flag">{task.frequency}</span>
+                </div>
+              </div>
+            );
+          }) : (
+            <div className="task-row unscheduled-task-empty">
+              <div>
+                <strong>Everything for this facility is already scheduled</strong>
+                <div className="muted">No extra facility tasks sitting outside today&apos;s run.</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </details>
+    </div>
+  );
+});
+
 export default function HomePage() {
   const [activeTaskCard, setActiveTaskCard] = useState(null);
   const [selectedBoardDay, setSelectedBoardDay] = useState(null);
@@ -289,10 +441,16 @@ export default function HomePage() {
     ? selectedBoardDay
     : boardDays[0] ?? null;
   const activeBoardDayIndex = activeBoardDay ? boardDays.indexOf(activeBoardDay) : -1;
-  const dashboardAssignments = dashboardBoard
-    ? buildDashboardAssignmentsFromBoard(dashboardBoard, activeBoardDay)
-    : [];
+  const dashboardAssignments = useMemo(() => (
+    dashboardBoard
+      ? buildDashboardAssignmentsFromBoard(dashboardBoard, activeBoardDay)
+      : []
+  ), [dashboardBoard, activeBoardDay]);
   const visibleAssignments = dashboardAssignments.length ? dashboardAssignments : cleanerAssignments;
+  const assignmentPresentationData = useMemo(
+    () => buildAssignmentPresentationData(visibleAssignments),
+    [visibleAssignments],
+  );
 
   return (
     <main className="page">
@@ -383,150 +541,14 @@ export default function HomePage() {
         </div>
 
         <div className="assignment-grid">
-        {visibleAssignments.map((assignment) => {
-          const unscheduledTasks = getUnscheduledFacilityTasks(assignment);
-
-          return (
-          <div className="card" key={assignment.id}>
-            <div className="facility-card-header">
-              <Link className="button secondary facility-card-title-button" href={`/facility-board/${assignment.id}`}>
-                {assignment.location}
-              </Link>
-              <span className="badge facility-card-shift-badge">{assignment.shift}</span>
-            </div>
-            <div className="qr-link-row">
-              <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
-              <span className="muted">/{assignment.sourceDay ?? activeBoardDay ?? 'board'}</span>
-            </div>
-            <div className="task-list task-list-nested">
-              {groupAssignmentTasks(assignment.tasks).map((group) => (
-                <details className="task-group-disclosure" key={`${assignment.id}-${group.zone}-${group.taskGroup}`}>
-                  <summary className="task-group-summary">
-                    <div className="task-group-summary-copy">
-                      <strong>{group.taskGroup}</strong>
-                      <div className="task-group-progress-row">
-                        <div className="task-group-progress"><span style={{ width: `${group.progress}%` }} /></div>
-                        <span className="task-group-progress-label">{group.completed}/{group.total}</span>
-                      </div>
-                    </div>
-                    <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
-                  </summary>
-                  <div className="task-group-body">
-                    {group.tasks.map((task) => {
-                      const taskCardDetails = {
-                        ...task,
-                        facility: assignment.location,
-                        shift: assignment.shift,
-                        assignmentId: assignment.id,
-                      };
-
-                      return (
-                      <details className="task-disclosure task-disclosure-compact" key={task.id}>
-                        <summary className="task-row task-row-disclosure task-row-disclosure-compact">
-                          <div className="task-inline-main">
-                            <button
-                              type="button"
-                              className="task-inline-order task-inline-order-button"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                setActiveTaskCard(taskCardDetails);
-                              }}
-                            >
-                              #{String(task.displayOrder).padStart(3, '0')}
-                            </button>
-                            <strong>{task.title}</strong>
-                          </div>
-                          <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
-                            {task.photoRequired && <span className="flag task-inline-flag">Photo</span>}
-                            {task.commentRequired && <span className="flag task-inline-flag">Comment</span>}
-                            <span className={`${statusClass(task.status)} task-inline-status`}>{formatTaskLabel(task.status)}</span>
-                            <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
-                          </div>
-                        </summary>
-                        <div className="task-disclosure-body">
-                          <div className="task-detail-grid">
-                            <div>
-                              <span className="muted">Task #</span>
-                              <strong>{String(task.displayOrder).padStart(3, '0')}</strong>
-                            </div>
-                            <div>
-                              <span className="muted">Group</span>
-                              <strong>{task.taskGroup}</strong>
-                            </div>
-                            <div>
-                              <span className="muted">Zone</span>
-                              <strong>{task.zone}</strong>
-                            </div>
-                            <div>
-                              <span className="muted">Status</span>
-                              <strong>{formatTaskLabel(task.status)}</strong>
-                            </div>
-                          </div>
-                        </div>
-                      </details>
-                    );})}
-                  </div>
-                </details>
-              ))}
-            </div>
-            <details className="task-group-disclosure unscheduled-facility-disclosure">
-              <summary className="task-group-summary unscheduled-facility-summary">
-                <div className="task-group-summary-copy">
-                  <strong>Not scheduled today</strong>
-                  <div className="muted">All {assignment.location} tasks not included in this day&apos;s facility board</div>
-                  <div className="task-group-progress-row unscheduled-facility-meta-row">
-                    <span className="task-group-progress-label">{unscheduledTasks.length} tasks</span>
-                  </div>
-                </div>
-                <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
-              </summary>
-              <div className="task-group-body unscheduled-facility-body">
-                {unscheduledTasks.length ? unscheduledTasks.map((task) => {
-                  const taskCardDetails = {
-                    ...task,
-                    facility: assignment.location,
-                    shift: assignment.shift,
-                    assignmentId: assignment.id,
-                    status: 'not scheduled',
-                  };
-
-                  return (
-                    <div className="task-row task-row-disclosure-compact unscheduled-task-row" key={`${assignment.id}-${task.templateId}`}>
-                      <div className="task-inline-main">
-                        <button
-                          type="button"
-                          className="task-inline-order task-inline-order-button"
-                          onClick={() => setActiveTaskCard(taskCardDetails)}
-                        >
-                          #{task.jobOrderNumber ?? '—'}
-                        </button>
-                        <div className="unscheduled-task-copy">
-                          <strong>{task.title}</strong>
-                          <span className="muted">{task.zone} · {task.taskGroup}</span>
-                          <span className="muted unscheduled-task-timing">
-                            Last done: {formatLastCompletedAge(task.lastCompleted)} · Next: {formatNextScheduleTiming(task.suggestedDue)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
-                        <span className="flag task-inline-flag">{task.frequency}</span>
-                      </div>
-                    </div>
-                  );
-                }) : (
-                  <div className="task-row unscheduled-task-empty">
-                    <div>
-                      <strong>Everything for this facility is already scheduled</strong>
-                      <div className="muted">No extra facility tasks sitting outside today&apos;s run.</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </details>
-          </div>
-          );
-        })}
+        {assignmentPresentationData.map((assignment) => (
+          <FacilityBoardCard
+            key={assignment.id}
+            assignment={assignment}
+            activeBoardDay={activeBoardDay}
+            onOpenTaskCard={setActiveTaskCard}
+          />
+        ))}
         </div>
       </section>
 
