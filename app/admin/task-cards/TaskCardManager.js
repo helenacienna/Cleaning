@@ -184,6 +184,10 @@ export default function TaskCardManager({ cards, zones }) {
                 <option>Daily</option>
                 <option>Every 2 days</option>
                 <option>Weekly</option>
+                <option>Monthly</option>
+                <option>Quarterly</option>
+                <option>Annual</option>
+                <option>As required</option>
               </select>
             </label>
             <label className="field-label">
