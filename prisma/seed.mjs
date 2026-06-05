@@ -406,7 +406,7 @@ async function main() {
 
           taskInstanceRows.push({
             id: instanceId,
-            instanceCode: `${template.taskTemplateCode}-${boardDate.replace(/-/g, '')}-${staff.staffCode}-${String(index + 1).padStart(3, '0')}`,
+            instanceCode: `${template.taskTemplateCode}-D${boardDate.replace(/-/g, '')}-T${String(dueAt.getUTCHours()).padStart(2, '0')}${String(dueAt.getUTCMinutes()).padStart(2, '0')}-S${staff.staffCode}`,
             taskTemplateId: template.id,
             shiftRunId: unallocated ? null : shiftRun.id,
             facilityId: template.facilityId,

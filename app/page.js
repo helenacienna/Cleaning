@@ -121,6 +121,9 @@ function formatEstimatedMinutes(task) {
 }
 
 function formatTaskNumber(task) {
+  if (task.instanceCode) {
+    return task.instanceCode;
+  }
   if (typeof task.displayOrder === 'number') {
     return String(task.displayOrder).padStart(3, '0');
   }
@@ -292,6 +295,7 @@ function buildDashboardAssignmentsFromBoard(board, selectedDay) {
         id: card.id,
         title: card.title,
         templateId: card.templateId,
+        instanceCode: card.instanceCode,
         zone: card.zone,
         taskGroup: card.groupName || card.taskGroup,
         frequency: card.frequency,
@@ -779,6 +783,10 @@ export default function HomePage() {
               <div className="task-card-modal-section">
                 <span className="muted">Task card number</span>
                 <strong>{formatTaskNumber(activeTaskCard)}</strong>
+              </div>
+              <div className="task-card-modal-section">
+                <span className="muted">Instance ID</span>
+                <strong>{activeTaskCard.instanceCode ?? '—'}</strong>
               </div>
               <div className="task-card-modal-section">
                 <span className="muted">Status</span>

@@ -535,6 +535,16 @@ function makeTaskCardId(index) {
   return `task-card-${String(index + 1).padStart(3, '0')}`;
 }
 
+function makeDemoHierarchyCode({ facilityIndex, zoneIndex, groupIndex, taskIndex }) {
+  return `F${String(facilityIndex + 1).padStart(2, '0')}-Z${String(zoneIndex + 1).padStart(2, '0')}-G${String(groupIndex + 1).padStart(2, '0')}-T${String(taskIndex + 1).padStart(2, '0')}`;
+}
+
+function makeDemoInstanceCode(hierarchyCode, boardDayLabel, timeText = '0900') {
+  const boardDate = parseBoardDateLabel(boardDayLabel);
+  const stamp = `${boardDate.getFullYear()}${String(boardDate.getMonth() + 1).padStart(2, '0')}${String(boardDate.getDate()).padStart(2, '0')}`;
+  return `${hierarchyCode}-D${stamp}-T${timeText}`;
+}
+
 function buildTaskCatalog() {
   const templates = [];
 
@@ -553,6 +563,7 @@ function buildTaskCatalog() {
             zone: zoneBlueprint.zone,
             facility: facilityName,
             templateId: makeTemplateId(templateIndex),
+            hierarchyCode: makeDemoHierarchyCode({ facilityIndex, zoneIndex, groupIndex, taskIndex }),
             jobOrderNumber: String(templateIndex + 1).padStart(3, '0'),
             required: taskBlueprint.required,
             frequency: group.frequency,
@@ -613,6 +624,7 @@ function buildAssignmentTasks(facilityName, zoneName, customTasks = null) {
     .map((task) => ({
       title: task.title,
       templateId: task.templateId,
+      hierarchyCode: task.hierarchyCode,
       jobOrderNumber: task.jobOrderNumber,
       required: task.required,
       frequency: task.frequency,
@@ -635,6 +647,8 @@ function buildAssignmentTasks(facilityName, zoneName, customTasks = null) {
       id: `assignment-${facilityName}-${zoneName}-${index + 1}`,
       title: task.title,
       templateId: task.templateId,
+      instanceCode: makeDemoInstanceCode(task.hierarchyCode ?? task.templateId, 'Fri 5', `${String(600 + index).padStart(4, '0')}`),
+      hierarchyCode: task.hierarchyCode,
       jobOrderNumber: task.jobOrderNumber,
       required: task.required,
       frequency: task.frequency,
@@ -921,6 +935,7 @@ const allocationCards = allocationDays.flatMap((day, dayIndex) => (
         id: `alloc-${dayIndex + 1}-${staff.name.replace(/\s+/g, '-').toLowerCase()}-${jobOrder}`,
         title: template.title,
         templateId: template.templateId,
+        instanceCode: makeDemoInstanceCode(template.hierarchyCode ?? template.templateId, day, `${String(600 + poolItem.laneIndex * 100 + jobOrder).padStart(4, '0')}`),
         staff: staff.name,
         day,
         jobOrder,
