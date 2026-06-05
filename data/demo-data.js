@@ -588,6 +588,8 @@ const allocationCards = allocationDays.flatMap((day, dayIndex) => (
         facility: template.facility,
         zone: template.zone,
         taskGroup: template.taskGroup,
+        frequency: template.frequency,
+        cadenceMode: template.cadenceMode,
         type: template.frequencyType.toLowerCase(),
         groupId: `group-${dayIndex + 1}-${template.zoneId}-${template.groupKey}`,
         groupName: template.taskGroup,
