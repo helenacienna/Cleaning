@@ -84,6 +84,7 @@ const boardDates = [
 ];
 const TARGET_TASKS_PER_SHIFT = 100;
 const COMPLETION_RATIO = 0.6;
+const SEED_TODAY = new Date('2026-06-05T00:00:00Z');
 
 const cleanerBlueprints = staffBlueprints.filter((staff) => staff.role === 'cleaner');
 
@@ -155,6 +156,30 @@ function createPrisma() {
   const adapter = new PrismaPg(pool);
   const prisma = new PrismaClient({ adapter });
   return { prisma, pool };
+}
+
+function getSeedTaskStatus(boardDate, index, completedTarget, unallocated) {
+  if (unallocated) {
+    return 'unscheduled';
+  }
+
+  const day = new Date(`${boardDate}T00:00:00Z`);
+  const today = new Date(SEED_TODAY);
+  today.setUTCHours(0, 0, 0, 0);
+
+  if (day.getTime() > today.getTime()) {
+    return 'scheduled';
+  }
+
+  if (index < completedTarget) {
+    return 'completed';
+  }
+
+  if (day.getTime() === today.getTime() && index === completedTarget) {
+    return 'in_progress';
+  }
+
+  return 'scheduled';
 }
 
 function parseTimeOnDate(dateText, timeText) {
@@ -376,13 +401,7 @@ async function main() {
           const scheduledForAt = unallocated ? null : addMinutes(shiftRun.shiftStartAt, Math.floor(index * 4.8));
           const dueAt = scheduledForAt ?? addMinutes(parseTimeOnDate(boardDate, '09:00'), index * 5);
           const planningDueAt = addMinutes(dueAt, -24 * 60);
-          const status = unallocated
-            ? 'unscheduled'
-            : index < completedTarget
-              ? 'completed'
-              : index === completedTarget
-                ? 'in_progress'
-                : 'scheduled';
+          const status = getSeedTaskStatus(boardDate, index, completedTarget, unallocated);
           const instanceId = uuidFor(`instance:${template.taskTemplateCode}:${boardDate}:${staff.staffCode}:${index + 1}`);
 
           taskInstanceRows.push({

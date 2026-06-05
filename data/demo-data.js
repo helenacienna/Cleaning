@@ -99,6 +99,7 @@ const allocationStaff = [
   { name: 'Ava Patel', facility: 'Holidays', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM', routeLabel: 'Holidays → Cienna → Boheme' },
 ];
 const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5', 'Sat 6', 'Sun 7', 'Mon 8', 'Tue 9', 'Wed 10'];
+const DEMO_TODAY = new Date('2026-06-05T00:00:00');
 const TARGET_TASKS_PER_SHIFT = 50;
 const COMPLETION_RATIO = 0.6;
 
@@ -246,6 +247,8 @@ function buildAssignmentTasks(facilityName, zoneName, customTasks = null) {
       required: task.required,
       frequency: task.frequency,
       frequencyType: task.frequencyType,
+      cadenceMode: task.cadenceMode,
+      designatedDay: task.designatedDay,
       estimatedMinutes: task.estimatedMinutes,
       notes: task.notes,
       photoRequired: task.required === 'Random photo eligible',
@@ -268,7 +271,7 @@ function buildAssignmentTasks(facilityName, zoneName, customTasks = null) {
       frequencyType: task.frequencyType,
       estimatedMinutes: task.estimatedMinutes,
       notes: task.notes,
-      status: index < completedTarget ? 'completed' : index === completedTarget ? 'in-progress' : (task.photoRequired && index % 7 === 0 ? 'photo-required' : 'pending'),
+      status: getDemoTaskStatus(DEMO_TODAY, index, completedTarget),
       photoRequired: task.photoRequired,
       commentRequired: task.commentRequired,
       taskGroup: task.taskGroup,
@@ -484,6 +487,25 @@ function calculateDemoNextDueDate(template) {
   return suggestedDue;
 }
 
+function getDemoTaskStatus(boardDate, index, completedTarget) {
+  const day = startOfDay(boardDate);
+  const today = startOfDay(DEMO_TODAY);
+
+  if (day.getTime() > today.getTime()) {
+    return 'pending';
+  }
+
+  if (index < completedTarget) {
+    return 'completed';
+  }
+
+  if (day.getTime() === today.getTime() && index === completedTarget) {
+    return 'in-progress';
+  }
+
+  return 'pending';
+}
+
 function hasDayIntervalOccurrence(boardDate, firstDueDate, intervalDays) {
   if (!firstDueDate) {
     return false;
@@ -585,7 +607,7 @@ const allocationCards = allocationDays.flatMap((day, dayIndex) => (
         jobOrder,
         laneIndex: poolItem.laneIndex,
         routeStopIndex: poolItem.stopIndex,
-        status: index < completedTarget ? 'completed' : index === completedTarget ? 'in-progress' : 'pending',
+        status: getDemoTaskStatus(parseBoardDateLabel(day), index, completedTarget),
         facility: template.facility,
         zone: template.zone,
         taskGroup: template.taskGroup,
@@ -595,7 +617,7 @@ const allocationCards = allocationDays.flatMap((day, dayIndex) => (
         type: template.frequencyType.toLowerCase(),
         groupId: `group-${dayIndex + 1}-${template.zoneId}-${template.groupKey}`,
         groupName: template.taskGroup,
-        auditScore: index < completedTarget ? (jobOrder % 4 === 0 ? 4 : 5) : null,
+        auditScore: getDemoTaskStatus(parseBoardDateLabel(day), index, completedTarget) === 'completed' ? (jobOrder % 4 === 0 ? 4 : 5) : null,
         issueNote: '',
         detached: false,
       };
