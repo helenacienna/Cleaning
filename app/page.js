@@ -294,6 +294,8 @@ function buildDashboardAssignmentsFromBoard(board, selectedDay) {
         templateId: card.templateId,
         zone: card.zone,
         taskGroup: card.groupName || card.taskGroup,
+        frequency: card.frequency,
+        cadenceMode: card.cadenceMode,
         status: formatBoardStatusForDashboard(card.status),
         photoRequired: card.type === 'critical',
         commentRequired: Boolean(card.issueNote),
