@@ -36,7 +36,7 @@ a { color: inherit; text-decoration: none; }
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .brand h1 {
@@ -57,10 +57,20 @@ a { color: inherit; text-decoration: none; }
   gap: 10px;
 }
 
-.dashboard-top-right {
+.dashboard-utility-bar {
   display: grid;
-  justify-items: end;
-  gap: 12px;
+  grid-template-columns: minmax(260px, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.dashboard-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 .dashboard-update-card {
@@ -78,6 +88,33 @@ a { color: inherit; text-decoration: none; }
 .dashboard-update-card strong {
   font-size: 16px;
   line-height: 1.2;
+}
+
+.dashboard-update-card-inline {
+  min-width: 0;
+  max-width: none;
+  padding: 8px 10px;
+  border-radius: 14px;
+  gap: 4px;
+}
+
+.dashboard-update-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.update-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(89, 195, 255, 0.16);
+  border: 1px solid rgba(89, 195, 255, 0.24);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .workflow-strip {
@@ -197,6 +234,31 @@ a { color: inherit; text-decoration: none; }
   margin-top: 8px;
 }
 
+.dashboard-info-row {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.dashboard-info-row .card {
+  padding: 8px 10px;
+  border-radius: 14px;
+  min-width: 0;
+}
+
+.dashboard-info-row .kpi strong,
+.dashboard-info-row .metric {
+  font-size: 20px;
+  margin-top: 2px;
+  line-height: 1.05;
+}
+
+.dashboard-info-row .muted {
+  font-size: 11px;
+  line-height: 1.15;
+}
+
 .panel-title {
   display: flex;
   justify-content: space-between;
@@ -210,27 +272,42 @@ a { color: inherit; text-decoration: none; }
   margin: 0;
 }
 
+.facility-board-title-row h3 {
+  font-size: 30px;
+  line-height: 1.05;
+}
+
+.facility-board-date-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.facility-board-date-label {
+  min-width: 190px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+
 .facility-card-header {
   display: grid;
   justify-items: center;
   text-align: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .facility-card-title-button {
   min-width: 220px;
   justify-content: center;
-  font-size: 18px;
-  padding: 12px 18px;
-}
-
-.facility-card-zones {
-  margin: 0;
+  font-size: 17px;
+  padding: 10px 16px;
 }
 
 .facility-card-shift-badge {
   justify-self: center;
+  padding: 6px 10px;
 }
 
 .task-list {
@@ -275,7 +352,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 .task-group-progress {
@@ -542,6 +619,13 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid transparent;
   font-weight: 700;
 }
+
+.button.slim {
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.1;
+}
 .button.primary {
   background: linear-gradient(135deg, var(--brand), #5d8bff);
   color: #03111f;
@@ -549,8 +633,13 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 980px) {
   .manager-layout,
-  .manager-kpi-grid {
+  .manager-kpi-grid,
+  .dashboard-utility-bar {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-action-row {
+    justify-content: flex-start;
   }
 
   .manager-facility-card {
@@ -570,7 +659,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 12px 0;
+  margin: 8px 0 10px;
 }
 
 .qr-grid {
@@ -2728,6 +2817,7 @@ button.button {
   .bottom-grid,
   .assignment-grid,
   .supervisor-grid,
+  .dashboard-info-row,
   .kpi-grid,
   .library-grid,
   .qr-grid,

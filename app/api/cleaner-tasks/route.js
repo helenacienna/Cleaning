@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../lib/prisma';
 import { buildComment } from '../../../lib/cleaner-data';
+import { markTaskTemplateCompleted } from '../../../lib/task-scheduling';
 
 function mapGradeToAuditStatus(grade) {
   if (grade >= 4) return 'passed';
@@ -89,6 +90,10 @@ export async function POST(request) {
           auditedAt: now,
         },
       });
+    }
+
+    if (grade >= 4) {
+      await markTaskTemplateCompleted(tx, taskInstanceId, now);
     }
   }, {
     timeout: 20000,

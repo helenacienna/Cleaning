@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getOrganiserBoardData } from '../../../lib/app-data';
 import { getPrisma } from '../../../lib/prisma';
 
 const boardDayFormatter = new Intl.DateTimeFormat('en-AU', {
@@ -29,6 +30,11 @@ function getNextStatus(currentStatus, hasShiftRun) {
   }
 
   return 'unscheduled';
+}
+
+export async function GET() {
+  const { board, source } = await getOrganiserBoardData();
+  return NextResponse.json({ board, source });
 }
 
 export async function POST(request) {

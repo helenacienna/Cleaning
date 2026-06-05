@@ -1,0 +1,20 @@
+name: Cienna ops tick
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ops-tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger maintenance + notification tick
+        env:
+          OPS_TICK_URL: ${{ secrets.OPS_TICK_URL }}
+        run: |
+          if [ -z "$OPS_TICK_URL" ]; then
+            echo "Missing OPS_TICK_URL secret"
+            exit 1
+          fi
+          curl --fail --silent --show-error "$OPS_TICK_URL"

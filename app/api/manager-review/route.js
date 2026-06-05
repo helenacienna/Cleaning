@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../lib/prisma';
 import { recordNotification } from '../../../lib/notification-center';
+import { markTaskTemplateCompleted } from '../../../lib/task-scheduling';
 
 const ACTION_MAP = {
   monitor: {
@@ -101,6 +102,10 @@ export async function POST(request) {
         auditedAt: now,
       },
     });
+
+    if (managerAction === 'close') {
+      await markTaskTemplateCompleted(tx, execution.taskInstanceId, now);
+    }
   }, {
     timeout: 20000,
   });

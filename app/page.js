@@ -143,12 +143,37 @@ function formatNextScheduleTiming(value) {
   return `Due in ${days} days`;
 }
 
+function formatBoardDateLabel(dayKey) {
+  return dayKey || 'No board day selected';
+}
+
+function getTodayBoardDayKey() {
+  return new Date().toLocaleDateString('en-AU', {
+    weekday: 'short',
+    day: 'numeric',
+  }).replace(',', '');
+}
+
+function getLastCompletedSortValue(task) {
+  const days = diffInDays(parseDemoDate(task.lastCompleted));
+
+  if (days === null) {
+    return -1;
+  }
+
+  return -days;
+}
+
 function getUnscheduledFacilityTasks(assignment) {
   const scheduledTemplateIds = new Set(assignment.tasks.map((task) => task.templateId).filter(Boolean));
 
   return taskCardTemplates
     .filter((task) => task.facility === assignment.location && !scheduledTemplateIds.has(task.templateId))
     .sort((a, b) => {
+      const lastCompletedDiff = getLastCompletedSortValue(b) - getLastCompletedSortValue(a);
+      if (lastCompletedDiff !== 0) {
+        return lastCompletedDiff;
+      }
       if (a.zone !== b.zone) {
         return a.zone.localeCompare(b.zone);
       }
@@ -159,138 +184,161 @@ function getUnscheduledFacilityTasks(assignment) {
     });
 }
 
+function buildDashboardAssignmentsFromBoard(board, selectedDay) {
+  if (!board?.cards?.length || !selectedDay) {
+    return [];
+  }
+
+  const dayCards = board.cards.filter((card) => card.day === selectedDay && card.staff !== 'Unallocated');
+  const facilityMap = new Map();
+
+  dayCards.forEach((card) => {
+    const facilityKey = card.facility || 'Unassigned facility';
+    if (!facilityMap.has(facilityKey)) {
+      const shiftMeta = board.staffMeta?.[card.staff];
+      facilityMap.set(facilityKey, {
+        id: facilityKey.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+        location: facilityKey,
+        shift: shiftMeta?.shiftLabel ?? card.staff,
+        sourceDay: selectedDay,
+        sourceCards: [],
+      });
+    }
+
+    facilityMap.get(facilityKey).sourceCards.push(card);
+  });
+
+  return Array.from(facilityMap.values()).map((assignment, index) => {
+    const tasks = assignment.sourceCards
+      .sort((a, b) => a.jobOrder - b.jobOrder)
+      .map((card) => ({
+        id: card.id,
+        title: card.title,
+        templateId: card.templateId,
+        zone: card.zone,
+        taskGroup: card.groupName || card.taskGroup,
+        status: formatBoardStatusForDashboard(card.status),
+        photoRequired: card.type === 'critical',
+        commentRequired: Boolean(card.issueNote),
+        displayOrder: card.jobOrder,
+      }));
+
+    const completed = tasks.filter((task) => task.status === 'completed').length;
+
+    return {
+      id: `board-${assignment.id || index + 1}`,
+      location: assignment.location,
+      shift: assignment.shift,
+      tasks,
+      stats: {
+        completed,
+        total: tasks.length,
+      },
+    };
+  });
+}
+
+function formatBoardStatusForDashboard(status) {
+  switch (status) {
+    case 'in_progress':
+      return 'in-progress';
+    case 'carried_forward':
+      return 'carried-forward';
+    default:
+      return status;
+  }
+}
+
 export default function HomePage() {
   const [activeTaskCard, setActiveTaskCard] = useState(null);
+  const [selectedBoardDay, setSelectedBoardDay] = useState(null);
+  const [dashboardBoard, setDashboardBoard] = useState(null);
 
   useEffect(() => {
     document.body.classList.toggle('modal-open', Boolean(activeTaskCard));
     return () => document.body.classList.remove('modal-open');
   }, [activeTaskCard]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch('/api/organiser-board', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        if (!cancelled && payload?.board) {
+          const boardDays = payload.board?.days ?? [];
+          const todayBoardDay = getTodayBoardDayKey();
+          setDashboardBoard(payload.board);
+          setSelectedBoardDay((current) => {
+            if (current && boardDays.includes(current)) {
+              return current;
+            }
+            return boardDays.find((day) => day === todayBoardDay) ?? boardDays[0] ?? null;
+          });
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const boardDays = dashboardBoard?.days ?? [];
+  const activeBoardDay = boardDays.includes(selectedBoardDay)
+    ? selectedBoardDay
+    : boardDays[0] ?? null;
+  const activeBoardDayIndex = activeBoardDay ? boardDays.indexOf(activeBoardDay) : -1;
+  const dashboardAssignments = dashboardBoard
+    ? buildDashboardAssignmentsFromBoard(dashboardBoard, activeBoardDay)
+    : [];
+  const visibleAssignments = dashboardAssignments.length ? dashboardAssignments : cleanerAssignments;
+
   return (
     <main className="page">
       <div className="topbar">
         <div className="brand">
-          <p>{appSummary.suiteLabel}</p>
           <h1>{appSummary.appName}</h1>
-        </div>
-        <div className="dashboard-top-right">
-          <div className="badge-row">
-            <span className="badge">Mobile-first cleaner workflow</span>
-            <span className="badge">Railway-ready</span>
-            <span className="badge">Audit-grade history</span>
-          </div>
-          <div className="dashboard-update-card">
-            <span className="muted">Last update</span>
-            <strong>1 Jun 2026 · 12:28 PM</strong>
-            <div className="muted">QR zone codes moved off the dashboard into a separate page.</div>
-          </div>
         </div>
       </div>
 
-      <section className="hero">
-        <div className="card hero-copy">
-          <div className="tab-row">
-            <span className="tab active">Cleaner app</span>
-            <span className="tab">Supervisor dashboard</span>
-            <span className="tab">Admin controls</span>
-          </div>
-          <h2>Reusable task cards, QR zones, and proof-driven cleaning operations.</h2>
-          <p>
-            This first build pass is designed as a Cienna-suite style operations app: task-card based,
-            schedule-aware, historically auditable, and simple enough for cleaners to move through fast.
-          </p>
-          <div className="kpi-grid">
-            <div className="card kpi">
-              <span className="muted">Completion rate</span>
-              <strong>{appSummary.completionRate}%</strong>
-            </div>
-            <div className="card kpi">
-              <span className="muted">Completed today</span>
-              <strong>{appSummary.completedTasks}</strong>
-            </div>
-            <div className="card kpi">
-              <span className="muted">Pending</span>
-              <strong>{appSummary.pendingTasks}</strong>
-            </div>
-            <div className="card kpi">
-              <span className="muted">Photo checks</span>
-              <strong>{appSummary.photoVerifications}</strong>
-            </div>
-          </div>
-          <div className="cta-row">
-            <a className="button primary" href="#schedule-builder">Start scheduling workflow</a>
-            <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
-            <Link className="button secondary" href="/scan/assignment-1">Open cleaner QR flow</Link>
-            <Link className="button secondary" href="/admin/manager">Open manager view</Link>
-            <Link className="button secondary" href="/admin/inbox">Open operations inbox</Link>
-            <Link className="button secondary" href="/admin/task-cards">Task cards</Link>
-            <Link className="button secondary" href="/qr-zones">QR zone codes</Link>
+      <section className="dashboard-utility-bar card">
+        <div className="dashboard-update-card dashboard-update-card-inline">
+          <span className="muted">Last deploy</span>
+          <strong>4 Jun 2026 · 1:54 PM</strong>
+          <div className="dashboard-update-meta">
+            <span className="update-pill">0d3dae1e</span>
+            <span className="muted">Restored 3 facility columns while keeping unification work in place</span>
           </div>
         </div>
-
-        <div className="card">
-          <div className="panel-title">
-            <div>
-              <h3>Today</h3>
-              <p className="muted">{appSummary.today}</p>
-            </div>
-            <span className="badge">Random photo verification enabled</span>
-          </div>
-          <div className="task-list">
-            <div className="task-row">
-              <div>
-                <strong>Overdue tasks</strong>
-                <div className="muted">Require carry-forward review</div>
-              </div>
-              <strong className="tone-red">{appSummary.overdueTasks}</strong>
-            </div>
-            <div className="task-row">
-              <div>
-                <strong>Audit evidence</strong>
-                <div className="muted">Photos and comments attached to completions</div>
-              </div>
-              <strong className="tone-blue">Live</strong>
-            </div>
-            <div className="task-row">
-              <div>
-                <strong>QR zone access</strong>
-                <div className="muted">Cleaner opens task list by scanning zone code</div>
-              </div>
-              <strong className="tone-green">Ready</strong>
-            </div>
-          </div>
+        <div className="dashboard-action-row">
+          <a className="button primary slim" href="#schedule-builder">Start scheduling workflow</a>
+          <Link className="button secondary slim" href="/admin/daily-hierarchy">Open organiser board</Link>
+          <Link className="button secondary slim" href="/scan/assignment-1">Open cleaner QR flow</Link>
+          <Link className="button secondary slim" href="/admin/manager">Open manager view</Link>
+          <Link className="button secondary slim" href="/admin/inbox">Open operations inbox</Link>
+          <Link className="button secondary slim" href="/admin/task-cards">Task cards</Link>
+          <Link className="button secondary slim" href="/qr-zones">QR zone codes</Link>
         </div>
       </section>
 
-      <section className="workflow-strip">
-        <div className="workflow-card">
-          <span className="badge">Step 1</span>
-          <strong>Build the run</strong>
-          <p className="muted">Set task order, cleaner, and repeat pattern in the schedule builder.</p>
-          <a className="button secondary" href="#schedule-builder">Open schedule builder</a>
+      <section className="dashboard-info-row">
+        <div className="card kpi">
+          <span className="muted">Completion rate</span>
+          <strong>{appSummary.completionRate}%</strong>
         </div>
-        <div className="workflow-card">
-          <span className="badge">Step 2</span>
-          <strong>Organise the shift</strong>
-          <p className="muted">Use the organiser board as the main planning surface to drag, reorder, and shape the day.</p>
-          <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
+        <div className="card kpi">
+          <span className="muted">Completed today</span>
+          <strong>{appSummary.completedTasks}</strong>
         </div>
-        <div className="workflow-card">
-          <span className="badge">Step 3</span>
-          <strong>Manager oversight</strong>
-          <p className="muted">Track published shifts, live completion, low scores, and open exceptions.</p>
-          <Link className="button secondary" href="/admin/manager">Open manager view</Link>
+        <div className="card kpi">
+          <span className="muted">Pending</span>
+          <strong>{appSummary.pendingTasks}</strong>
         </div>
-        <div className="workflow-card">
-          <span className="badge">Step 4</span>
-          <strong>Run the cleaner flow</strong>
-          <p className="muted">Open the same checklist view the cleaner uses during the shift.</p>
-          <Link className="button secondary" href="/scan/assignment-1">Open cleaner checklist</Link>
+        <div className="card kpi">
+          <span className="muted">Photo checks</span>
+          <strong>{appSummary.photoVerifications}</strong>
         </div>
-      </section>
-
-      <section className="supervisor-grid">
         {supervisorCards.map((card) => (
           <div className="card" key={card.title}>
             <span className="muted">{card.title}</span>
@@ -301,15 +349,41 @@ export default function HomePage() {
       </section>
 
       <section>
-        <div className="panel-title">
+        <div className="panel-title facility-board-title-row">
           <div>
             <h3>Facility board</h3>
-            <p className="muted">Three live facility columns with grouped tasks, progress, and quick task-card access.</p>
+          </div>
+          <div className="facility-board-date-nav">
+            <button
+              type="button"
+              className="button secondary slim"
+              onClick={() => setSelectedBoardDay(boardDays[activeBoardDayIndex - 1] ?? activeBoardDay)}
+              disabled={activeBoardDayIndex <= 0}
+            >
+              ← Prev
+            </button>
+            <div className="facility-board-date-label">{formatBoardDateLabel(activeBoardDay)}</div>
+            <button
+              type="button"
+              className="button secondary slim"
+              onClick={() => setSelectedBoardDay(boardDays.find((day) => day === getTodayBoardDayKey()) ?? activeBoardDay)}
+              disabled={!boardDays.includes(getTodayBoardDayKey()) || activeBoardDay === getTodayBoardDayKey()}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              className="button secondary slim"
+              onClick={() => setSelectedBoardDay(boardDays[activeBoardDayIndex + 1] ?? activeBoardDay)}
+              disabled={activeBoardDayIndex === -1 || activeBoardDayIndex >= boardDays.length - 1}
+            >
+              Next →
+            </button>
           </div>
         </div>
 
         <div className="assignment-grid">
-        {cleanerAssignments.map((assignment) => {
+        {visibleAssignments.map((assignment) => {
           const unscheduledTasks = getUnscheduledFacilityTasks(assignment);
 
           return (
@@ -318,17 +392,11 @@ export default function HomePage() {
               <Link className="button secondary facility-card-title-button" href={`/facility-board/${assignment.id}`}>
                 {assignment.location}
               </Link>
-              <p className="muted facility-card-zones">{(assignment.zones?.length ? assignment.zones : [assignment.zone]).join(' · ')}</p>
               <span className="badge facility-card-shift-badge">{assignment.shift}</span>
             </div>
-            <div className="stat-row">
-              <span className="flag">{assignment.stats.completed}/{assignment.stats.total} done</span>
-              <span className="flag">{assignment.stats.photoRequired} photo checks</span>
-            </div>
-            <div className="progress"><span style={{ width: `${assignment.progress}%` }} /></div>
             <div className="qr-link-row">
-              <Link className="button secondary" href={`/scan/${assignment.id}`}>Simulate QR scan</Link>
-              <span className="muted">/{assignment.id}</span>
+              <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
+              <span className="muted">/{assignment.sourceDay ?? activeBoardDay ?? 'board'}</span>
             </div>
             <div className="task-list task-list-nested">
               {groupAssignmentTasks(assignment.tasks).map((group) => (
@@ -336,7 +404,6 @@ export default function HomePage() {
                   <summary className="task-group-summary">
                     <div className="task-group-summary-copy">
                       <strong>{group.taskGroup}</strong>
-                      <div className="muted">{group.zone} · {group.tasks.length} tasks</div>
                       <div className="task-group-progress-row">
                         <div className="task-group-progress"><span style={{ width: `${group.progress}%` }} /></div>
                         <span className="task-group-progress-label">{group.completed}/{group.total}</span>
