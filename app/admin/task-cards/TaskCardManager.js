@@ -243,11 +243,11 @@ export default function TaskCardManager({ cards, zones }) {
             </label>
             <label className="field-label">
               <span>Last completed</span>
-              <input value={draft.lastCompleted} onChange={(event) => handleDraftChange('lastCompleted', event.target.value)} />
+              <input type="date" value={draft.lastCompleted} onChange={(event) => handleDraftChange('lastCompleted', event.target.value)} />
             </label>
             <label className="field-label">
               <span>Suggested due</span>
-              <input value={draft.suggestedDue} onChange={(event) => handleDraftChange('suggestedDue', event.target.value)} />
+              <input type="date" value={draft.suggestedDue} onChange={(event) => handleDraftChange('suggestedDue', event.target.value)} />
             </label>
             <label className="field-label span-2">
               <span>Notes</span>

@@ -4,6 +4,8 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import crypto from 'node:crypto';
 
 const facilities = ['Cienna', 'Boheme', 'Holidays'];
+const OPEN_INSTANCE_STATUSES = new Set(['upcoming', 'due', 'unscheduled', 'scheduled', 'in_progress', 'overdue', 'carried_forward']);
+const UNSCHEDULED_INSTANCE_STATUSES = new Set(['unscheduled', 'overdue', 'carried_forward']);
 
 const staffBlueprints = [
   {
@@ -70,21 +72,9 @@ const staffBlueprints = [
   },
 ];
 
-const boardDates = [
-  '2026-06-01',
-  '2026-06-02',
-  '2026-06-03',
-  '2026-06-04',
-  '2026-06-05',
-  '2026-06-06',
-  '2026-06-07',
-  '2026-06-08',
-  '2026-06-09',
-  '2026-06-10',
-];
 const TARGET_TASKS_PER_SHIFT = 100;
 const COMPLETION_RATIO = 0.6;
-const SEED_TODAY = new Date('2026-06-05T00:00:00Z');
+const SEED_TODAY = new Date();
 
 const cleanerBlueprints = staffBlueprints.filter((staff) => staff.role === 'cleaner');
 
@@ -145,8 +135,135 @@ function slugify(value = '') {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+function startOfUtcDay(date) {
+  const next = new Date(date);
+  next.setUTCHours(0, 0, 0, 0);
+  return next;
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function addMonths(date, months) {
+  const next = new Date(date);
+  next.setUTCMonth(next.getUTCMonth() + months);
+  return next;
+}
+
+function formatDateKey(date) {
+  return startOfUtcDay(date).toISOString().slice(0, 10);
+}
+
+function formatTimeKey(date) {
+  return `${String(date.getUTCHours()).padStart(2, '0')}${String(date.getUTCMinutes()).padStart(2, '0')}`;
+}
+
+function buildBoardDates(anchorDate, pastDays = 4, futureDays = 5) {
+  const today = startOfUtcDay(anchorDate);
+  return Array.from({ length: pastDays + futureDays + 1 }, (_, index) => formatDateKey(addDays(today, index - pastDays)));
+}
+
+const boardDates = buildBoardDates(SEED_TODAY);
+
 function uuidFor(key) {
   return crypto.createHash('md5').update(key).digest('hex').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+}
+
+function getWeekdayCode(date) {
+  return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][date.getUTCDay()];
+}
+
+function getTargetWeekday(template) {
+  const designatedDay = String(template.recurrenceRule?.designatedDay ?? template.targetDays?.[0] ?? 'mon').toLowerCase();
+  return designatedDay;
+}
+
+function getCadenceMode(template) {
+  return template.recurrenceRule?.cadenceMode === 'rolling' ? 'rolling' : 'anchored';
+}
+
+function isTemplateDueOnDate(template, date) {
+  const boardDay = startOfUtcDay(date);
+  const dueDay = startOfUtcDay(template.nextDueAt);
+
+  if (template.recurrenceType === 'daily') {
+    return boardDay.getTime() >= dueDay.getTime();
+  }
+
+  if (template.recurrenceType === 'weekly') {
+    if (getCadenceMode(template) === 'rolling') {
+      const diffDays = Math.round((boardDay.getTime() - dueDay.getTime()) / (24 * 60 * 60 * 1000));
+      return diffDays >= 0 && diffDays % 7 === 0;
+    }
+
+    return boardDay.getTime() >= dueDay.getTime() && getWeekdayCode(boardDay) === getTargetWeekday(template);
+  }
+
+  if (template.recurrenceType === 'monthly') {
+    return boardDay.getTime() >= dueDay.getTime() && boardDay.getUTCDate() === dueDay.getUTCDate();
+  }
+
+  return boardDay.getTime() === dueDay.getTime();
+}
+
+function getNextDueAtAfter(template, referenceAt) {
+  const base = startOfUtcDay(referenceAt);
+
+  if (template.recurrenceType === 'daily') {
+    return addDays(base, 1);
+  }
+
+  if (template.recurrenceType === 'weekly') {
+    if (getCadenceMode(template) === 'rolling') {
+      return addDays(base, 7);
+    }
+
+    let cursor = addDays(base, 1);
+    while (getWeekdayCode(cursor) !== getTargetWeekday(template)) {
+      cursor = addDays(cursor, 1);
+    }
+    return cursor;
+  }
+
+  if (template.recurrenceType === 'monthly') {
+    return addMonths(base, 1);
+  }
+
+  return null;
+}
+
+function getTemplateStatusBucket({ nextDueAt, overdueSinceAt, unscheduledInstanceCount, lastCompletedAt }, now = new Date()) {
+  if (overdueSinceAt) return 'overdue';
+  if (unscheduledInstanceCount > 0) return 'unscheduled';
+  if (nextDueAt && new Date(nextDueAt).getTime() <= now.getTime()) return 'due';
+  if (lastCompletedAt && now.getTime() - new Date(lastCompletedAt).getTime() < 2 * 24 * 60 * 60 * 1000) return 'completed_recently';
+  return 'upcoming';
+}
+
+function pickAssignedStaff(template, cleanerBlueprintsForRoute, boardDateText, assignmentCounts) {
+  const eligible = cleanerBlueprintsForRoute.filter((staff) => staff.routes.some((route) => route.facility === template.facilityName && route.zones.includes(template.zoneName)));
+  if (!eligible.length) {
+    return null;
+  }
+
+  const dateHash = Number(boardDateText.replace(/-/g, ''));
+  const preferredIndex = (template.defaultSequence + dateHash) % eligible.length;
+  const ranked = eligible
+    .map((staff, index) => ({
+      staff,
+      offset: (index - preferredIndex + eligible.length) % eligible.length,
+      count: assignmentCounts.get(staff.staffCode) ?? 0,
+    }))
+    .sort((left, right) => left.count - right.count || left.offset - right.offset || left.staff.staffCode.localeCompare(right.staff.staffCode));
+
+  const chosen = ranked[0]?.staff ?? null;
+  if (chosen) {
+    assignmentCounts.set(chosen.staffCode, (assignmentCounts.get(chosen.staffCode) ?? 0) + 1);
+  }
+  return chosen;
 }
 
 function createPrisma() {
@@ -158,17 +275,16 @@ function createPrisma() {
   return { prisma, pool };
 }
 
-function getSeedTaskStatus(boardDate, index, completedTarget, unallocated) {
-  if (unallocated) {
-    return 'unscheduled';
-  }
-
+function getSeedTaskStatus(boardDate, index, completedTarget) {
   const day = new Date(`${boardDate}T00:00:00Z`);
-  const today = new Date(SEED_TODAY);
-  today.setUTCHours(0, 0, 0, 0);
+  const today = startOfUtcDay(SEED_TODAY);
 
   if (day.getTime() > today.getTime()) {
     return 'scheduled';
+  }
+
+  if (day.getTime() < today.getTime()) {
+    return 'completed';
   }
 
   if (index < completedTarget) {
@@ -191,23 +307,6 @@ function parseTimeOnDate(dateText, timeText) {
 
 function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60 * 1000);
-}
-
-function buildCleanerRouteTaskPool(staff, templateRows, facilityById, zoneById) {
-  return staff.routes.flatMap((route, stopIndex) => {
-    const stopTemplates = templateRows.filter((template) => {
-      const facility = facilityById.get(template.facilityId);
-      const zone = zoneById.get(template.zoneId);
-      return facility?.name === route.facility && route.zones.includes(zone?.name);
-    });
-
-    const laneSpan = route.laneIndexes.length;
-    return stopTemplates.map((template, templateIndex) => ({
-      template,
-      stopIndex,
-      laneIndex: route.laneIndexes[Math.min(laneSpan - 1, Math.floor((templateIndex / stopTemplates.length) * laneSpan))] ?? route.laneIndexes[0] ?? 0,
-    }));
-  });
 }
 
 async function resetData(prisma) {
@@ -246,8 +345,6 @@ async function main() {
     const zoneRows = [];
     const groupRows = [];
     const templateRows = [];
-    const statusRows = [];
-
     let templateCounter = 1;
 
     for (const facility of facilityRows) {
@@ -289,9 +386,25 @@ async function main() {
             const priority = groupIndex === 2 ? 'optional' : 'critical';
             const evidenceRequirement = taskIndex === 0 ? 'none' : zoneBlueprint.code === 'Z01' ? 'optional_photo' : 'required_photo';
             const commentRequirement = taskIndex === 0 ? 'none' : 'on_exception';
-            const nextDueAt = groupIndex === 2 ? new Date('2026-06-05T09:00:00Z') : new Date('2026-06-01T09:00:00Z');
-            const nextPlanningDueAt = groupIndex === 2 ? new Date('2026-06-03T09:00:00Z') : new Date('2026-05-31T09:00:00Z');
-            const lastCompletedAt = taskIndex === 0 ? new Date('2026-05-30T08:00:00Z') : new Date('2026-05-29T08:00:00Z');
+            const cadenceMode = recurrenceType === 'weekly' ? (taskIndex % 2 === 0 ? 'anchored' : 'rolling') : null;
+            const designatedDay = ['mon', 'tue', 'wed', 'thu', 'fri'][(facilityRows.findIndex((row) => row.id === facility.id) + groupIndex + taskIndex) % 5];
+            const dailyLastCompletedAt = addDays(startOfUtcDay(SEED_TODAY), -1);
+            const weeklyLastCompletedAt = addDays(startOfUtcDay(SEED_TODAY), -(taskIndex % 2 === 0 ? 7 : 6));
+            const monthlyLastCompletedAt = addDays(startOfUtcDay(SEED_TODAY), -28 - (taskIndex * 2));
+            const lastCompletedAt = recurrenceType === 'daily'
+              ? dailyLastCompletedAt
+              : recurrenceType === 'weekly'
+                ? weeklyLastCompletedAt
+                : monthlyLastCompletedAt;
+            const nextDueAt = recurrenceType === 'weekly' && cadenceMode === 'anchored'
+              ? (() => {
+                  let cursor = startOfUtcDay(SEED_TODAY);
+                  while (getWeekdayCode(cursor) !== designatedDay) {
+                    cursor = addDays(cursor, 1);
+                  }
+                  return cursor;
+                })()
+              : getNextDueAtAfter({ recurrenceType, recurrenceRule: cadenceMode ? { cadenceMode, designatedDay } : null }, lastCompletedAt);
 
             templateRows.push({
               id: templateId,
@@ -303,8 +416,8 @@ async function main() {
               description: `${groupBlueprint.name} · ${zoneBlueprint.zone} · ${facility.name}`,
               serviceType: 'routine',
               recurrenceType,
-              recurrenceRule: recurrenceType === 'weekly' ? { cadenceMode: 'anchored', designatedDay: 'mon' } : null,
-              targetDays: recurrenceType === 'weekly' ? ['mon'] : ['mon', 'tue', 'wed', 'thu', 'fri'],
+              recurrenceRule: recurrenceType === 'weekly' ? { cadenceMode, designatedDay } : null,
+              targetDays: recurrenceType === 'weekly' ? [designatedDay] : ['mon', 'tue', 'wed', 'thu', 'fri'],
               preferredTimeWindow: 'flexible',
               defaultSequence: templateCounter,
               estimatedMinutes: taskIndex === 0 ? 8 : 15,
@@ -320,17 +433,10 @@ async function main() {
               missedTaskPolicy: priority === 'critical' ? 'carry_forward' : 'manager_review',
               rescheduleWindowDays: 2,
               active: true,
-            });
-
-            statusRows.push({
-              taskTemplateId: templateId,
-              lastCompletedAt,
+              facilityName: facility.name,
+              zoneName: zoneBlueprint.zone,
               nextDueAt,
-              nextPlanningDueAt,
-              overdueSinceAt: null,
-              openInstanceCount: 0,
-              unscheduledInstanceCount: 0,
-              statusBucket: 'upcoming',
+              lastCompletedAt,
             });
 
             templateCounter += 1;
@@ -341,8 +447,9 @@ async function main() {
 
     await prisma.zone.createMany({ data: zoneRows });
     await prisma.taskGroup.createMany({ data: groupRows });
-    await prisma.taskTemplate.createMany({ data: templateRows });
-    await prisma.taskTemplateStatus.createMany({ data: statusRows });
+    await prisma.taskTemplate.createMany({
+      data: templateRows.map(({ facilityName, zoneName, nextDueAt, lastCompletedAt, ...row }) => row),
+    });
 
     const staffRows = staffBlueprints.map((staff) => ({
       id: uuidFor(`staff:${staff.staffCode}`),
@@ -379,36 +486,45 @@ async function main() {
 
     await prisma.shiftRun.createMany({ data: shiftRunRows });
 
-    const facilityById = new Map(facilityRows.map((facility) => [facility.id, facility]));
-    const zoneById = new Map(zoneRows.map((zone) => [zone.id, zone]));
-    const groupById = new Map(groupRows.map((group) => [group.id, group]));
-
     const taskInstanceRows = [];
     const taskExecutionRows = [];
+    const statusRows = [];
+    const instancesByTemplateId = new Map();
 
     for (const boardDate of boardDates) {
+      const boardDateValue = new Date(`${boardDate}T00:00:00Z`);
+      const assignmentCounts = new Map();
+      const assignmentsByStaffCode = new Map(cleanerBlueprints.map((staff) => [staff.staffCode, []]));
+
+      const dueTemplates = templateRows
+        .filter((template) => isTemplateDueOnDate(template, boardDateValue))
+        .sort((left, right) => left.defaultSequence - right.defaultSequence);
+
+      for (const template of dueTemplates) {
+        const assignedStaff = pickAssignedStaff(template, cleanerBlueprints, boardDate, assignmentCounts);
+        if (!assignedStaff) {
+          continue;
+        }
+        assignmentsByStaffCode.get(assignedStaff.staffCode)?.push(template);
+      }
+
       for (const staff of cleanerBlueprints) {
         const shiftRun = shiftRunLookup.get(`${staff.staffCode}:${boardDate}`);
-        const routePool = buildCleanerRouteTaskPool(staff, templateRows, facilityById, zoneById);
-        const completedTarget = Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO);
+        const assignedTemplates = assignmentsByStaffCode.get(staff.staffCode) ?? [];
+        const completedTarget = Math.round(assignedTemplates.length * COMPLETION_RATIO);
 
-        for (let index = 0; index < TARGET_TASKS_PER_SHIFT; index += 1) {
-          const poolItem = routePool[index % routePool.length];
-          const template = poolItem.template;
-          const facility = facilityById.get(template.facilityId);
-          const zone = zoneById.get(template.zoneId);
-          const unallocated = index > 0 && index % 29 === 0;
-          const scheduledForAt = unallocated ? null : addMinutes(shiftRun.shiftStartAt, Math.floor(index * 4.8));
-          const dueAt = scheduledForAt ?? addMinutes(parseTimeOnDate(boardDate, '09:00'), index * 5);
+        assignedTemplates.forEach((template, index) => {
+          const scheduledForAt = addMinutes(shiftRun.shiftStartAt, Math.floor(index * 12));
+          const dueAt = scheduledForAt;
           const planningDueAt = addMinutes(dueAt, -24 * 60);
-          const status = getSeedTaskStatus(boardDate, index, completedTarget, unallocated);
-          const instanceId = uuidFor(`instance:${template.taskTemplateCode}:${boardDate}:${staff.staffCode}:${index + 1}`);
+          const status = getSeedTaskStatus(boardDate, index, completedTarget);
+          const instanceId = uuidFor(`instance:${template.taskTemplateCode}:${boardDate}:${staff.staffCode}`);
 
-          taskInstanceRows.push({
+          const instance = {
             id: instanceId,
-            instanceCode: `${template.taskTemplateCode}-D${boardDate.replace(/-/g, '')}-T${String(dueAt.getUTCHours()).padStart(2, '0')}${String(dueAt.getUTCMinutes()).padStart(2, '0')}-S${staff.staffCode}`,
+            instanceCode: `${template.taskTemplateCode}-D${boardDate.replace(/-/g, '')}-T${formatTimeKey(dueAt)}-S${staff.staffCode}`,
             taskTemplateId: template.id,
-            shiftRunId: unallocated ? null : shiftRun.id,
+            shiftRunId: shiftRun.id,
             facilityId: template.facilityId,
             zoneId: template.zoneId,
             taskGroupId: template.taskGroupId,
@@ -416,40 +532,74 @@ async function main() {
             plannedZoneId: template.zoneId,
             plannedTaskGroupId: template.taskGroupId,
             titleSnapshot: template.title,
-            descriptionSnapshot: `${template.description} · Run item ${index + 1}`,
+            descriptionSnapshot: `${template.description} · Scheduled instance for ${boardDate}`,
             sourceType: 'auto_generated',
             dueAt,
             planningDueAt,
             scheduledForAt,
-            assignedStaffId: unallocated ? null : uuidFor(`staff:${staff.staffCode}`),
+            assignedStaffId: uuidFor(`staff:${staff.staffCode}`),
             sequence: index + 1,
             status,
             priority: template.priority,
             evidenceRequirement: template.evidenceRequirement,
             commentRequirement: template.commentRequirement,
-            estimatedMinutes: Math.max(4, Math.round((shiftRun.shiftEndAt.getTime() - shiftRun.shiftStartAt.getTime()) / (TARGET_TASKS_PER_SHIFT * 60000))),
+            estimatedMinutes: template.estimatedMinutes,
             isExceptionTask: false,
             manuallyCreated: false,
-          });
+          };
+
+          taskInstanceRows.push(instance);
+
+          if (!instancesByTemplateId.has(template.id)) {
+            instancesByTemplateId.set(template.id, []);
+          }
+          instancesByTemplateId.get(template.id).push(instance);
 
           if (status === 'completed') {
             taskExecutionRows.push({
               id: uuidFor(`execution:${instanceId}`),
               taskInstanceId: instanceId,
-              startedAt: addMinutes(dueAt, -4),
-              completedAt: addMinutes(dueAt, 1),
+              startedAt: addMinutes(dueAt, -Math.max(2, Math.round((template.estimatedMinutes ?? 10) * 0.6))),
+              completedAt: addMinutes(dueAt, Math.max(1, Math.round((template.estimatedMinutes ?? 10) * 0.2))),
               completedByStaffId: uuidFor(`staff:${staff.staffCode}`),
               completionStatus: 'completed',
-              completionComment: `Completed during seeded organiser run at ${facility.name} · ${zone.name}.`,
+              completionComment: `Completed during seeded organiser run at ${template.facilityName} · ${template.zoneName}.`,
               issueRaised: false,
             });
           }
-        }
+        });
       }
+    }
+
+    for (const template of templateRows) {
+      const templateInstances = (instancesByTemplateId.get(template.id) ?? []).sort((left, right) => new Date(left.dueAt) - new Date(right.dueAt));
+      const completedInstances = templateInstances.filter((instance) => instance.status === 'completed');
+      const latestCompletedInstance = completedInstances[completedInstances.length - 1] ?? null;
+      const openInstances = templateInstances.filter((instance) => OPEN_INSTANCE_STATUSES.has(instance.status));
+      const nextDueAt = openInstances[0]?.dueAt ?? getNextDueAtAfter(template, latestCompletedInstance?.dueAt ?? template.lastCompletedAt ?? SEED_TODAY);
+      const unscheduledInstanceCount = openInstances.filter((instance) => UNSCHEDULED_INSTANCE_STATUSES.has(instance.status)).length;
+
+      statusRows.push({
+        taskTemplateId: template.id,
+        lastCompletedAt: latestCompletedInstance?.dueAt ?? template.lastCompletedAt,
+        lastCompletedInstanceId: latestCompletedInstance?.id ?? null,
+        nextDueAt,
+        nextPlanningDueAt: nextDueAt ? addMinutes(nextDueAt, -24 * 60) : null,
+        overdueSinceAt: null,
+        openInstanceCount: openInstances.length,
+        unscheduledInstanceCount,
+        statusBucket: getTemplateStatusBucket({
+          nextDueAt,
+          overdueSinceAt: null,
+          unscheduledInstanceCount,
+          lastCompletedAt: latestCompletedInstance?.dueAt ?? template.lastCompletedAt,
+        }, SEED_TODAY),
+      });
     }
 
     await prisma.taskInstance.createMany({ data: taskInstanceRows });
     await prisma.taskExecution.createMany({ data: taskExecutionRows });
+    await prisma.taskTemplateStatus.createMany({ data: statusRows });
 
     console.log(`Seeded ${facilityRows.length} facilities, ${zoneRows.length} zones, ${groupRows.length} task groups, ${templateRows.length} task templates, ${staffRows.length} staff, ${shiftRunRows.length} shift runs, ${taskInstanceRows.length} task instances.`);
   } finally {

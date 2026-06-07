@@ -6,7 +6,6 @@ import {
   supervisorCards,
   taskCardTemplates,
   taskLibrary,
-  reports,
   scheduleBuilder,
 } from '../data/demo-data';
 import Link from 'next/link';
@@ -1020,26 +1019,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="panel-title">
-            <div>
-              <h3>Reporting snapshot</h3>
-              <p className="muted">Filterable by location, zone, task, cleaner, and date range</p>
-            </div>
-          </div>
-          <div className="report-table">
-            {reports.map(([label, value]) => (
-              <div className="report-row" key={label}>
-                <span className="muted">{label}</span>
-                <strong>{value}</strong>
-              </div>
-            ))}
-          </div>
-          <div className="cta-row">
-            <span className="button secondary">Supervisor audits</span>
-            <span className="button secondary">Issue reports</span>
-          </div>
-        </div>
       </section>
     </main>
   );

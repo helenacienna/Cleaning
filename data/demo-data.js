@@ -924,19 +924,46 @@ function buildRouteTaskPool(staff, boardDate) {
   });
 }
 
-const allocationCards = allocationDays.flatMap((day, dayIndex) => (
-  allocationStaff.flatMap((staff) => {
-    const routeTaskPool = buildRouteTaskPool(staff, parseBoardDateLabel(day));
-    if (!routeTaskPool.length) {
-      return [];
-    }
-    const taskCount = Math.min(TARGET_TASKS_PER_SHIFT, routeTaskPool.length);
-    const completedTarget = Math.round(taskCount * COMPLETION_RATIO);
+function getEligibleAllocationStops(template) {
+  return allocationStaff.flatMap((staff) => {
+    const routeStops = allocationRoutes[staff.name] || [];
+    return routeStops
+      .filter((stop) => stop.facility === template.facility && stop.zones.includes(template.zone))
+      .map((stop, stopIndex) => ({ staff, stop, stopIndex }));
+  });
+}
 
-    return Array.from({ length: taskCount }, (_, index) => {
-      const poolItem = routeTaskPool[index % routeTaskPool.length];
+function buildAllocationCardsForDay(day, dayIndex) {
+  const boardDate = parseBoardDateLabel(day);
+  const dueTemplates = taskCatalog.filter((template) => isTemplateScheduledOnBoardDay(template, boardDate));
+  const assignmentCounts = new Map(allocationStaff.map((staff) => [staff.name, 0]));
+  const cardsByStaff = new Map(allocationStaff.map((staff) => [staff.name, []]));
+
+  dueTemplates.forEach((template) => {
+    const eligibleStops = getEligibleAllocationStops(template)
+      .sort((left, right) => (assignmentCounts.get(left.staff.name) ?? 0) - (assignmentCounts.get(right.staff.name) ?? 0) || left.staff.name.localeCompare(right.staff.name));
+
+    const chosen = eligibleStops[0];
+    if (!chosen) {
+      return;
+    }
+
+    const staffCards = cardsByStaff.get(chosen.staff.name);
+    const laneIndexes = chosen.stop.laneIndexes.length ? chosen.stop.laneIndexes : [0];
+    const laneIndex = laneIndexes[staffCards.length % laneIndexes.length] ?? 0;
+
+    staffCards.push({ template, laneIndex, routeStopIndex: chosen.stopIndex });
+    assignmentCounts.set(chosen.staff.name, (assignmentCounts.get(chosen.staff.name) ?? 0) + 1);
+  });
+
+  return allocationStaff.flatMap((staff) => {
+    const assigned = cardsByStaff.get(staff.name) ?? [];
+    const completedTarget = Math.round(assigned.length * COMPLETION_RATIO);
+
+    return assigned.map((poolItem, index) => {
       const template = poolItem.template;
       const jobOrder = index + 1;
+      const status = getDemoTaskStatus(boardDate, index, completedTarget);
 
       return {
         id: `alloc-${dayIndex + 1}-${staff.name.replace(/\s+/g, '-').toLowerCase()}-${jobOrder}`,
@@ -947,8 +974,8 @@ const allocationCards = allocationDays.flatMap((day, dayIndex) => (
         day,
         jobOrder,
         laneIndex: poolItem.laneIndex,
-        routeStopIndex: poolItem.stopIndex,
-        status: getDemoTaskStatus(parseBoardDateLabel(day), index, completedTarget),
+        routeStopIndex: poolItem.routeStopIndex,
+        status,
         facility: template.facility,
         zone: template.zone,
         taskGroup: template.taskGroup,
@@ -958,13 +985,15 @@ const allocationCards = allocationDays.flatMap((day, dayIndex) => (
         type: template.frequencyType.toLowerCase(),
         groupId: `group-${dayIndex + 1}-${template.zoneId}-${template.groupKey}`,
         groupName: template.taskGroup,
-        auditScore: getDemoTaskStatus(parseBoardDateLabel(day), index, completedTarget) === 'completed' ? (jobOrder % 4 === 0 ? 4 : 5) : null,
+        auditScore: status === 'completed' ? (jobOrder % 4 === 0 ? 4 : 5) : null,
         issueNote: '',
         detached: false,
       };
     });
-  })
-));
+  });
+}
+
+const allocationCards = allocationDays.flatMap((day, dayIndex) => buildAllocationCardsForDay(day, dayIndex));
 
 const uniqueGroupKeys = Array.from(new Set(allocationCards.map((card) => `${card.day}:${card.groupId}:${card.staff}`)));
 const taskGroups = uniqueGroupKeys.map((groupKey) => {
