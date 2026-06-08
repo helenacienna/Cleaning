@@ -2,6 +2,27 @@
 
 import { useMemo, useState } from 'react';
 
+const FREQUENCY_OPTIONS = [
+  { value: 'none', label: 'None / manual' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const PRIORITY_OPTIONS = [
+  { value: 'Critical', label: 'Critical' },
+  { value: 'Standard', label: 'Standard' },
+  { value: 'Optional', label: 'Optional' },
+];
+
+const REQUIREMENT_OPTIONS = [
+  'Standard',
+  'Random photo eligible',
+  'Comment on exception',
+  'Forced photo',
+];
+
 function buildInitialDraft(card) {
   return {
     title: card.title,
@@ -10,8 +31,8 @@ function buildInitialDraft(card) {
     taskGroup: card.taskGroup,
     zone: card.zone,
     facility: card.facility,
-    frequency: card.frequency,
-    frequencyType: card.frequencyType,
+    frequency: String(card.frequency ?? 'none').toLowerCase(),
+    frequencyType: card.frequencyType === 'Suggestive' ? 'Standard' : card.frequencyType,
     cadenceMode: card.cadenceMode,
     designatedDay: card.designatedDay,
     required: card.required,
@@ -31,6 +52,13 @@ function formatEstimatedTimeRequired(estimatedMinutes) {
   return `${minutes} min`;
 }
 
+function formatRuntimeDate(value) {
+  if (!value || value === '—') {
+    return '—';
+  }
+  return value;
+}
+
 export default function TaskCardManager({ cards, zones }) {
   const [taskCards, setTaskCards] = useState(cards);
   const [selectedId, setSelectedId] = useState(cards[0]?.id ?? null);
@@ -38,6 +66,7 @@ export default function TaskCardManager({ cards, zones }) {
   const [zoneFilter, setZoneFilter] = useState('All zones');
   const [statusFilter, setStatusFilter] = useState('Active');
   const [notice, setNotice] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const selectedCard = taskCards.find((card) => card.id === selectedId) ?? taskCards[0] ?? null;
   const [draft, setDraft] = useState(selectedCard ? buildInitialDraft(selectedCard) : null);
@@ -64,15 +93,38 @@ export default function TaskCardManager({ cards, zones }) {
     setDraft((existing) => ({ ...existing, [field]: value }));
   }
 
-  function handleSave() {
-    if (!selectedCard || !draft) {
+  async function handleSave() {
+    if (!selectedCard || !draft || isSaving) {
       return;
     }
 
-    setTaskCards((existing) => existing.map((card) => (
-      card.id === selectedCard.id ? { ...card, ...draft } : card
-    )));
-    setNotice(`Saved changes to ${draft.title}.`);
+    setIsSaving(true);
+    setNotice('');
+
+    try {
+      const response = await fetch(`/api/task-templates/${selectedCard.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(draft),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.card) {
+        throw new Error(payload?.error || 'Save failed');
+      }
+
+      setTaskCards((existing) => existing.map((card) => (
+        card.id === selectedCard.id ? payload.card : card
+      )));
+      setDraft(buildInitialDraft(payload.card));
+      setNotice(`Saved changes to ${payload.card.title}.`);
+    } catch (error) {
+      setNotice(error.message || 'Could not save task card.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   if (!selectedCard || !draft) {
@@ -84,7 +136,7 @@ export default function TaskCardManager({ cards, zones }) {
       <div className="admin-calendar-header">
         <div>
           <h2>Task cards</h2>
-          <p className="muted">View task card templates, adjust the default sequence, and update group, zone, facility, and frequency settings.</p>
+          <p className="muted">Manage reusable task card templates that feed organiser scheduling and runtime task instances.</p>
         </div>
         <div className="admin-calendar-controls">
           <span className="badge">{taskCards.length} templates</span>
@@ -166,35 +218,28 @@ export default function TaskCardManager({ cards, zones }) {
             </label>
             <label className="field-label">
               <span>Task group</span>
-              <input value={draft.taskGroup} onChange={(event) => handleDraftChange('taskGroup', event.target.value)} />
+              <input value={draft.taskGroup} disabled />
             </label>
             <label className="field-label">
               <span>Zone</span>
-              <select value={draft.zone} onChange={(event) => handleDraftChange('zone', event.target.value)}>
+              <select value={draft.zone} disabled>
                 {zones.map((zone) => <option key={zone}>{zone}</option>)}
               </select>
             </label>
             <label className="field-label">
               <span>Facility</span>
-              <input value={draft.facility} onChange={(event) => handleDraftChange('facility', event.target.value)} />
+              <input value={draft.facility} disabled />
             </label>
             <label className="field-label">
               <span>Frequency</span>
               <select value={draft.frequency} onChange={(event) => handleDraftChange('frequency', event.target.value)}>
-                <option>Daily</option>
-                <option>Every 2 days</option>
-                <option>Weekly</option>
-                <option>Monthly</option>
-                <option>Quarterly</option>
-                <option>Annual</option>
-                <option>As required</option>
+                {FREQUENCY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </label>
             <label className="field-label">
               <span>Priority type</span>
               <select value={draft.frequencyType} onChange={(event) => handleDraftChange('frequencyType', event.target.value)}>
-                <option>Critical</option>
-                <option>Suggestive</option>
+                {PRIORITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </label>
             {draft.frequency === 'weekly' && (
@@ -223,10 +268,7 @@ export default function TaskCardManager({ cards, zones }) {
             <label className="field-label">
               <span>Requirement</span>
               <select value={draft.required} onChange={(event) => handleDraftChange('required', event.target.value)}>
-                <option>Standard</option>
-                <option>Random photo eligible</option>
-                <option>Comment on exception</option>
-                <option>Forced photo</option>
+                {REQUIREMENT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
               </select>
             </label>
             <label className="field-label">
@@ -243,14 +285,14 @@ export default function TaskCardManager({ cards, zones }) {
             </label>
             <label className="field-label">
               <span>Last completed</span>
-              <input type="date" value={draft.lastCompleted} onChange={(event) => handleDraftChange('lastCompleted', event.target.value)} />
+              <input value={formatRuntimeDate(draft.lastCompleted)} disabled />
             </label>
             <label className="field-label">
               <span>Suggested due</span>
-              <input type="date" value={draft.suggestedDue} onChange={(event) => handleDraftChange('suggestedDue', event.target.value)} />
+              <input value={formatRuntimeDate(draft.suggestedDue)} disabled />
             </label>
             <label className="field-label span-2">
-              <span>Notes</span>
+              <span>Notes / description</span>
               <textarea rows="5" value={draft.notes} onChange={(event) => handleDraftChange('notes', event.target.value)} />
             </label>
             <label className="checkbox-row span-2">
@@ -261,11 +303,11 @@ export default function TaskCardManager({ cards, zones }) {
 
           <div className="task-card-actions">
             <div>
-              {notice ? <span className="save-notice">{notice}</span> : <span className="muted">Changes are local to this prototype view for now.</span>}
+              {notice ? <span className="save-notice">{notice}</span> : <span className="muted">Saving now writes to the real task template record. Runtime status dates remain read-only here.</span>}
             </div>
             <div className="cta-row no-top-gap">
-              <button className="button secondary" type="button" onClick={() => handleSelect(selectedCard)}>Reset changes</button>
-              <button className="button primary" type="button" onClick={handleSave}>Save task card</button>
+              <button className="button secondary" type="button" onClick={() => handleSelect(selectedCard)} disabled={isSaving}>Reset changes</button>
+              <button className="button primary" type="button" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving…' : 'Save task card'}</button>
             </div>
           </div>
         </div>
