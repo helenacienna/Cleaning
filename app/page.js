@@ -5,7 +5,6 @@ import {
   cleanerAssignments,
   supervisorCards,
   taskCardTemplates,
-  scheduleBuilder,
 } from '../data/demo-data';
 import Link from 'next/link';
 import { memo, useEffect, useMemo, useState } from 'react';
@@ -195,15 +194,30 @@ function formatNextScheduleTiming(value) {
 }
 
 function formatBoardDateLabel(dayKey) {
-  return dayKey || 'No board day selected';
+  if (!dayKey) {
+    return 'No board day selected';
+  }
+
+  const date = new Date(`${dayKey}T00:00:00+10:00`);
+  if (Number.isNaN(date.getTime())) {
+    return dayKey;
+  }
+
+  return date.toLocaleDateString('en-AU', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Australia/Brisbane',
+  }).replace(',', '');
 }
 
 function getTodayBoardDayKey() {
-  return new Date().toLocaleDateString('en-AU', {
-    weekday: 'short',
-    day: 'numeric',
+  return new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Australia/Brisbane',
-  }).replace(',', '');
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
 }
 
 function isFutureBoardDay(dayKey, boardDays) {
@@ -684,7 +698,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="dashboard-action-row">
-          <a className="button primary slim" href="#schedule-builder">Start scheduling workflow</a>
+          <Link className="button primary slim" href="/admin/daily-hierarchy">Open scheduling workflow</Link>
           <Link className="button secondary slim" href="/admin/daily-hierarchy">Open organiser board</Link>
           <Link className="button secondary slim" href="/scan/assignment-1">Open cleaner QR flow</Link>
           <Link className="button secondary slim" href="/admin/manager">Open manager view</Link>
@@ -839,160 +853,6 @@ export default function HomePage() {
           </div>
         </div>
       )}
-
-      <section className="card schedule-builder" id="schedule-builder">
-        <div className="panel-title">
-          <div>
-            <h3>Schedule builder prototype</h3>
-            <p className="muted">Build a repeating run sheet from reusable task templates, then generate dated task instances for history/reporting.</p>
-          </div>
-          <span className="badge">Draft mode</span>
-        </div>
-
-        <div className="schedule-grid">
-          <div className="schedule-sidebar">
-            <div className="builder-field">
-              <span className="muted">Location</span>
-              <strong>{scheduleBuilder.selectedLocation}</strong>
-            </div>
-            <div className="builder-field">
-              <span className="muted">Zone / QR code</span>
-              <strong>{scheduleBuilder.selectedZone}</strong>
-            </div>
-            <div className="builder-field">
-              <span className="muted">Frequency</span>
-              <strong>{scheduleBuilder.frequency}</strong>
-            </div>
-            <div className="builder-field">
-              <span className="muted">Run style</span>
-              <strong>{scheduleBuilder.shift}</strong>
-            </div>
-            <div className="builder-field">
-              <span className="muted">Assigned cleaner</span>
-              <strong>{scheduleBuilder.assignedCleaner}</strong>
-            </div>
-            <div className="cta-row">
-              <span className="button primary">Save schedule draft</span>
-              <span className="button secondary">Preview cleaner run sheet</span>
-              <Link className="button secondary" href="/admin/task-cards">Edit task cards</Link>
-            </div>
-          </div>
-
-          <div className="schedule-main">
-            <div className="schedule-toolbar">
-              <div>
-                <h4>Run sheet task order</h4>
-                <p className="muted">Job order numbers set the default sequence, but staff can still reorder or split tasks when the day changes.</p>
-              </div>
-              <span className="badge">{scheduleBuilder.draftTasks.length} task cards</span>
-            </div>
-            <div className="schedule-task-list">
-              {scheduleBuilder.draftTasks.map((task) => (
-                <div className="schedule-task" key={task.templateId}>
-                  <div className="schedule-task-main">
-                    <div className="task-number">{task.order}</div>
-                    <div>
-                      <strong>{task.title}</strong>
-                      <div className="muted">Job #{task.jobOrderNumber} · {task.templateId}</div>
-                    </div>
-                  </div>
-                  <div className="frequency-panel">
-                    <span className={`frequency-type ${task.frequencyType === 'Critical' ? 'frequency-critical' : 'frequency-suggestive'}`}>
-                      {task.frequencyType}
-                    </span>
-                    <div>
-                      <span className="muted">Task group</span>
-                      <strong>{task.taskGroup}</strong>
-                    </div>
-                    <div>
-                      <span className="muted">Zone</span>
-                      <strong>{task.zone}</strong>
-                    </div>
-                    <div>
-                      <span className="muted">Facility</span>
-                      <strong>{task.facility}</strong>
-                    </div>
-                  </div>
-                  <div className="frequency-panel">
-                    <div>
-                      <span className="muted">Frequency</span>
-                      <strong>{task.frequency}</strong>
-                    </div>
-                    <div>
-                      <span className="muted">Last completed</span>
-                      <strong>{task.lastCompleted}</strong>
-                    </div>
-                    <div>
-                      <span className="muted">Suggested due</span>
-                      <strong>{task.suggestedDue}</strong>
-                    </div>
-                  </div>
-                  <span className="flag">{task.required}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="generated-panel">
-          <div>
-            <h4>Generated history keys</h4>
-            <p className="muted">The schedule creates unique daily task instances while preserving the reusable task template IDs.</p>
-          </div>
-          <div className="generated-grid">
-            <div className="builder-field strong-field">
-              <span className="muted">Repeat rule</span>
-              <strong>{scheduleBuilder.repeatRule}</strong>
-            </div>
-            <div className="builder-field strong-field">
-              <span className="muted">Random photo rule</span>
-              <strong>{scheduleBuilder.randomPhotoRate}</strong>
-            </div>
-          </div>
-          <div className="instance-list">
-            {scheduleBuilder.generatedInstances.map(([date, count, key]) => (
-              <div className="instance-row" key={key}>
-                <strong>{date}</strong>
-                <span className="muted">{count}</span>
-                <code>{key}</code>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="calendar-panel">
-          <div className="schedule-toolbar">
-            <div>
-              <h4>Calendar planning view</h4>
-              <p className="muted">See critical and suggestive work across the week by job order, facility, and zone before publishing schedules.</p>
-            </div>
-            <div className="calendar-legend">
-              <span><i className="legend-dot critical-dot" /> Critical</span>
-              <span><i className="legend-dot suggestive-dot" /> Suggestive</span>
-            </div>
-          </div>
-
-          <div className="calendar-grid">
-            {scheduleBuilder.calendarDays.map((day) => (
-              <div className={`calendar-day ${day.dayType === 'weekend' ? 'weekend-day' : ''}`} key={day.date}>
-                <div className="calendar-date-row">
-                  <strong>{day.date}</strong>
-                  <span className="muted">{day.jobs.length ? `${day.jobs.length} job groups` : 'No runs'}</span>
-                </div>
-                <div className="calendar-jobs">
-                  {day.jobs.length ? day.jobs.map((job) => (
-                    <div className={`calendar-job ${job.type === 'critical' ? 'calendar-critical' : 'calendar-suggestive'}`} key={`${day.date}-${job.jobOrderStart}-${job.zone}`}>
-                      <strong>Job order {job.jobOrderStart}</strong>
-                      <span>{job.groupName}</span>
-                      <small>{job.facility} · {job.zone}</small>
-                    </div>
-                  )) : <span className="empty-day">Unscheduled</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
     </main>
   );

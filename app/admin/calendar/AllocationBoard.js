@@ -6,6 +6,24 @@ import { makeCleanerShiftAssignmentId } from '../../../data/demo-data';
 
 const STORAGE_KEY = 'cienna-allocation-board-state-v1';
 
+function formatBoardDayLabel(dayKey) {
+  if (!dayKey) {
+    return 'No day';
+  }
+
+  const date = new Date(`${dayKey}T00:00:00+10:00`);
+  if (Number.isNaN(date.getTime())) {
+    return dayKey;
+  }
+
+  return date.toLocaleDateString('en-AU', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Australia/Brisbane',
+  }).replace(',', '');
+}
+
 function formatJobOrder(jobOrder) {
   return String(jobOrder).padStart(3, '0');
 }
@@ -435,7 +453,7 @@ export default function AllocationBoard({
               </div>
               <div className="day-switcher">
                 {board.days.map((day) => (
-                  <button className={`button ${selectedDay === day ? 'primary' : 'secondary'}`} type="button" key={day} onClick={() => setSelectedDay(day)}>{day}</button>
+                  <button className={`button ${selectedDay === day ? 'primary' : 'secondary'}`} type="button" key={day} onClick={() => setSelectedDay(day)}>{formatBoardDayLabel(day)}</button>
                 ))}
               </div>
             </div>
@@ -661,7 +679,7 @@ export default function AllocationBoard({
           <div className="allocation-corner">Staff / Day</div>
           {board.days.map((day) => {
             const dayCount = cards.filter((card) => card.day === day).length;
-            return <div className="allocation-day-head" key={day}><strong>{day}</strong><span>{dayCount} cards</span></div>;
+            return <div className="allocation-day-head" key={day}><strong>{formatBoardDayLabel(day)}</strong><span>{dayCount} cards</span></div>;
           })}
 
           {board.staff.map((staff) => (

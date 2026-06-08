@@ -2,14 +2,15 @@ import { NextResponse } from 'next/server';
 import { getOrganiserBoardData } from '../../../lib/app-data';
 import { getPrisma } from '../../../lib/prisma';
 
-const boardDayFormatter = new Intl.DateTimeFormat('en-AU', {
-  weekday: 'short',
-  day: 'numeric',
+const boardDayKeyFormatter = new Intl.DateTimeFormat('sv-SE', {
   timeZone: 'Australia/Brisbane',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
 });
 
-function formatBoardDay(value) {
-  return boardDayFormatter.format(new Date(value)).replace(',', '');
+function formatBoardDayKey(value) {
+  return boardDayKeyFormatter.format(new Date(value));
 }
 
 function addMinutes(date, minutes) {
@@ -82,7 +83,7 @@ export async function POST(request) {
   const shiftRunMap = new Map(
     shiftRuns
       .filter((shiftRun) => shiftRun.assignedStaff)
-      .map((shiftRun) => [`${shiftRun.assignedStaff.fullName}::${formatBoardDay(shiftRun.runDate)}`, shiftRun]),
+      .map((shiftRun) => [`${shiftRun.assignedStaff.fullName}::${formatBoardDayKey(shiftRun.runDate)}`, shiftRun]),
   );
   const facilityMap = new Map(facilities.map((facility) => [facility.name, facility]));
   const zoneMap = new Map(zones.map((zone) => [`${zone.facilityId}::${zone.name}`, zone]));

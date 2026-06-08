@@ -141,7 +141,6 @@ export default function TaskCardManager({ cards, zones }) {
         <div className="admin-calendar-controls">
           <span className="badge">{taskCards.length} templates</span>
           <span className="badge">{taskCards.filter((card) => card.active).length} active</span>
-          <span className="button primary">Create task card</span>
         </div>
       </div>
 
