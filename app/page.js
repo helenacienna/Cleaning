@@ -301,7 +301,7 @@ function buildDashboardAssignmentsFromBoard(board, selectedDay) {
     return [];
   }
 
-  const dayCards = board.cards.filter((card) => card.day === selectedDay && card.staff !== 'Unallocated');
+  const dayCards = board.cards.filter((card) => card.day === selectedDay);
   const facilityMap = new Map();
 
   dayCards.forEach((card) => {
@@ -311,7 +311,7 @@ function buildDashboardAssignmentsFromBoard(board, selectedDay) {
       facilityMap.set(facilityKey, {
         id: facilityKey.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
         location: facilityKey,
-        shift: shiftMeta?.shiftLabel ?? card.staff,
+        shift: shiftMeta?.shiftLabel ?? (card.staff === 'Unallocated' ? 'Scheduled / unallocated' : card.staff),
         sourceDay: selectedDay,
         sourceCards: [],
       });
@@ -692,7 +692,7 @@ export default function HomePage() {
       ? buildDashboardAssignmentsFromBoard(dashboardBoard, activeBoardDay)
       : []
   ), [dashboardBoard, activeBoardDay]);
-  const visibleAssignments = dashboardAssignments.length ? dashboardAssignments : cleanerAssignments;
+  const visibleAssignments = dashboardBoard ? dashboardAssignments : cleanerAssignments;
   const showingFutureBoardDay = isFutureBoardDay(activeBoardDay, boardDays);
   const assignmentPresentationData = useMemo(
     () => buildAssignmentPresentationData(visibleAssignments, {
