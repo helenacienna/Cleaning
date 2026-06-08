@@ -725,7 +725,6 @@ export default function HomePage() {
           <Link className="button secondary slim" href="/scan/assignment-1">Open cleaner QR flow</Link>
           <Link className="button secondary slim" href="/admin/manager">Open manager view</Link>
           <Link className="button secondary slim" href="/admin/inbox">Open operations inbox</Link>
-          <Link className="button secondary slim" href="/admin/task-cards">Task cards</Link>
           <Link className="button secondary slim" href="/qr-zones">QR zone codes</Link>
         </div>
       </section>
