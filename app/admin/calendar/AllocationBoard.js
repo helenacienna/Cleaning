@@ -191,6 +191,9 @@ function getCardStatusLabel(card) {
   if (card.status === 'carried-forward') {
     return 'Carry forward';
   }
+  if (card.status === 'scheduled') {
+    return 'Scheduled';
+  }
   return 'Pending';
 }
 
