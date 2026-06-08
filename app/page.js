@@ -266,15 +266,34 @@ function getUnscheduledFacilityTasks(assignment) {
     });
 }
 
+function normalizeFutureTaskStatus(status) {
+  if (['completed', 'in-progress', 'carried-forward', 'overdue'].includes(status)) {
+    return 'scheduled';
+  }
+
+  return status;
+}
+
 function buildAssignmentPresentationData(assignments, options = {}) {
   const showProgress = options.showProgress !== false;
+  const forceScheduledStatuses = options.forceScheduledStatuses === true;
 
-  return assignments.map((assignment) => ({
-    ...assignment,
-    showProgress,
-    taskGroups: groupAssignmentTasks(assignment.tasks),
-    unscheduledTasks: getUnscheduledFacilityTasks(assignment),
-  }));
+  return assignments.map((assignment) => {
+    const tasks = forceScheduledStatuses
+      ? assignment.tasks.map((task) => ({
+          ...task,
+          status: normalizeFutureTaskStatus(task.status),
+        }))
+      : assignment.tasks;
+
+    return {
+      ...assignment,
+      tasks,
+      showProgress,
+      taskGroups: groupAssignmentTasks(tasks),
+      unscheduledTasks: getUnscheduledFacilityTasks({ ...assignment, tasks }),
+    };
+  });
 }
 
 function buildDashboardAssignmentsFromBoard(board, selectedDay) {
@@ -676,7 +695,10 @@ export default function HomePage() {
   const visibleAssignments = dashboardAssignments.length ? dashboardAssignments : cleanerAssignments;
   const showingFutureBoardDay = isFutureBoardDay(activeBoardDay, boardDays);
   const assignmentPresentationData = useMemo(
-    () => buildAssignmentPresentationData(visibleAssignments, { showProgress: !showingFutureBoardDay }),
+    () => buildAssignmentPresentationData(visibleAssignments, {
+      showProgress: !showingFutureBoardDay,
+      forceScheduledStatuses: showingFutureBoardDay,
+    }),
     [visibleAssignments, showingFutureBoardDay],
   );
 
