@@ -5,7 +5,6 @@ import {
   cleanerAssignments,
   supervisorCards,
   taskCardTemplates,
-  taskLibrary,
   scheduleBuilder,
 } from '../data/demo-data';
 import Link from 'next/link';
@@ -995,32 +994,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bottom-grid">
-        <div className="card">
-          <div className="panel-title">
-            <div>
-              <h3>Task library</h3>
-              <p className="muted">Reusable cards that can appear in multiple schedules</p>
-            </div>
-            <span className="badge">Admin managed</span>
-          </div>
-          <div className="library-grid">
-            {taskLibrary.map((task) => (
-              <div className="card" key={task.title}>
-                <span className="muted">{task.category}</span>
-                <h4>{task.title}</h4>
-                <p className="muted">Estimated duration: {task.duration}</p>
-                <div className="flag-row">
-                  {task.flags.map((flag) => (
-                    <span className="flag" key={flag}>{flag}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </section>
     </main>
   );
 }
