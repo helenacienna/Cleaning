@@ -203,6 +203,7 @@ function getTodayBoardDayKey() {
   return new Date().toLocaleDateString('en-AU', {
     weekday: 'short',
     day: 'numeric',
+    timeZone: 'Australia/Brisbane',
   }).replace(',', '');
 }
 
