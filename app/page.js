@@ -220,6 +220,22 @@ function getTodayBoardDayKey() {
   }).format(new Date());
 }
 
+function formatDashboardRefreshLabel(value) {
+  if (!value) {
+    return 'Waiting for board data';
+  }
+
+  return new Date(value).toLocaleString('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Australia/Brisbane',
+  }).replace(',', ' ·');
+}
+
 function isFutureBoardDay(dayKey, boardDays) {
   if (!dayKey || !Array.isArray(boardDays) || !boardDays.length) {
     return false;
@@ -267,7 +283,7 @@ function getUnscheduledFacilityTasks(assignment) {
 }
 
 function normalizeFutureTaskStatus(status) {
-  if (['completed', 'in-progress', 'carried-forward', 'overdue'].includes(status)) {
+  if (['completed', 'in-progress', 'carried-forward', 'overdue', 'due'].includes(status)) {
     return 'scheduled';
   }
 
@@ -390,7 +406,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
                 </div>
               ) : (
                 <div className="task-group-progress-row">
-                  <span className="task-group-progress-label">Not started yet</span>
+                  <span className="task-group-progress-label">Scheduled</span>
                 </div>
               )}
             </div>
@@ -411,7 +427,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
                         <span className="task-group-progress-label">{zone.completed}/{zone.total}</span>
                       </>
                     ) : (
-                      <span className="task-group-progress-label">Not started yet</span>
+                      <span className="task-group-progress-label">Scheduled</span>
                     )}
                     <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
                   </div>
@@ -427,7 +443,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
                           {assignment.showProgress ? (
                             <span className="task-group-progress-label">{group.completed}/{group.total}</span>
                           ) : (
-                            <span className="task-group-progress-label">Not started yet</span>
+                            <span className="task-group-progress-label">Scheduled</span>
                           )}
                           <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
                         </div>
@@ -517,7 +533,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
                   </div>
                 ) : (
                   <div className="task-group-progress-row">
-                    <span className="task-group-progress-label">Not started yet</span>
+                    <span className="task-group-progress-label">Scheduled</span>
                   </div>
                 )}
               </div>
@@ -645,6 +661,7 @@ export default function HomePage() {
   const [activeTaskCard, setActiveTaskCard] = useState(null);
   const [selectedBoardDay, setSelectedBoardDay] = useState(null);
   const [dashboardBoard, setDashboardBoard] = useState(null);
+  const [dashboardRefreshedAt, setDashboardRefreshedAt] = useState(() => new Date().toISOString());
 
   useEffect(() => {
     document.body.classList.toggle('modal-open', Boolean(activeTaskCard));
@@ -661,6 +678,7 @@ export default function HomePage() {
           const boardDays = payload.board?.days ?? [];
           const todayBoardDay = getTodayBoardDayKey();
           setDashboardBoard(payload.board);
+          setDashboardRefreshedAt(new Date().toISOString());
           setSelectedBoardDay((current) => {
             if (current && boardDays.includes(current)) {
               return current;
@@ -712,11 +730,17 @@ export default function HomePage() {
 
       <section className="dashboard-utility-bar card">
         <div className="dashboard-update-card dashboard-update-card-inline">
-          <span className="muted">Last deploy</span>
-          <strong>4 Jun 2026 · 1:54 PM</strong>
+          <span className="muted">Board refreshed</span>
+          <strong>{formatDashboardRefreshLabel(dashboardRefreshedAt)}</strong>
           <div className="dashboard-update-meta">
-            <span className="update-pill">0d3dae1e</span>
-            <span className="muted">Restored 3 facility columns while keeping unification work in place</span>
+            <span className="update-pill">{dashboardBoard?.source ?? 'loading'}</span>
+            <span className="muted">
+              {dashboardBoard?.source === 'prisma'
+                ? 'Live organiser data loaded'
+                : dashboardBoard?.source
+                  ? 'Fallback board active while live runtime data is unavailable'
+                  : 'Loading organiser data'}
+            </span>
           </div>
         </div>
         <div className="dashboard-action-row">
@@ -725,6 +749,7 @@ export default function HomePage() {
           <Link className="button secondary slim" href="/scan/assignment-1">Open cleaner QR flow</Link>
           <Link className="button secondary slim" href="/admin/manager">Open manager view</Link>
           <Link className="button secondary slim" href="/admin/inbox">Open operations inbox</Link>
+          <Link className="button secondary slim" href="/admin/facilities">Manage facilities</Link>
           <Link className="button secondary slim" href="/qr-zones">QR zone codes</Link>
         </div>
       </section>

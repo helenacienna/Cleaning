@@ -1,4 +1,4 @@
-const facilities = ['Cienna', 'Boheme', 'Holidays'];
+const facilities = ['Cienna', 'Boheme', 'Holiday'];
 
 const makeDemoTask = (title, required = 'Standard', estimatedMinutes = 10) => ({
   title,
@@ -78,10 +78,10 @@ const zoneBlueprints = [
         name: 'Button sanitising',
         frequency: 'Weekly',
         cadenceMode: 'Anchored',
-        designatedDay: 'MON',
+        designatedDay: 'TUE',
         frequencyType: 'Critical',
-        lastCompleted: '25 May 2026',
-        suggestedDue: '1 Jun 2026',
+        lastCompleted: '26 May 2026',
+        suggestedDue: '2 Jun 2026',
         tasks: [
           makeDemoTask('Sanitise call buttons', 'Forced photo', 12),
           makeDemoTask('Wipe door tracks', 'Comment on exception', 10),
@@ -174,10 +174,10 @@ const zoneBlueprints = [
         name: 'Tower 3 foyer detail cycle',
         frequency: 'Weekly',
         cadenceMode: 'Rolling',
-        designatedDay: '—',
+        designatedDay: 'WED',
         frequencyType: 'Suggestive',
-        lastCompleted: '29 May 2026',
-        suggestedDue: '5 Jun 2026',
+        lastCompleted: '27 May 2026',
+        suggestedDue: '3 Jun 2026',
         tasks: [
           makeDemoTask('Detail clean skirting corners', 'Comment on exception', 14),
           makeDemoTask('Dust behind lobby seating', 'Standard', 12),
@@ -366,10 +366,10 @@ const zoneBlueprints = [
         name: 'Gym equipment recovery cycle',
         frequency: 'Weekly',
         cadenceMode: 'Rolling',
-        designatedDay: '—',
+        designatedDay: 'THU',
         frequencyType: 'Critical',
-        lastCompleted: '29 May 2026',
-        suggestedDue: '5 Jun 2026',
+        lastCompleted: '28 May 2026',
+        suggestedDue: '4 Jun 2026',
         tasks: [
           makeDemoTask('Detail clean cardio consoles', 'Forced photo', 16),
           makeDemoTask('Dust wall-mounted TV brackets', 'Comment on exception', 12),
@@ -491,11 +491,40 @@ const zoneBlueprints = [
 
 const allocationStaff = [
   { name: 'Tony', facility: 'Cienna', shiftLabel: 'Morning walk-through shift', shiftWindow: '6:00 AM – 2:00 PM', routeLabel: 'Rooftop → Tower 4 → Residents lounge → Pool → Carparks' },
-  { name: 'Leo Nguyen', facility: 'Boheme', shiftLabel: 'Day flexible shift', shiftWindow: '7:30 AM – 3:30 PM', routeLabel: 'Boheme → Holidays → Cienna' },
-  { name: 'Ava Patel', facility: 'Holidays', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM', routeLabel: 'Holidays → Cienna → Boheme' },
+  { name: 'Leo Nguyen', facility: 'Boheme', shiftLabel: 'Day flexible shift', shiftWindow: '7:30 AM – 3:30 PM', routeLabel: 'Boheme → Holiday → Cienna' },
+  { name: 'Ava Patel', facility: 'Holiday', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM', routeLabel: 'Holiday → Cienna → Boheme' },
 ];
-const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5', 'Sat 6', 'Sun 7', 'Mon 8', 'Tue 9', 'Wed 10'];
-const DEMO_TODAY = new Date('2026-06-05T00:00:00');
+const boardDayLabelFormatter = new Intl.DateTimeFormat('en-AU', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'Australia/Brisbane',
+});
+
+const boardDayKeyFormatter = new Intl.DateTimeFormat('sv-SE', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  timeZone: 'Australia/Brisbane',
+});
+
+function formatBoardDayLabelValue(value) {
+  return boardDayLabelFormatter.format(new Date(`${value}T00:00:00+10:00`)).replace(',', '');
+}
+
+function getTodayBoardDayKey() {
+  return boardDayKeyFormatter.format(new Date());
+}
+
+function addBoardDayKeys(dayKey, days) {
+  const date = new Date(`${dayKey}T00:00:00+10:00`);
+  date.setDate(date.getDate() + days);
+  return boardDayKeyFormatter.format(date);
+}
+
+const DEMO_BOARD_HORIZON_DAYS = 14;
+const allocationDays = Array.from({ length: DEMO_BOARD_HORIZON_DAYS }, (_, index) => addBoardDayKeys(getTodayBoardDayKey(), index));
+const DEMO_TODAY = new Date(`${getTodayBoardDayKey()}T00:00:00+10:00`);
 const TARGET_TASKS_PER_SHIFT = 50;
 const COMPLETION_RATIO = 0.6;
 
@@ -517,11 +546,11 @@ const allocationRoutes = {
   ],
   'Leo Nguyen': [
     { facility: 'Boheme', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3', 'Residents lounge'], laneIndexes: [1, 2] },
-    { facility: 'Holidays', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
+    { facility: 'Holiday', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
     { facility: 'Cienna', zones: ['Mail room', 'Loading dock'], laneIndexes: [4] },
   ],
   'Ava Patel': [
-    { facility: 'Holidays', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
+    { facility: 'Holiday', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
     { facility: 'Cienna', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [4, 5] },
     { facility: 'Boheme', zones: ['Mail room', 'Loading dock'], laneIndexes: [6] },
   ],
@@ -667,7 +696,7 @@ function buildAssignmentTasks(facilityName, zoneName, customTasks = null) {
 export const appSummary = {
   appName: 'Cienna Cleaning',
   suiteLabel: 'Cienna Suite',
-  today: 'Friday, 29 May',
+  today: formatBoardDayLabelValue(getTodayBoardDayKey()),
   completionRate: 78,
   completedTasks: 126,
   pendingTasks: 54,
@@ -735,6 +764,10 @@ export const reports = [
 ];
 
 function parseBoardDateLabel(day) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(day))) {
+    return new Date(`${day}T00:00:00+10:00`);
+  }
+
   const match = String(day).match(/^(\w{3})\s(\d{1,2})$/);
   if (!match) {
     return new Date(Number.NaN);
@@ -1105,11 +1138,11 @@ export const scheduleBuilder = {
     ['Wed 3 Jun', '180 task instances', 'scheduled_cienna_2026-06-03'],
   ],
   calendarDays: [
-    { date: 'Mon 1', dayType: 'weekday', jobs: [{ jobOrderStart: '001', facility: 'Cienna', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '061', facility: 'Boheme', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '121', facility: 'Holidays', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }] },
-    { date: 'Tue 2', dayType: 'weekday', jobs: [{ jobOrderStart: '019', facility: 'Cienna', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '079', facility: 'Boheme', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '139', facility: 'Holidays', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }] },
-    { date: 'Wed 3', dayType: 'weekday', jobs: [{ jobOrderStart: '031', facility: 'Cienna', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '091', facility: 'Boheme', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '151', facility: 'Holidays', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }] },
-    { date: 'Thu 4', dayType: 'weekday', jobs: [{ jobOrderStart: '043', facility: 'Cienna', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '103', facility: 'Boheme', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '163', facility: 'Holidays', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }] },
-    { date: 'Fri 5', dayType: 'weekday', jobs: [{ jobOrderStart: '013', facility: 'Cienna', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '073', facility: 'Boheme', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '133', facility: 'Holidays', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }] },
+    { date: 'Mon 1', dayType: 'weekday', jobs: [{ jobOrderStart: '001', facility: 'Cienna', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '061', facility: 'Boheme', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '121', facility: 'Holiday', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }] },
+    { date: 'Tue 2', dayType: 'weekday', jobs: [{ jobOrderStart: '019', facility: 'Cienna', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '079', facility: 'Boheme', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '139', facility: 'Holiday', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }] },
+    { date: 'Wed 3', dayType: 'weekday', jobs: [{ jobOrderStart: '031', facility: 'Cienna', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '091', facility: 'Boheme', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '151', facility: 'Holiday', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }] },
+    { date: 'Thu 4', dayType: 'weekday', jobs: [{ jobOrderStart: '043', facility: 'Cienna', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '103', facility: 'Boheme', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '163', facility: 'Holiday', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }] },
+    { date: 'Fri 5', dayType: 'weekday', jobs: [{ jobOrderStart: '013', facility: 'Cienna', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '073', facility: 'Boheme', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '133', facility: 'Holiday', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }] },
     { date: 'Sat 6', dayType: 'weekend', jobs: [{ jobOrderStart: '025', facility: 'Cienna', zone: 'Carparks', groupName: 'Carpark round', count: 2, type: 'suggestive' }] },
     { date: 'Sun 7', dayType: 'weekend', jobs: [] },
   ],
@@ -1125,7 +1158,7 @@ export const scheduleBuilder = {
       ...denseScoreDemoCards,
       { id: 'alloc-unassigned-1', title: 'Check dock spill kit', templateId: 'custom_001', staff: 'Unallocated', day: 'Mon 1', jobOrder: 61, status: 'pending', facility: 'Cienna', zone: 'Loading dock', taskGroup: 'Back-of-house tidy', type: 'suggestive', groupId: 'group-unassigned-dock', groupName: 'Back-of-house tidy' },
       { id: 'alloc-unassigned-2', title: 'Recheck sauna entry mat', templateId: 'custom_002', staff: 'Unallocated', day: 'Wed 3', jobOrder: 62, status: 'in-progress', facility: 'Boheme', zone: 'Pool area', taskGroup: 'Amenities wipe-down', type: 'critical', groupId: 'group-unassigned-pool', groupName: 'Amenities wipe-down' },
-      { id: 'alloc-unassigned-3', title: 'Inspect parcel overflow shelf', templateId: 'custom_003', staff: 'Unallocated', day: 'Fri 5', jobOrder: 63, status: 'pending', facility: 'Holidays', zone: 'Mail room', taskGroup: 'Parcel room reset', type: 'suggestive', groupId: 'group-unassigned-mail', groupName: 'Parcel room reset' },
+      { id: 'alloc-unassigned-3', title: 'Inspect parcel overflow shelf', templateId: 'custom_003', staff: 'Unallocated', day: 'Fri 5', jobOrder: 63, status: 'pending', facility: 'Holiday', zone: 'Mail room', taskGroup: 'Parcel room reset', type: 'suggestive', groupId: 'group-unassigned-mail', groupName: 'Parcel room reset' },
     ],
   },
   exceptionWorkflow: {
