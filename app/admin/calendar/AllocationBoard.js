@@ -24,6 +24,87 @@ function formatBoardDayLabel(dayKey) {
   }).replace(',', '');
 }
 
+function parseBoardDay(dayKey) {
+  if (!dayKey) {
+    return null;
+  }
+
+  const date = new Date(`${dayKey}T00:00:00+10:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatBoardMonthLabel(dayKey) {
+  const date = parseBoardDay(dayKey);
+  if (!date) {
+    return 'Unknown month';
+  }
+
+  return date.toLocaleDateString('en-AU', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Australia/Brisbane',
+  });
+}
+
+function addBoardDays(dayKey, days) {
+  const date = parseBoardDay(dayKey);
+  if (!date) {
+    return dayKey;
+  }
+
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next.toLocaleDateString('en-CA', {
+    timeZone: 'Australia/Brisbane',
+  });
+}
+
+function getBoardMonthKey(dayKey) {
+  return String(dayKey || '').slice(0, 7);
+}
+
+function getDefaultBoardDay(days) {
+  if (!days.length) {
+    return null;
+  }
+
+  const today = new Date().toLocaleDateString('en-CA', {
+    timeZone: 'Australia/Brisbane',
+  });
+
+  return days.find((day) => day >= today) ?? days[days.length - 1] ?? days[0];
+}
+
+function clampBoardDay(days, preferredDay, fallbackDay = null) {
+  if (!days.length) {
+    return null;
+  }
+
+  if (preferredDay && days.includes(preferredDay)) {
+    return preferredDay;
+  }
+
+  if (preferredDay) {
+    return days.find((day) => day >= preferredDay) ?? days[days.length - 1];
+  }
+
+  return fallbackDay && days.includes(fallbackDay) ? fallbackDay : days[0];
+}
+
+function getVisibleBoardDays(days, anchorDay, windowSize = 14) {
+  if (!days.length) {
+    return [];
+  }
+
+  const safeAnchorDay = clampBoardDay(days, anchorDay, days[0]);
+  if (!safeAnchorDay) {
+    return [];
+  }
+
+  const windowEndDay = addBoardDays(safeAnchorDay, windowSize - 1);
+  return days.filter((day) => day >= safeAnchorDay && day <= windowEndDay);
+}
+
 function formatJobOrder(jobOrder) {
   return String(jobOrder).padStart(3, '0');
 }
@@ -278,7 +359,9 @@ export default function AllocationBoard({
     return Array.isArray(initialStoredState?.cards) ? initialStoredState.cards : board.cards;
   });
   const [view, setView] = useState(initialView);
-  const [selectedDay, setSelectedDay] = useState(board.days[0]);
+  const defaultBoardDay = getDefaultBoardDay(board.days);
+  const [selectedDay, setSelectedDay] = useState(defaultBoardDay);
+  const [rangeAnchorDay, setRangeAnchorDay] = useState(defaultBoardDay);
   const [hierarchyMode, setHierarchyMode] = useState('nested');
   const [openGroups, setOpenGroups] = useState({});
   const [openZoneGroups, setOpenZoneGroups] = useState({});
@@ -404,11 +487,58 @@ export default function AllocationBoard({
   const assignedCount = cards.filter((card) => card.staff !== 'Unallocated').length;
   const unallocatedCount = cards.length - assignedCount;
   const reworkCount = cards.filter((card) => card.reworkRequired || card.managerAction === 'reassign' || card.status === 'carried-forward').length;
+  const visibleDays = useMemo(() => getVisibleBoardDays(board.days, rangeAnchorDay), [board.days, rangeAnchorDay]);
+  const activeDays = visibleDays.length ? visibleDays : board.days;
+  const activeSelectedDay = clampBoardDay(activeDays, selectedDay, activeDays[0]);
+  const monthOptions = useMemo(() => {
+    const seen = new Map();
+    board.days.forEach((day) => {
+      const monthKey = getBoardMonthKey(day);
+      if (!seen.has(monthKey)) {
+        seen.set(monthKey, {
+          key: monthKey,
+          label: formatBoardMonthLabel(day),
+          firstDay: day,
+        });
+      }
+    });
+    return [...seen.values()];
+  }, [board.days]);
+  const activeMonthKey = getBoardMonthKey(activeSelectedDay ?? activeDays[0] ?? defaultBoardDay);
   const dailyStaff = useMemo(
-    () => board.staff.filter((staff) => staff !== 'Unallocated' || cards.some((card) => card.staff === 'Unallocated' && card.day === selectedDay)),
-    [board.staff, cards, selectedDay],
+    () => board.staff.filter((staff) => staff !== 'Unallocated' || cards.some((card) => card.staff === 'Unallocated' && card.day === activeSelectedDay)),
+    [board.staff, cards, activeSelectedDay],
   );
   const timeLanes = useMemo(() => getTimeLanes(board.staffMeta), [board.staffMeta]);
+  const planningWindowControls = (
+    <div className="day-switcher">
+      <button className="button secondary" type="button" onClick={() => setRangeAnchorDay(clampBoardDay(board.days, addBoardDays(rangeAnchorDay ?? defaultBoardDay, -14), defaultBoardDay))}>← 2 weeks</button>
+      <select className="button secondary" value={activeMonthKey} onChange={(event) => {
+        const nextMonth = monthOptions.find((option) => option.key === event.target.value);
+        if (!nextMonth) {
+          return;
+        }
+        setRangeAnchorDay(nextMonth.firstDay);
+        setSelectedDay(nextMonth.firstDay);
+      }}>
+        {monthOptions.map((option) => (
+          <option key={option.key} value={option.key}>{option.label}</option>
+        ))}
+      </select>
+      {activeDays.map((day) => (
+        <button className={`button ${activeSelectedDay === day ? 'primary' : 'secondary'}`} type="button" key={day} onClick={() => setSelectedDay(day)}>{formatBoardDayLabel(day)}</button>
+      ))}
+      <button className="button secondary" type="button" onClick={() => {
+        const nextDefaultDay = defaultBoardDay ?? board.days[0] ?? null;
+        if (!nextDefaultDay) {
+          return;
+        }
+        setRangeAnchorDay(nextDefaultDay);
+        setSelectedDay(nextDefaultDay);
+      }}>Today</button>
+      <button className="button secondary" type="button" onClick={() => setRangeAnchorDay(clampBoardDay(board.days, addBoardDays(rangeAnchorDay ?? defaultBoardDay, 14), board.days[board.days.length - 1]))}>2 weeks →</button>
+    </div>
+  );
 
   return (
     <section className="card allocation-board-shell">
@@ -451,11 +581,7 @@ export default function AllocationBoard({
                 <button className={`button ${hierarchyMode === 'compact' ? 'primary' : 'secondary'}`} type="button" onClick={() => setHierarchyMode('compact')}>Compact stack</button>
                 <button className={`button ${hierarchyMode === 'sections' ? 'primary' : 'secondary'}`} type="button" onClick={() => setHierarchyMode('sections')}>Section bands</button>
               </div>
-              <div className="day-switcher">
-                {board.days.map((day) => (
-                  <button className={`button ${selectedDay === day ? 'primary' : 'secondary'}`} type="button" key={day} onClick={() => setSelectedDay(day)}>{formatBoardDayLabel(day)}</button>
-                ))}
-              </div>
+              {planningWindowControls}
             </div>
           </div>
 
@@ -463,7 +589,7 @@ export default function AllocationBoard({
             <div className="daily-timeline-grid daily-timeline-grid-continuous">
               <div className="daily-time-head">Shift time</div>
               {dailyStaff.map((staff) => {
-                const staffCards = cards.filter((card) => card.staff === staff && card.day === selectedDay);
+                const staffCards = cards.filter((card) => card.staff === staff && card.day === activeSelectedDay);
                 const shiftMeta = board.staffMeta?.[staff];
                 return (
                   <div className="daily-staff-head hierarchy-staff-head" key={staff}>
@@ -484,7 +610,7 @@ export default function AllocationBoard({
 
               {dailyStaff.map((staff) => {
                 const staffCards = cards
-                  .filter((card) => card.staff === staff && card.day === selectedDay)
+                  .filter((card) => card.staff === staff && card.day === activeSelectedDay)
                   .sort((a, b) => a.jobOrder - b.jobOrder);
                 const shiftMeta = board.staffMeta?.[staff];
                 const facilityRuns = buildFacilityRuns(staffCards, timeLanes, shiftMeta);
@@ -494,7 +620,7 @@ export default function AllocationBoard({
                     {facilityRuns.map((run, runIndex) => {
                       if (run.facilityKey === '__empty__') {
                         return run.details.map((detail) => (
-                          <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${staff}-empty-${detail.lane.key}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
+                          <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${staff}-empty-${detail.lane.key}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, activeSelectedDay)}>
                             <span className="slot-empty">Drop</span>
                           </div>
                         ));
@@ -505,7 +631,7 @@ export default function AllocationBoard({
                       const facilityProgress = getCompletionStats(run.details.flatMap((detail) => detail.laneCards));
                       const facilityChecklistId = makeCleanerShiftAssignmentId({
                         staff,
-                        day: selectedDay,
+                        day: activeSelectedDay,
                         facility: facilityName,
                         zone: 'facility',
                       });
@@ -529,7 +655,7 @@ export default function AllocationBoard({
 
                           <div className="daily-staff-lane-stack">
                             {run.details.map((detail) => (
-                              <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${detail.lane.key}-${staff}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
+                              <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${detail.lane.key}-${staff}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, activeSelectedDay)}>
                                 {detail.facilities.map((facility) => (
                                   <div className={`hierarchy-zone-stack hierarchy-zone-stack-${hierarchyMode}`} key={`${facility.facilityName}-${detail.lane.key}`}>
                                     {facility.zones.map((zone) => (
@@ -574,18 +700,18 @@ export default function AllocationBoard({
                                                       const isOpen = openGroups[groupKey];
                                                       const groupDropUpdates = {
                                                         staff,
-                                                        day: selectedDay,
+                                                        day: activeSelectedDay,
                                                         laneIndex: detail.lane.index,
                                                         facility: facility.facilityName,
                                                         zone: zone.zoneName,
                                                         taskGroup: group.groupName,
                                                         groupName: group.groupName,
-                                                        groupId: group.cards[0]?.groupId ?? `${staff}-${selectedDay}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`,
+                                                        groupId: group.cards[0]?.groupId ?? `${staff}-${activeSelectedDay}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`,
                                                         plannedFacility: facility.facilityName,
                                                         plannedZone: zone.zoneName,
                                                         plannedTaskGroup: group.groupName,
                                                       };
-                                                      const dropKey = `${staff}-${selectedDay}-${detail.lane.index}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`;
+                                                      const dropKey = `${staff}-${activeSelectedDay}-${detail.lane.index}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`;
 
                                                       return (
                                                         <>
@@ -675,9 +801,17 @@ export default function AllocationBoard({
       )}
 
       {view === 'weekly' && (
-        <div className="allocation-grid">
+        <div className="daily-board-panel">
+          <div className="daily-board-toolbar">
+            <div>
+              <h3>Weekly board window</h3>
+              <p className="muted">Use the same active planning window controls here, then switch back to daily without losing your place.</p>
+            </div>
+            {planningWindowControls}
+          </div>
+          <div className="allocation-grid">
           <div className="allocation-corner">Staff / Day</div>
-          {board.days.map((day) => {
+          {activeDays.map((day) => {
             const dayCount = cards.filter((card) => card.day === day).length;
             return <div className="allocation-day-head" key={day}><strong>{formatBoardDayLabel(day)}</strong><span>{dayCount} cards</span></div>;
           })}
@@ -688,7 +822,7 @@ export default function AllocationBoard({
                 <strong>{staff}</strong>
                 <span>{cards.filter((card) => card.staff === staff).length} cards</span>
               </div>
-              {board.days.map((day) => {
+              {activeDays.map((day) => {
                 const slotCards = cards
                   .filter((card) => card.staff === staff && card.day === day)
                   .sort((a, b) => a.jobOrder - b.jobOrder);
@@ -731,6 +865,7 @@ export default function AllocationBoard({
               })}
             </div>
           ))}
+          </div>
         </div>
       )}
     </section>
