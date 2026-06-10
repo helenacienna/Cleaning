@@ -358,6 +358,7 @@ model TaskInstance {
   planningDueAt                DateTime?           @map("planning_due_at") @db.Timestamptz(6)
   scheduledForAt               DateTime?           @map("scheduled_for_at") @db.Timestamptz(6)
   assignedStaffId              String?             @map("assigned_staff_id") @db.Uuid
+  plannedRunDate               DateTime?           @map("planned_run_date") @db.Date
   plannedFacilityId            String?             @map("planned_facility_id") @db.Uuid
   plannedZoneId                String?             @map("planned_zone_id") @db.Uuid
   plannedTaskGroupId           String?             @map("planned_task_group_id") @db.Uuid
@@ -398,6 +399,7 @@ model TaskInstance {
   @@index([status, dueAt])
   @@index([assignedStaffId, dueAt])
   @@index([shiftRunId, sequence])
+  @@index([plannedRunDate])
   @@index([plannedFacilityId])
   @@index([plannedZoneId])
   @@index([plannedTaskGroupId])

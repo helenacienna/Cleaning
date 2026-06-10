@@ -58,6 +58,11 @@ function parseTargetDays(value) {
   return [String(value).toLowerCase()];
 }
 
+function parseRecurrenceBasis(value) {
+  const normalized = String(value ?? '').toLowerCase();
+  return normalized === 'suggested' || normalized === 'rolling' ? 'suggested' : 'anchored';
+}
+
 export async function PATCH(request, { params }) {
   const prisma = await getPrisma();
 
@@ -75,6 +80,7 @@ export async function PATCH(request, { params }) {
   const recurrenceType = parseRecurrenceType(body.frequency);
   const priority = parsePriority(body.frequencyType);
   const requirement = parseRequirement(body.required);
+  const recurrenceBasis = parseRecurrenceBasis(body.cadenceMode);
   const estimatedMinutes = Number.parseInt(String(body.estimatedMinutes ?? '').trim(), 10);
   const defaultSequence = Number.parseInt(String(body.jobOrderNumber ?? '').trim(), 10);
 
@@ -95,7 +101,8 @@ export async function PATCH(request, { params }) {
       recurrenceRule: recurrenceType === 'weekly'
         ? {
             ...(existing.recurrenceRule && typeof existing.recurrenceRule === 'object' ? existing.recurrenceRule : {}),
-            cadenceMode: String(body.cadenceMode ?? 'Anchored').toLowerCase(),
+            recurrenceBasis,
+            cadenceMode: recurrenceBasis === 'suggested' ? 'rolling' : 'anchored',
             designatedDay: String(body.designatedDay ?? 'MON').toLowerCase(),
           }
         : null,

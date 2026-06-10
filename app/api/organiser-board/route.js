@@ -1,21 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getOrganiserBoardData } from '../../../lib/app-data';
+import { getManagerOverviewData } from '../../../lib/manager-data';
 import { getPrisma } from '../../../lib/prisma';
-
-const boardDayKeyFormatter = new Intl.DateTimeFormat('sv-SE', {
-  timeZone: 'Australia/Brisbane',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
-
-function formatBoardDayKey(value) {
-  return boardDayKeyFormatter.format(new Date(value));
-}
-
-function addMinutes(date, minutes) {
-  return new Date(date.getTime() + minutes * 60 * 1000);
-}
+import { alignAnchoredWeeklyDueAt, calculatePlanningDueAt, getRecurrenceBasis, refreshTemplateStatus } from '../../../lib/task-scheduling';
+import { deriveOrganiserSchedule, formatBoardDayKey } from '../../../lib/task-effective-day.mjs';
 
 function getNextStatus(currentStatus, hasShiftRun) {
   if (['completed', 'in_progress', 'cancelled', 'skipped'].includes(currentStatus)) {
@@ -34,8 +22,18 @@ function getNextStatus(currentStatus, hasShiftRun) {
 }
 
 export async function GET() {
-  const { board, source } = await getOrganiserBoardData();
-  return NextResponse.json({ board, source });
+  const [{ board, source }, managerOverview] = await Promise.all([
+    getOrganiserBoardData(),
+    getManagerOverviewData(),
+  ]);
+
+  const summary = {
+    totalTasks: managerOverview.totalTasks,
+    completedTasks: managerOverview.completedTasks,
+    completionRate: managerOverview.completionRate,
+  };
+
+  return NextResponse.json({ board, source, summary });
 }
 
 export async function POST(request) {
@@ -58,7 +56,18 @@ export async function POST(request) {
   const [instances, staffMembers, shiftRuns, facilities, zones, taskGroups] = await Promise.all([
     prisma.taskInstance.findMany({
       where: { id: { in: instanceIds } },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        dueAt: true,
+        taskTemplateId: true,
+        taskTemplate: {
+          select: {
+            recurrenceType: true,
+            recurrenceRule: true,
+          },
+        },
+      },
     }),
     prisma.staff.findMany({
       where: { active: true },
@@ -94,8 +103,24 @@ export async function POST(request) {
     .map((card, index) => {
       const current = instanceMap.get(card.id);
       const assignedStaff = card.staff && card.staff !== 'Unallocated' ? staffMap.get(card.staff) : null;
-      const shiftRun = assignedStaff ? shiftRunMap.get(`${assignedStaff.fullName}::${card.day}`) : null;
       const laneIndex = Number.isInteger(card.laneIndex) ? card.laneIndex : 0;
+      const recurrenceBasis = getRecurrenceBasis(current.taskTemplate);
+      const isAnchoredWeekly = current.taskTemplate?.recurrenceType === 'weekly' && recurrenceBasis === 'anchored';
+      const anchoredDueAt = isAnchoredWeekly
+        ? (alignAnchoredWeeklyDueAt(current.dueAt, current.taskTemplate) ?? current.dueAt)
+        : current.dueAt;
+      const anchorBoardDay = formatBoardDayKey(anchoredDueAt);
+      const actualBoardDay = card.day ?? anchorBoardDay;
+      const effectiveShiftRun = assignedStaff ? shiftRunMap.get(`${assignedStaff.fullName}::${actualBoardDay}`) : null;
+      const { dueAt, plannedRunDate, scheduledForAt } = deriveOrganiserSchedule({
+        currentDueAt: current.dueAt,
+        anchoredDueAt,
+        recurrenceBasis,
+        recurrenceType: current.taskTemplate?.recurrenceType,
+        actualBoardDay,
+        shiftStartAt: effectiveShiftRun?.shiftStartAt ?? null,
+        laneIndex,
+      });
       const plannedFacility = card.facility ? facilityMap.get(card.facility) : null;
       const plannedZone = plannedFacility && card.zone ? zoneMap.get(`${plannedFacility.id}::${card.zone}`) : null;
       const plannedTaskGroup = plannedZone && card.taskGroup ? taskGroupMap.get(`${plannedZone.id}::${card.taskGroup}`) : null;
@@ -104,13 +129,16 @@ export async function POST(request) {
         where: { id: card.id },
         data: {
           assignedStaffId: assignedStaff?.id ?? null,
-          shiftRunId: shiftRun?.id ?? null,
+          shiftRunId: effectiveShiftRun?.id ?? null,
+          plannedRunDate,
           plannedFacilityId: plannedFacility?.id ?? null,
           plannedZoneId: plannedZone?.id ?? null,
           plannedTaskGroupId: plannedTaskGroup?.id ?? null,
           sequence: Number.isFinite(card.jobOrder) ? Number(card.jobOrder) : index + 1,
-          scheduledForAt: shiftRun?.shiftStartAt ? addMinutes(new Date(shiftRun.shiftStartAt), laneIndex * 60) : null,
-          status: getNextStatus(current.status, Boolean(shiftRun)),
+          scheduledForAt,
+          dueAt,
+          planningDueAt: calculatePlanningDueAt(dueAt),
+          status: getNextStatus(current.status, Boolean(effectiveShiftRun)),
         },
       });
     });
@@ -121,6 +149,20 @@ export async function POST(request) {
   for (let index = 0; index < updates.length; index += chunkSize) {
     const chunk = updates.slice(index, index + chunkSize);
     await prisma.$transaction(chunk, {
+      timeout: 20000,
+    });
+  }
+
+  const taskTemplateIds = [...new Set(
+    cards
+      .map((card) => instanceMap.get(card.id)?.taskTemplateId)
+      .filter(Boolean),
+  )];
+
+  for (const taskTemplateId of taskTemplateIds) {
+    await prisma.$transaction(async (tx) => {
+      await refreshTemplateStatus(tx, taskTemplateId);
+    }, {
       timeout: 20000,
     });
   }
