@@ -11,22 +11,16 @@ const FREQUENCY_OPTIONS = [
 ];
 
 const PRIORITY_OPTIONS = [
-  { value: 'critical', label: 'Critical' },
-  { value: 'standard', label: 'Standard' },
-  { value: 'optional', label: 'Optional' },
+  { value: 'Critical', label: 'Critical' },
+  { value: 'Standard', label: 'Standard' },
+  { value: 'Optional', label: 'Optional' },
 ];
 
-const EVIDENCE_OPTIONS = [
-  { value: 'none', label: 'No photo required' },
-  { value: 'optional_photo', label: 'Optional / random photo' },
-  { value: 'required_photo', label: 'Required photo' },
-  { value: 'multi_photo', label: 'Multiple photos required' },
-];
-
-const COMMENT_OPTIONS = [
-  { value: 'none', label: 'No comment required' },
-  { value: 'on_exception', label: 'Comment on exception' },
-  { value: 'always', label: 'Comment always required' },
+const REQUIREMENT_OPTIONS = [
+  'Standard',
+  'Random photo eligible',
+  'Comment on exception',
+  'Forced photo',
 ];
 
 function buildInitialDraft(card) {
@@ -38,11 +32,10 @@ function buildInitialDraft(card) {
     zone: card.zone,
     facility: card.facility,
     frequency: String(card.frequency ?? 'none').toLowerCase(),
-    frequencyType: card.priorityValue ?? 'standard',
+    frequencyType: card.frequencyType === 'Suggestive' ? 'Standard' : card.frequencyType,
     cadenceMode: card.cadenceMode,
     designatedDay: card.designatedDay,
-    evidenceRequirement: card.evidenceRequirement ?? 'none',
-    commentRequirement: card.commentRequirement ?? 'none',
+    required: card.required,
     estimatedMinutes: String(card.estimatedMinutes ?? ''),
     lastCompleted: card.lastCompleted,
     suggestedDue: card.suggestedDue,
@@ -187,7 +180,7 @@ export default function TaskCardManager({ cards, zones }) {
               >
                 <div className="task-card-list-top">
                   <strong>{card.title}</strong>
-                  <span className={`frequency-type ${card.priorityValue === 'critical' ? 'frequency-critical' : 'frequency-suggestive'}`}>{card.frequencyType}</span>
+                  <span className={`frequency-type ${card.frequencyType === 'Critical' ? 'frequency-critical' : 'frequency-suggestive'}`}>{card.frequencyType}</span>
                 </div>
                 <span className="muted">#{card.jobOrderNumber} · {card.taskGroup}</span>
                 <span className="muted">{card.facility} · {card.zone}</span>
@@ -272,15 +265,9 @@ export default function TaskCardManager({ cards, zones }) {
               </>
             )}
             <label className="field-label">
-              <span>Photo evidence</span>
-              <select value={draft.evidenceRequirement} onChange={(event) => handleDraftChange('evidenceRequirement', event.target.value)}>
-                {EVIDENCE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
-            </label>
-            <label className="field-label">
-              <span>Comment requirement</span>
-              <select value={draft.commentRequirement} onChange={(event) => handleDraftChange('commentRequirement', event.target.value)}>
-                {COMMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              <span>Requirement</span>
+              <select value={draft.required} onChange={(event) => handleDraftChange('required', event.target.value)}>
+                {REQUIREMENT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
               </select>
             </label>
             <label className="field-label">

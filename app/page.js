@@ -726,23 +726,6 @@ export default function HomePage() {
         <div className="brand">
           <h1>{appSummary.appName}</h1>
         </div>
-        <details className="dashboard-settings-menu">
-          <summary className="button secondary dashboard-settings-trigger">Settings & navigation</summary>
-          <div className="dashboard-settings-popover">
-            <div className="dashboard-settings-section">
-              <span className="muted dashboard-settings-label">Navigate</span>
-              <div className="dashboard-settings-links">
-                <Link className="button primary slim" href="/admin/daily-hierarchy">Open scheduling workflow</Link>
-                <Link className="button secondary slim" href="/admin/daily-hierarchy">Open organiser board</Link>
-                <Link className="button secondary slim" href="/scan/assignment-1">Open cleaner QR flow</Link>
-                <Link className="button secondary slim" href="/admin/manager">Open manager view</Link>
-                <Link className="button secondary slim" href="/admin/inbox">Open operations inbox</Link>
-                <Link className="button secondary slim" href="/admin/facilities">Manage facilities</Link>
-                <Link className="button secondary slim" href="/qr-zones">QR zone codes</Link>
-              </div>
-            </div>
-          </div>
-        </details>
       </div>
 
       <section className="dashboard-utility-bar card">
@@ -761,7 +744,13 @@ export default function HomePage() {
           </div>
         </div>
         <div className="dashboard-action-row">
-          <span className="muted dashboard-action-row-note">Navigation moved into the Settings & navigation menu.</span>
+          <Link className="button primary slim" href="/admin/daily-hierarchy">Open scheduling workflow</Link>
+          <Link className="button secondary slim" href="/admin/daily-hierarchy">Open organiser board</Link>
+          <Link className="button secondary slim" href="/scan/assignment-1">Open cleaner QR flow</Link>
+          <Link className="button secondary slim" href="/admin/manager">Open manager view</Link>
+          <Link className="button secondary slim" href="/admin/inbox">Open operations inbox</Link>
+          <Link className="button secondary slim" href="/admin/facilities">Manage facilities</Link>
+          <Link className="button secondary slim" href="/qr-zones">QR zone codes</Link>
         </div>
       </section>
 
