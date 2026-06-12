@@ -484,13 +484,6 @@ export default function AllocationBoard({
     setExpandedCards((existing) => ({ ...existing, [cardId]: !existing[cardId] }));
   }
 
-  function handleAssigneeChange(cardId, nextStaff) {
-    moveCard(cardId, {
-      staff: nextStaff || 'Unallocated',
-      laneIndex: 0,
-    });
-  }
-
   const assignedCount = cards.filter((card) => card.staff !== 'Unallocated').length;
   const unallocatedCount = cards.length - assignedCount;
   const reworkCount = cards.filter((card) => card.reworkRequired || card.managerAction === 'reassign' || card.status === 'carried-forward').length;
@@ -772,18 +765,6 @@ export default function AllocationBoard({
                                                                           <strong>{item.value}</strong>
                                                                         </div>
                                                                       ))}
-                                                                      <div className="allocation-card-assignee" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-                                                                        <label htmlFor={`assignee-nested-${card.id}`}>Assignee</label>
-                                                                        <select
-                                                                          id={`assignee-nested-${card.id}`}
-                                                                          value={card.staff || 'Unallocated'}
-                                                                          onChange={(event) => handleAssigneeChange(card.id, event.target.value)}
-                                                                        >
-                                                                          {board.staff.map((staffOption) => (
-                                                                            <option key={`${card.id}-nested-${staffOption}`} value={staffOption}>{staffOption}</option>
-                                                                          ))}
-                                                                        </select>
-                                                                      </div>
                                                                       {card.issueNote ? <p className="allocation-card-note">{card.issueNote}</p> : null}
                                                                     </div>
                                                                   )}
@@ -872,18 +853,6 @@ export default function AllocationBoard({
                                   <strong>{item.value}</strong>
                                 </div>
                               ))}
-                              <div className="allocation-card-assignee" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-                                <label htmlFor={`assignee-weekly-${card.id}`}>Assignee</label>
-                                <select
-                                  id={`assignee-weekly-${card.id}`}
-                                  value={card.staff || 'Unallocated'}
-                                  onChange={(event) => handleAssigneeChange(card.id, event.target.value)}
-                                >
-                                  {board.staff.map((staffOption) => (
-                                    <option key={`${card.id}-weekly-${staffOption}`} value={staffOption}>{staffOption}</option>
-                                  ))}
-                                </select>
-                              </div>
                               {card.issueNote ? <p className="allocation-card-note">{card.issueNote}</p> : null}
                             </div>
                           )}
