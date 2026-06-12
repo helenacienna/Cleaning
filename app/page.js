@@ -765,6 +765,32 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="dashboard-info-row">
+        <div className="card kpi">
+          <span className="muted">Completion rate</span>
+          <strong>{appSummary.completionRate}%</strong>
+        </div>
+        <div className="card kpi">
+          <span className="muted">Completed today</span>
+          <strong>{appSummary.completedTasks}</strong>
+        </div>
+        <div className="card kpi">
+          <span className="muted">Pending</span>
+          <strong>{appSummary.pendingTasks}</strong>
+        </div>
+        <div className="card kpi">
+          <span className="muted">Photo checks</span>
+          <strong>{appSummary.photoVerifications}</strong>
+        </div>
+        {supervisorCards.map((card) => (
+          <div className="card" key={card.title}>
+            <span className="muted">{card.title}</span>
+            <strong className={`metric tone-${card.tone}`}>{card.value}</strong>
+            <div className="muted">{card.note}</div>
+          </div>
+        ))}
+      </section>
+
       <section>
         <div className="panel-title facility-board-title-row">
           <div>
@@ -809,32 +835,6 @@ export default function HomePage() {
           />
         ))}
         </div>
-      </section>
-
-      <section className="dashboard-info-row">
-        <div className="card kpi">
-          <span className="muted">Completion rate</span>
-          <strong>{appSummary.completionRate}%</strong>
-        </div>
-        <div className="card kpi">
-          <span className="muted">Completed today</span>
-          <strong>{appSummary.completedTasks}</strong>
-        </div>
-        <div className="card kpi">
-          <span className="muted">Pending</span>
-          <strong>{appSummary.pendingTasks}</strong>
-        </div>
-        <div className="card kpi">
-          <span className="muted">Photo checks</span>
-          <strong>{appSummary.photoVerifications}</strong>
-        </div>
-        {supervisorCards.map((card) => (
-          <div className="card" key={card.title}>
-            <span className="muted">{card.title}</span>
-            <strong className={`metric tone-${card.tone}`}>{card.value}</strong>
-            <div className="muted">{card.note}</div>
-          </div>
-        ))}
       </section>
 
       {activeTaskCard && (

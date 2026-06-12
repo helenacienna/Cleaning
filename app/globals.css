@@ -2929,25 +2929,6 @@ button.button {
   .schedule-task-main { min-width: 0; }
   .qr-card { grid-template-columns: 1fr; }
   .cleaner-task { grid-template-columns: 1fr; }
-  .assignment-grid {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 100%;
-    grid-template-columns: none;
-    overflow-x: auto;
-    overflow-y: visible;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 6px;
-    margin-left: -18px;
-    margin-right: -18px;
-    padding-left: 18px;
-    padding-right: 18px;
-  }
-  .assignment-grid > * {
-    min-width: 0;
-    scroll-snap-align: start;
-  }
   .compact-task-list { max-height: 76vh; padding: 16vh 4px; gap: 14px; }
   .compact-task-card { min-height: auto; }
   .compact-task-top { grid-template-columns: 38px 1fr; padding-right: 0; padding-top: 28px; }
