@@ -27,12 +27,37 @@ function parseRequirement(value) {
   }
 }
 
+function parseEvidenceRequirement(value) {
+  switch (String(value ?? '').toLowerCase()) {
+    case 'optional_photo':
+    case 'required_photo':
+    case 'multi_photo':
+    case 'none':
+      return String(value).toLowerCase();
+    default:
+      return null;
+  }
+}
+
+function parseCommentRequirement(value) {
+  switch (String(value ?? '').toLowerCase()) {
+    case 'on_exception':
+    case 'always':
+    case 'none':
+      return String(value).toLowerCase();
+    default:
+      return null;
+  }
+}
+
 function parsePriority(value) {
   switch (String(value ?? '').toLowerCase()) {
     case 'critical':
       return 'critical';
     case 'optional':
       return 'optional';
+    case 'standard':
+      return 'standard';
     default:
       return 'standard';
   }
@@ -79,8 +104,12 @@ export async function PATCH(request, { params }) {
 
   const recurrenceType = parseRecurrenceType(body.frequency);
   const priority = parsePriority(body.frequencyType);
-  const requirement = parseRequirement(body.required);
   const recurrenceBasis = parseRecurrenceBasis(body.cadenceMode);
+  const evidenceRequirement = parseEvidenceRequirement(body.evidenceRequirement);
+  const commentRequirement = parseCommentRequirement(body.commentRequirement);
+  const requirement = evidenceRequirement && commentRequirement
+    ? { evidenceRequirement, commentRequirement }
+    : parseRequirement(body.required);
   const estimatedMinutes = Number.parseInt(String(body.estimatedMinutes ?? '').trim(), 10);
   const defaultSequence = Number.parseInt(String(body.jobOrderNumber ?? '').trim(), 10);
 

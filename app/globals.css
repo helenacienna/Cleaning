@@ -73,6 +73,58 @@ a { color: inherit; text-decoration: none; }
   justify-content: flex-end;
 }
 
+.dashboard-action-row-note {
+  text-align: right;
+}
+
+.dashboard-settings-menu {
+  position: relative;
+}
+
+.dashboard-settings-trigger {
+  list-style: none;
+  cursor: pointer;
+}
+
+.dashboard-settings-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.dashboard-settings-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 20;
+  min-width: 280px;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
+}
+
+.dashboard-settings-section {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-settings-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-settings-links {
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard-settings-links .button {
+  justify-content: center;
+}
+
 .dashboard-update-card {
   display: grid;
   gap: 6px;
