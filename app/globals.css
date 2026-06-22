@@ -827,9 +827,12 @@ a { color: inherit; text-decoration: none; }
 .task-grade-flag {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 3px 6px;
   font-size: 8px;
+  font-weight: 700;
   line-height: 1;
+  white-space: nowrap;
   border-radius: 999px;
   border: 1px solid rgba(34, 197, 94, 0.22);
   background: rgba(34, 197, 94, 0.10);

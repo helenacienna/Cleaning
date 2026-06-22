@@ -1061,7 +1061,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
     const canApplySuggested = Boolean(effectiveRecommendedStaff) && !isScheduledRecommendation && !isSaving && onApplySuggestedStaff;
     const BadgeTag = canApplySuggested ? 'button' : 'span';
 
-    const gradeLabel = formatTaskGradeLabel(task.score);
+    const gradeLabel = formatTaskGradeLabel(task.score ?? task.auditScore);
 
     return (
       <span className="task-assignment-display">
