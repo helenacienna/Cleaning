@@ -942,6 +942,8 @@ function buildDashboardAssignmentsFromBoard(board, selectedDay) {
         required: card.required,
         jobOrderNumber: card.jobOrder,
         status: formatBoardStatusForDashboard(card.status),
+        score: card.score ?? null,
+        auditScore: card.auditScore ?? null,
         photoRequired: String(card.required || '').toLowerCase().includes('photo'),
         commentRequired: Boolean(card.issueNote),
         displayOrder: card.jobOrder,
