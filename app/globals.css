@@ -705,11 +705,11 @@ a { color: inherit; text-decoration: none; }
 }
 
 .task-row-disclosure-compact {
-  padding: 6px 8px;
-  min-height: 42px;
+  padding: 4px 8px;
+  min-height: 36px;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 4px;
+  gap: 2px;
   align-items: stretch;
 }
 
@@ -717,7 +717,7 @@ a { color: inherit; text-decoration: none; }
 .task-inline-bottom-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -743,20 +743,20 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 18px;
-  line-height: 1.1;
+  line-height: 1.05;
 }
 
 .task-inline-copy {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  gap: 2px;
+  gap: 0;
   flex: 1 1 auto;
 }
 
 .task-inline-copy .muted {
   font-size: 18px;
-  line-height: 1.1;
+  line-height: 1.05;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
