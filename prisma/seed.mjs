@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import crypto from 'node:crypto';
 
-const facilities = ['Cienna', 'Boheme', 'Holidays'];
+const facilities = ['Cienna', 'Boheme', 'Holiday'];
 const OPEN_INSTANCE_STATUSES = new Set(['upcoming', 'due', 'unscheduled', 'scheduled', 'in_progress', 'overdue', 'carried_forward']);
 const UNSCHEDULED_INSTANCE_STATUSES = new Set(['unscheduled', 'overdue', 'carried_forward']);
 
@@ -47,12 +47,12 @@ const staffBlueprints = [
     fullName: 'Leo Nguyen',
     role: 'cleaner',
     shiftLabel: 'Day flexible shift',
-    routeLabel: 'Boheme → Holidays → Cienna',
-    shiftStart: '07:30',
-    shiftEnd: '15:30',
+    routeLabel: 'Boheme → Holiday → Cienna',
+    shiftStart: '08:00',
+    shiftEnd: '16:00',
     routes: [
       { facility: 'Boheme', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3', 'Residents lounge'], laneIndexes: [1, 2] },
-      { facility: 'Holidays', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
+      { facility: 'Holiday', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
       { facility: 'Cienna', zones: ['Mail room', 'Loading dock'], laneIndexes: [4] },
     ],
   },
@@ -61,11 +61,11 @@ const staffBlueprints = [
     fullName: 'Ava Patel',
     role: 'cleaner',
     shiftLabel: 'Late flexible shift',
-    routeLabel: 'Holidays → Cienna → Boheme',
-    shiftStart: '09:00',
-    shiftEnd: '17:00',
+    routeLabel: 'Holiday → Cienna → Boheme',
+    shiftStart: '10:00',
+    shiftEnd: '18:00',
     routes: [
-      { facility: 'Holidays', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
+      { facility: 'Holiday', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
       { facility: 'Cienna', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [4, 5] },
       { facility: 'Boheme', zones: ['Mail room', 'Loading dock'], laneIndexes: [6] },
     ],
@@ -181,8 +181,24 @@ function getTargetWeekday(template) {
   return designatedDay;
 }
 
-function getCadenceMode(template) {
-  return template.recurrenceRule?.cadenceMode === 'rolling' ? 'rolling' : 'anchored';
+function getNextWeekdayOnOrAfter(referenceDate, weekdayCode) {
+  let cursor = startOfUtcDay(referenceDate);
+  while (getWeekdayCode(cursor) !== weekdayCode) {
+    cursor = addDays(cursor, 1);
+  }
+  return cursor;
+}
+
+function getSeedDistributedMonthlyDueAt(referenceDate, slotIndex = 0) {
+  const anchor = startOfUtcDay(referenceDate);
+  const weekdayCode = ['mon', 'tue', 'wed', 'thu', 'fri'][slotIndex % 5];
+  const weekOffset = Math.floor(slotIndex / 5) % 2;
+  return getNextWeekdayOnOrAfter(addDays(anchor, weekOffset * 7), weekdayCode);
+}
+
+function getRecurrenceBasis(template) {
+  const configured = String(template.recurrenceRule?.recurrenceBasis ?? template.recurrenceRule?.cadenceMode ?? 'anchored').toLowerCase();
+  return configured === 'suggested' || configured === 'rolling' ? 'suggested' : 'anchored';
 }
 
 function isTemplateDueOnDate(template, date) {
@@ -194,7 +210,7 @@ function isTemplateDueOnDate(template, date) {
   }
 
   if (template.recurrenceType === 'weekly') {
-    if (getCadenceMode(template) === 'rolling') {
+    if (getRecurrenceBasis(template) === 'suggested') {
       const diffDays = Math.round((boardDay.getTime() - dueDay.getTime()) / (24 * 60 * 60 * 1000));
       return diffDays >= 0 && diffDays % 7 === 0;
     }
@@ -217,7 +233,7 @@ function getNextDueAtAfter(template, referenceAt) {
   }
 
   if (template.recurrenceType === 'weekly') {
-    if (getCadenceMode(template) === 'rolling') {
+    if (getRecurrenceBasis(template) === 'suggested') {
       return addDays(base, 7);
     }
 
@@ -309,6 +325,13 @@ function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60 * 1000);
 }
 
+function buildInstanceCode(templateCode, dueAt) {
+  const date = new Date(dueAt);
+  const stamp = date.toISOString().slice(0, 10).replace(/-/g, '');
+  const time = `${String(date.getUTCHours()).padStart(2, '0')}${String(date.getUTCMinutes()).padStart(2, '0')}`;
+  return `${templateCode}-D${stamp}-T${time}`;
+}
+
 async function resetData(prisma) {
   await prisma.inboxParticipant.deleteMany();
   await prisma.inboxMessage.deleteMany();
@@ -386,25 +409,25 @@ async function main() {
             const priority = groupIndex === 2 ? 'optional' : 'critical';
             const evidenceRequirement = taskIndex === 0 ? 'none' : zoneBlueprint.code === 'Z01' ? 'optional_photo' : 'required_photo';
             const commentRequirement = taskIndex === 0 ? 'none' : 'on_exception';
-            const cadenceMode = recurrenceType === 'weekly' ? (taskIndex % 2 === 0 ? 'anchored' : 'rolling') : null;
-            const designatedDay = ['mon', 'tue', 'wed', 'thu', 'fri'][(facilityRows.findIndex((row) => row.id === facility.id) + groupIndex + taskIndex) % 5];
+            const facilityIndex = facilityRows.findIndex((row) => row.id === facility.id);
+            const recurrenceBasis = recurrenceType === 'weekly' ? (taskIndex % 2 === 0 ? 'anchored' : 'suggested') : 'suggested';
+            const designatedDay = ['mon', 'tue', 'wed', 'thu', 'fri'][(facilityIndex + zoneBlueprints.findIndex((zone) => zone.code === zoneBlueprint.code) + taskIndex) % 5];
             const dailyLastCompletedAt = addDays(startOfUtcDay(SEED_TODAY), -1);
-            const weeklyLastCompletedAt = addDays(startOfUtcDay(SEED_TODAY), -(taskIndex % 2 === 0 ? 7 : 6));
-            const monthlyLastCompletedAt = addDays(startOfUtcDay(SEED_TODAY), -28 - (taskIndex * 2));
+            const weeklyNextDueAt = getNextWeekdayOnOrAfter(startOfUtcDay(SEED_TODAY), designatedDay);
+            const weeklyLastCompletedAt = addDays(weeklyNextDueAt, -7);
+            const monthlySlotIndex = (facilityIndex * zoneBlueprints.length + zoneBlueprints.findIndex((zone) => zone.code === zoneBlueprint.code) + taskIndex) % 10;
+            const monthlyNextDueAt = getSeedDistributedMonthlyDueAt(SEED_TODAY, monthlySlotIndex);
+            const monthlyLastCompletedAt = addMonths(monthlyNextDueAt, -1);
             const lastCompletedAt = recurrenceType === 'daily'
               ? dailyLastCompletedAt
               : recurrenceType === 'weekly'
                 ? weeklyLastCompletedAt
                 : monthlyLastCompletedAt;
-            const nextDueAt = recurrenceType === 'weekly' && cadenceMode === 'anchored'
-              ? (() => {
-                  let cursor = startOfUtcDay(SEED_TODAY);
-                  while (getWeekdayCode(cursor) !== designatedDay) {
-                    cursor = addDays(cursor, 1);
-                  }
-                  return cursor;
-                })()
-              : getNextDueAtAfter({ recurrenceType, recurrenceRule: cadenceMode ? { cadenceMode, designatedDay } : null }, lastCompletedAt);
+            const nextDueAt = recurrenceType === 'weekly' && recurrenceBasis === 'anchored'
+              ? weeklyNextDueAt
+              : recurrenceType === 'monthly'
+                ? monthlyNextDueAt
+              : getNextDueAtAfter({ recurrenceType, recurrenceRule: recurrenceType === 'weekly' ? { recurrenceBasis, cadenceMode: recurrenceBasis === 'suggested' ? 'rolling' : 'anchored', designatedDay } : null }, lastCompletedAt);
 
             templateRows.push({
               id: templateId,
@@ -416,7 +439,7 @@ async function main() {
               description: `${groupBlueprint.name} · ${zoneBlueprint.zone} · ${facility.name}`,
               serviceType: 'routine',
               recurrenceType,
-              recurrenceRule: recurrenceType === 'weekly' ? { cadenceMode, designatedDay } : null,
+              recurrenceRule: recurrenceType === 'weekly' ? { recurrenceBasis, cadenceMode: recurrenceBasis === 'suggested' ? 'rolling' : 'anchored', designatedDay } : null,
               targetDays: recurrenceType === 'weekly' ? [designatedDay] : ['mon', 'tue', 'wed', 'thu', 'fri'],
               preferredTimeWindow: 'flexible',
               defaultSequence: templateCounter,
@@ -518,11 +541,12 @@ async function main() {
           const dueAt = scheduledForAt;
           const planningDueAt = addMinutes(dueAt, -24 * 60);
           const status = getSeedTaskStatus(boardDate, index, completedTarget);
-          const instanceId = uuidFor(`instance:${template.taskTemplateCode}:${boardDate}:${staff.staffCode}`);
+          const instanceCode = buildInstanceCode(template.taskTemplateCode, dueAt);
+          const instanceId = uuidFor(`instance:${instanceCode}`);
 
           const instance = {
             id: instanceId,
-            instanceCode: `${template.taskTemplateCode}-D${boardDate.replace(/-/g, '')}-T${formatTimeKey(dueAt)}-S${staff.staffCode}`,
+            instanceCode,
             taskTemplateId: template.id,
             shiftRunId: shiftRun.id,
             facilityId: template.facilityId,

@@ -8,7 +8,7 @@ export default function OrganiserAlerts({ board }) {
     <section className="card" style={{ marginBottom: 16 }}>
       <div className="panel-title">
         <div>
-          <h3>Organiser alerts</h3>
+          <h3>Board alerts</h3>
           <p className="muted">Tasks that need reshuffling, reassignment, or attention before the shift slips.</p>
         </div>
         <span className="badge">{reworkCards.length + overdueCards.length} alerts</span>
@@ -18,7 +18,7 @@ export default function OrganiserAlerts({ board }) {
         <div className="task-row">
           <div>
             <strong>Rework queue</strong>
-            <div className="muted">Tasks returned by managers and waiting in the organiser board.</div>
+            <div className="muted">Tasks returned by managers and waiting on the main board.</div>
           </div>
           <strong className={reworkCards.length ? 'tone-amber' : 'tone-green'}>{reworkCards.length}</strong>
         </div>
@@ -42,7 +42,7 @@ export default function OrganiserAlerts({ board }) {
         </div>
         <div className="task-row">
           <div>
-            <strong>Schedule rule mismatches</strong>
+            <strong>Task rule mismatches</strong>
             <div className="muted">Instances that do not align with their template cadence or anchored weekday rules.</div>
           </div>
           <div className="flag-row">

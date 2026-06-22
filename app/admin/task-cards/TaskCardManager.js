@@ -59,9 +59,11 @@ function formatRuntimeDate(value) {
   return value;
 }
 
-export default function TaskCardManager({ cards, zones }) {
+export default function TaskCardManager({ cards, zones, initialTemplateId = null }) {
   const [taskCards, setTaskCards] = useState(cards);
-  const [selectedId, setSelectedId] = useState(cards[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState(
+    cards.find((card) => card.templateId === initialTemplateId)?.id ?? cards[0]?.id ?? null,
+  );
   const [search, setSearch] = useState('');
   const [zoneFilter, setZoneFilter] = useState('All zones');
   const [statusFilter, setStatusFilter] = useState('Active');
@@ -136,7 +138,7 @@ export default function TaskCardManager({ cards, zones }) {
       <div className="admin-calendar-header">
         <div>
           <h2>Task cards</h2>
-          <p className="muted">Manage reusable task card templates that feed organiser scheduling and runtime task instances.</p>
+          <p className="muted">Manage reusable task card templates that feed the main board and runtime task instances.</p>
         </div>
         <div className="admin-calendar-controls">
           <span className="badge">{taskCards.length} templates</span>
@@ -247,7 +249,7 @@ export default function TaskCardManager({ cards, zones }) {
                   <span>Weekly cadence</span>
                   <select value={draft.cadenceMode} onChange={(event) => handleDraftChange('cadenceMode', event.target.value)}>
                     <option>Anchored</option>
-                    <option>Rolling</option>
+                    <option>Suggested</option>
                   </select>
                 </label>
                 <label className="field-label">
@@ -296,7 +298,7 @@ export default function TaskCardManager({ cards, zones }) {
             </label>
             <label className="checkbox-row span-2">
               <input type="checkbox" checked={draft.active} onChange={(event) => handleDraftChange('active', event.target.checked)} />
-              <span>Task card is active and available for scheduling</span>
+              <span>Task card is active and available on the main board</span>
             </label>
           </div>
 

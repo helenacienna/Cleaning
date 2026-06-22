@@ -4,7 +4,7 @@ export default function ManagerAlerts({ alertCards }) {
       <div className="panel-title">
         <div>
           <h3>Alert centre</h3>
-          <p className="muted">Immediate issues that need manager or organiser attention.</p>
+          <p className="muted">Immediate issues that need manager attention.</p>
         </div>
         <span className="badge">{alertCards.length} alerts</span>
       </div>

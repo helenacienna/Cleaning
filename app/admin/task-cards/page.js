@@ -6,8 +6,10 @@ export const metadata = {
   title: 'Task Cards · Cienna Cleaning',
 };
 
-export default async function TaskCardsPage() {
+export default async function TaskCardsPage({ searchParams }) {
   const { cards, zones } = await getTaskCardLibraryData();
+  const resolvedSearchParams = await searchParams;
+  const initialTemplateId = typeof resolvedSearchParams?.templateId === 'string' ? resolvedSearchParams.templateId : null;
 
   return (
     <main className="page admin-calendar-page">
@@ -18,12 +20,12 @@ export default async function TaskCardsPage() {
         </div>
         <div className="badge-row">
           <Link className="button secondary" href="/">Back to dashboard</Link>
-          <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
+          <Link className="button secondary" href="/">Open dashboard</Link>
           <span className="badge">Template management</span>
         </div>
       </div>
 
-      <TaskCardManager cards={cards} zones={zones} />
+      <TaskCardManager cards={cards} zones={zones} initialTemplateId={initialTemplateId} />
     </main>
   );
 }

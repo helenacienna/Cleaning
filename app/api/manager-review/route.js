@@ -119,7 +119,7 @@ export async function POST(request) {
   return NextResponse.json({
     ok: true,
     message: managerAction === 'reassign'
-      ? 'Task moved back into organiser rework queue'
+      ? 'Task moved back into the board rework queue'
       : `Manager action saved: ${managerAction}`,
   });
 }

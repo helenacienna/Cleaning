@@ -1,8 +1,7 @@
 import Link from 'next/link';
-import { qrZones } from '../../data/demo-data';
 
 export const metadata = {
-  title: 'QR Zone Codes · Cienna Cleaning',
+  title: 'QR workflow parked · Cienna Cleaning',
 };
 
 export default function QrZonesPage() {
@@ -11,35 +10,25 @@ export default function QrZonesPage() {
       <div className="topbar">
         <div className="brand">
           <p>Cienna Cleaning Admin</p>
-          <h1>QR zone codes</h1>
+          <h1>QR workflow parked</h1>
         </div>
         <div className="badge-row">
           <Link className="button secondary" href="/">Back to dashboard</Link>
-          <span className="badge">Prototype links active</span>
+          <span className="badge">Future feature</span>
         </div>
       </div>
 
       <section className="card">
         <div className="panel-title">
           <div>
-            <h3>Zone QR library</h3>
-            <p className="muted">Print one code per physical cleaning zone. Scanning opens the cleaner task list for that location.</p>
+            <h3>Cleaner access is simplified for now</h3>
+            <p className="muted">The QR-based entry flow has been removed from active use during testing. Cleaners should open their daily work from the staff landing page instead.</p>
           </div>
-          <span className="badge">{qrZones.length} zones</span>
         </div>
-        <div className="qr-grid">
-          {qrZones.map((zone) => (
-            <Link className="qr-card" href={zone.qrUrl} key={zone.id}>
-              <div className="fake-qr" aria-hidden="true">
-                <span /><span /><span /><span /><span /><span /><span /><span /><span />
-              </div>
-              <div>
-                <strong>{zone.label}</strong>
-                <p className="muted">{zone.location}</p>
-                <span className="flag">{zone.code}</span>
-              </div>
-            </Link>
-          ))}
+
+        <div className="workflow-banner-actions" style={{ marginTop: 16 }}>
+          <Link className="button primary" href="/cleaner">Open staff landing</Link>
+          <Link className="button secondary" href="/admin/staff">Open staff admin</Link>
         </div>
       </section>
     </main>

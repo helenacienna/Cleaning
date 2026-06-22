@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/write-deploy-status.mjs",
     "build": "next build",
     "start": "next start",
     "postinstall": "prisma generate",
@@ -16,8 +17,12 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node prisma/seed.mjs",
     "db:setup": "npm run db:migrate && npm run db:seed",
+    "backup:db": "node scripts/export-db-backup.mjs",
+    "backup:live": "node scripts/backup-live-state.mjs",
     "ops:maintenance": "node scripts/run-maintenance.mjs",
-    "ops:notify": "node scripts/run-notifications.mjs"
+    "ops:notify": "node scripts/run-notifications.mjs",
+    "ops:calendar:shiftruns:dry-run": "node scripts/sync-shiftruns-google-calendar.mjs --dry-run",
+    "ops:calendar:shiftruns:commit": "node scripts/sync-shiftruns-google-calendar.mjs --commit"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

@@ -246,6 +246,10 @@ model Staff {
   fullName  String    @map("full_name")
   role      StaffRole
   phone     String?
+  preferredTimeWindow TimeWindow? @map("preferred_time_window")
+  preferredShiftLabel String?     @map("preferred_shift_label")
+  availabilityNotes   String?     @map("availability_notes")
+  weeklyAvailability  Json?       @map("weekly_availability")
   active    Boolean   @default(true)
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -537,4 +541,13 @@ model InboxMessage {
   @@index([threadId, createdAt])
   @@index([senderStaffId, createdAt])
   @@map("inbox_messages")
+}
+
+model AppSetting {
+  key       String   @id
+  value     Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("app_settings")
 }

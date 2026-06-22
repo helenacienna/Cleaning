@@ -6,6 +6,28 @@ import { makeCleanerShiftAssignmentId } from '../../../data/demo-data';
 
 const STORAGE_KEY = 'cienna-allocation-board-state-v1';
 
+function getTodayBoardDayKey() {
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Australia/Brisbane',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+function getDefaultBoardDay(days = []) {
+  if (!days.length) {
+    return null;
+  }
+
+  const today = getTodayBoardDayKey();
+  if (days.includes(today)) {
+    return today;
+  }
+
+  return days[days.length - 1] ?? null;
+}
+
 function formatBoardDayLabel(dayKey) {
   if (!dayKey) {
     return 'No day';
@@ -22,87 +44,6 @@ function formatBoardDayLabel(dayKey) {
     month: 'short',
     timeZone: 'Australia/Brisbane',
   }).replace(',', '');
-}
-
-function parseBoardDay(dayKey) {
-  if (!dayKey) {
-    return null;
-  }
-
-  const date = new Date(`${dayKey}T00:00:00+10:00`);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function formatBoardMonthLabel(dayKey) {
-  const date = parseBoardDay(dayKey);
-  if (!date) {
-    return 'Unknown month';
-  }
-
-  return date.toLocaleDateString('en-AU', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'Australia/Brisbane',
-  });
-}
-
-function addBoardDays(dayKey, days) {
-  const date = parseBoardDay(dayKey);
-  if (!date) {
-    return dayKey;
-  }
-
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next.toLocaleDateString('en-CA', {
-    timeZone: 'Australia/Brisbane',
-  });
-}
-
-function getBoardMonthKey(dayKey) {
-  return String(dayKey || '').slice(0, 7);
-}
-
-function getDefaultBoardDay(days) {
-  if (!days.length) {
-    return null;
-  }
-
-  const today = new Date().toLocaleDateString('en-CA', {
-    timeZone: 'Australia/Brisbane',
-  });
-
-  return days.find((day) => day >= today) ?? days[days.length - 1] ?? days[0];
-}
-
-function clampBoardDay(days, preferredDay, fallbackDay = null) {
-  if (!days.length) {
-    return null;
-  }
-
-  if (preferredDay && days.includes(preferredDay)) {
-    return preferredDay;
-  }
-
-  if (preferredDay) {
-    return days.find((day) => day >= preferredDay) ?? days[days.length - 1];
-  }
-
-  return fallbackDay && days.includes(fallbackDay) ? fallbackDay : days[0];
-}
-
-function getVisibleBoardDays(days, anchorDay, windowSize = 14) {
-  if (!days.length) {
-    return [];
-  }
-
-  const safeAnchorDay = clampBoardDay(days, anchorDay, days[0]);
-  if (!safeAnchorDay) {
-    return [];
-  }
-
-  const windowEndDay = addBoardDays(safeAnchorDay, windowSize - 1);
-  return days.filter((day) => day >= safeAnchorDay && day <= windowEndDay);
 }
 
 function formatJobOrder(jobOrder) {
@@ -334,6 +275,23 @@ function reorderCards(cards, cardId, updates, targetCardId = null) {
   }));
 }
 
+function haveCardPersistenceFieldsChanged(previousCard, nextCard) {
+  return (
+    (previousCard?.staff ?? 'Unallocated') !== (nextCard?.staff ?? 'Unallocated')
+    || (previousCard?.day ?? null) !== (nextCard?.day ?? null)
+    || (previousCard?.facility ?? null) !== (nextCard?.facility ?? null)
+    || (previousCard?.zone ?? null) !== (nextCard?.zone ?? null)
+    || ((previousCard?.groupName || previousCard?.taskGroup) ?? null) !== ((nextCard?.groupName || nextCard?.taskGroup) ?? null)
+    || Number(previousCard?.jobOrder ?? 0) !== Number(nextCard?.jobOrder ?? 0)
+    || Number(previousCard?.laneIndex ?? 0) !== Number(nextCard?.laneIndex ?? 0)
+  );
+}
+
+function getChangedCards(previousCards = [], nextCards = []) {
+  const previousMap = new Map(previousCards.map((card) => [card.id, card]));
+  return nextCards.filter((card) => haveCardPersistenceFieldsChanged(previousMap.get(card.id), card));
+}
+
 export default function AllocationBoard({
   board,
   initialView = 'weekly',
@@ -359,9 +317,7 @@ export default function AllocationBoard({
     return Array.isArray(initialStoredState?.cards) ? initialStoredState.cards : board.cards;
   });
   const [view, setView] = useState(initialView);
-  const defaultBoardDay = getDefaultBoardDay(board.days);
-  const [selectedDay, setSelectedDay] = useState(defaultBoardDay);
-  const [rangeAnchorDay, setRangeAnchorDay] = useState(defaultBoardDay);
+  const [selectedDay, setSelectedDay] = useState(() => getDefaultBoardDay(board.days));
   const [hierarchyMode, setHierarchyMode] = useState('nested');
   const [openGroups, setOpenGroups] = useState({});
   const [openZoneGroups, setOpenZoneGroups] = useState({});
@@ -383,11 +339,16 @@ export default function AllocationBoard({
     });
   }
 
-  async function syncRemoteBoard(nextCards, nextShiftState, fallbackMessage = 'Changes saved locally') {
+  async function syncRemoteBoard(nextCards, nextShiftState, fallbackMessage = 'Changes saved locally', cardsToSync = nextCards) {
     if (useLocalDrafts) {
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ cards: nextCards, shiftState: nextShiftState }));
       }
+      setSaveNotice(fallbackMessage);
+      return;
+    }
+
+    if (!Array.isArray(cardsToSync) || !cardsToSync.length) {
       setSaveNotice(fallbackMessage);
       return;
     }
@@ -400,7 +361,7 @@ export default function AllocationBoard({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cards: nextCards, shiftState: nextShiftState }),
+        body: JSON.stringify({ cards: cardsToSync, shiftState: nextShiftState }),
       });
 
       if (!response.ok) {
@@ -414,8 +375,8 @@ export default function AllocationBoard({
     }
   }
 
-  function persistCards(nextCards, message = 'Changes saved locally') {
-    void syncRemoteBoard(nextCards, shiftState, message);
+  function persistCards(nextCards, message = 'Changes saved locally', cardsToSync = nextCards) {
+    void syncRemoteBoard(nextCards, shiftState, message, cardsToSync);
   }
 
   function persistShiftState(nextShiftState, message) {
@@ -426,7 +387,8 @@ export default function AllocationBoard({
   function moveCard(cardId, updates, targetCardId = null) {
     setCardsWithHistory((existing) => {
       const nextCards = reorderCards(existing, cardId, updates, targetCardId);
-      persistCards(nextCards);
+      const changedCards = getChangedCards(existing, nextCards);
+      persistCards(nextCards, 'Changes saved locally', changedCards);
       return nextCards;
     });
   }
@@ -438,20 +400,22 @@ export default function AllocationBoard({
       }
 
       const previousCards = past[past.length - 1];
+      const changedCards = getChangedCards(cards, previousCards);
       setCards(previousCards);
-      persistCards(previousCards, 'Reverted last change');
+      persistCards(previousCards, 'Reverted last change', changedCards);
       return past.slice(0, -1);
     });
   }
 
   function resetBoard() {
+    const changedCards = getChangedCards(cards, board.cards);
     setHistory([]);
     setCards(board.cards);
     if (typeof window !== 'undefined' && useLocalDrafts) {
       window.localStorage.removeItem(STORAGE_KEY);
     }
     setShiftState('draft');
-    void syncRemoteBoard(board.cards, 'draft', useLocalDrafts ? 'Reset to original demo layout' : 'Reset to seeded organiser layout');
+    void syncRemoteBoard(board.cards, 'draft', useLocalDrafts ? 'Reset to original demo layout' : 'Reset to seeded organiser layout', changedCards);
   }
 
   function handleDragStart(event, cardId) {
@@ -484,61 +448,21 @@ export default function AllocationBoard({
     setExpandedCards((existing) => ({ ...existing, [cardId]: !existing[cardId] }));
   }
 
+  function handleAssigneeChange(cardId, nextStaff) {
+    moveCard(cardId, {
+      staff: nextStaff || 'Unallocated',
+      laneIndex: 0,
+    });
+  }
+
   const assignedCount = cards.filter((card) => card.staff !== 'Unallocated').length;
   const unallocatedCount = cards.length - assignedCount;
   const reworkCount = cards.filter((card) => card.reworkRequired || card.managerAction === 'reassign' || card.status === 'carried-forward').length;
-  const visibleDays = useMemo(() => getVisibleBoardDays(board.days, rangeAnchorDay), [board.days, rangeAnchorDay]);
-  const activeDays = visibleDays.length ? visibleDays : board.days;
-  const activeSelectedDay = clampBoardDay(activeDays, selectedDay, activeDays[0]);
-  const monthOptions = useMemo(() => {
-    const seen = new Map();
-    board.days.forEach((day) => {
-      const monthKey = getBoardMonthKey(day);
-      if (!seen.has(monthKey)) {
-        seen.set(monthKey, {
-          key: monthKey,
-          label: formatBoardMonthLabel(day),
-          firstDay: day,
-        });
-      }
-    });
-    return [...seen.values()];
-  }, [board.days]);
-  const activeMonthKey = getBoardMonthKey(activeSelectedDay ?? activeDays[0] ?? defaultBoardDay);
   const dailyStaff = useMemo(
-    () => board.staff.filter((staff) => staff !== 'Unallocated' || cards.some((card) => card.staff === 'Unallocated' && card.day === activeSelectedDay)),
-    [board.staff, cards, activeSelectedDay],
+    () => board.staff.filter((staff) => staff !== 'Unallocated' || cards.some((card) => card.staff === 'Unallocated' && card.day === selectedDay)),
+    [board.staff, cards, selectedDay],
   );
   const timeLanes = useMemo(() => getTimeLanes(board.staffMeta), [board.staffMeta]);
-  const planningWindowControls = (
-    <div className="day-switcher">
-      <button className="button secondary" type="button" onClick={() => setRangeAnchorDay(clampBoardDay(board.days, addBoardDays(rangeAnchorDay ?? defaultBoardDay, -14), defaultBoardDay))}>← 2 weeks</button>
-      <select className="button secondary" value={activeMonthKey} onChange={(event) => {
-        const nextMonth = monthOptions.find((option) => option.key === event.target.value);
-        if (!nextMonth) {
-          return;
-        }
-        setRangeAnchorDay(nextMonth.firstDay);
-        setSelectedDay(nextMonth.firstDay);
-      }}>
-        {monthOptions.map((option) => (
-          <option key={option.key} value={option.key}>{option.label}</option>
-        ))}
-      </select>
-      {activeDays.map((day) => (
-        <button className={`button ${activeSelectedDay === day ? 'primary' : 'secondary'}`} type="button" key={day} onClick={() => setSelectedDay(day)}>{formatBoardDayLabel(day)}</button>
-      ))}
-      <button className="button secondary" type="button" onClick={() => {
-        const nextDefaultDay = defaultBoardDay ?? board.days[0] ?? null;
-        if (!nextDefaultDay) {
-          return;
-        }
-        setRangeAnchorDay(nextDefaultDay);
-        setSelectedDay(nextDefaultDay);
-      }}>Today</button>
-      <button className="button secondary" type="button" onClick={() => setRangeAnchorDay(clampBoardDay(board.days, addBoardDays(rangeAnchorDay ?? defaultBoardDay, 14), board.days[board.days.length - 1]))}>2 weeks →</button>
-    </div>
-  );
 
   return (
     <section className="card allocation-board-shell">
@@ -581,7 +505,11 @@ export default function AllocationBoard({
                 <button className={`button ${hierarchyMode === 'compact' ? 'primary' : 'secondary'}`} type="button" onClick={() => setHierarchyMode('compact')}>Compact stack</button>
                 <button className={`button ${hierarchyMode === 'sections' ? 'primary' : 'secondary'}`} type="button" onClick={() => setHierarchyMode('sections')}>Section bands</button>
               </div>
-              {planningWindowControls}
+              <div className="day-switcher">
+                {board.days.map((day) => (
+                  <button className={`button ${selectedDay === day ? 'primary' : 'secondary'}`} type="button" key={day} onClick={() => setSelectedDay(day)}>{formatBoardDayLabel(day)}</button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -589,7 +517,7 @@ export default function AllocationBoard({
             <div className="daily-timeline-grid daily-timeline-grid-continuous">
               <div className="daily-time-head">Shift time</div>
               {dailyStaff.map((staff) => {
-                const staffCards = cards.filter((card) => card.staff === staff && card.day === activeSelectedDay);
+                const staffCards = cards.filter((card) => card.staff === staff && card.day === selectedDay);
                 const shiftMeta = board.staffMeta?.[staff];
                 return (
                   <div className="daily-staff-head hierarchy-staff-head" key={staff}>
@@ -610,7 +538,7 @@ export default function AllocationBoard({
 
               {dailyStaff.map((staff) => {
                 const staffCards = cards
-                  .filter((card) => card.staff === staff && card.day === activeSelectedDay)
+                  .filter((card) => card.staff === staff && card.day === selectedDay)
                   .sort((a, b) => a.jobOrder - b.jobOrder);
                 const shiftMeta = board.staffMeta?.[staff];
                 const facilityRuns = buildFacilityRuns(staffCards, timeLanes, shiftMeta);
@@ -620,7 +548,7 @@ export default function AllocationBoard({
                     {facilityRuns.map((run, runIndex) => {
                       if (run.facilityKey === '__empty__') {
                         return run.details.map((detail) => (
-                          <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${staff}-empty-${detail.lane.key}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, activeSelectedDay)}>
+                          <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${staff}-empty-${detail.lane.key}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
                             <span className="slot-empty">Drop</span>
                           </div>
                         ));
@@ -631,7 +559,7 @@ export default function AllocationBoard({
                       const facilityProgress = getCompletionStats(run.details.flatMap((detail) => detail.laneCards));
                       const facilityChecklistId = makeCleanerShiftAssignmentId({
                         staff,
-                        day: activeSelectedDay,
+                        day: selectedDay,
                         facility: facilityName,
                         zone: 'facility',
                       });
@@ -647,15 +575,13 @@ export default function AllocationBoard({
                               </span>
                             </div>
                             <div className="hierarchy-facility-link-row">
-                              <Link className="button secondary hierarchy-cleaner-link" href={`/scan/${facilityChecklistId}`}>
-                                Open cleaner checklist
-                              </Link>
+                              <span className="button secondary hierarchy-cleaner-link" aria-disabled="true">Cleaner checklist via staff list</span>
                             </div>
                           </div>
 
                           <div className="daily-staff-lane-stack">
                             {run.details.map((detail) => (
-                              <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${detail.lane.key}-${staff}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, activeSelectedDay)}>
+                              <div className={`daily-timeline-cell hierarchy-cell hierarchy-mode-${hierarchyMode} hierarchy-lane-segment`} key={`${detail.lane.key}-${staff}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, staff, selectedDay)}>
                                 {detail.facilities.map((facility) => (
                                   <div className={`hierarchy-zone-stack hierarchy-zone-stack-${hierarchyMode}`} key={`${facility.facilityName}-${detail.lane.key}`}>
                                     {facility.zones.map((zone) => (
@@ -700,18 +626,18 @@ export default function AllocationBoard({
                                                       const isOpen = openGroups[groupKey];
                                                       const groupDropUpdates = {
                                                         staff,
-                                                        day: activeSelectedDay,
+                                                        day: selectedDay,
                                                         laneIndex: detail.lane.index,
                                                         facility: facility.facilityName,
                                                         zone: zone.zoneName,
                                                         taskGroup: group.groupName,
                                                         groupName: group.groupName,
-                                                        groupId: group.cards[0]?.groupId ?? `${staff}-${activeSelectedDay}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`,
+                                                        groupId: group.cards[0]?.groupId ?? `${staff}-${selectedDay}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`,
                                                         plannedFacility: facility.facilityName,
                                                         plannedZone: zone.zoneName,
                                                         plannedTaskGroup: group.groupName,
                                                       };
-                                                      const dropKey = `${staff}-${activeSelectedDay}-${detail.lane.index}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`;
+                                                      const dropKey = `${staff}-${selectedDay}-${detail.lane.index}-${facility.facilityName}-${zone.zoneName}-${group.groupName}`;
 
                                                       return (
                                                         <>
@@ -765,6 +691,18 @@ export default function AllocationBoard({
                                                                           <strong>{item.value}</strong>
                                                                         </div>
                                                                       ))}
+                                                                      <div className="allocation-card-assignee" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+                                                                        <label htmlFor={`assignee-nested-${card.id}`}>Assignee</label>
+                                                                        <select
+                                                                          id={`assignee-nested-${card.id}`}
+                                                                          value={card.staff || 'Unallocated'}
+                                                                          onChange={(event) => handleAssigneeChange(card.id, event.target.value)}
+                                                                        >
+                                                                          {board.staff.map((staffOption) => (
+                                                                            <option key={`${card.id}-nested-${staffOption}`} value={staffOption}>{staffOption}</option>
+                                                                          ))}
+                                                                        </select>
+                                                                      </div>
                                                                       {card.issueNote ? <p className="allocation-card-note">{card.issueNote}</p> : null}
                                                                     </div>
                                                                   )}
@@ -801,17 +739,9 @@ export default function AllocationBoard({
       )}
 
       {view === 'weekly' && (
-        <div className="daily-board-panel">
-          <div className="daily-board-toolbar">
-            <div>
-              <h3>Weekly board window</h3>
-              <p className="muted">Use the same active planning window controls here, then switch back to daily without losing your place.</p>
-            </div>
-            {planningWindowControls}
-          </div>
-          <div className="allocation-grid">
+        <div className="allocation-grid">
           <div className="allocation-corner">Staff / Day</div>
-          {activeDays.map((day) => {
+          {board.days.map((day) => {
             const dayCount = cards.filter((card) => card.day === day).length;
             return <div className="allocation-day-head" key={day}><strong>{formatBoardDayLabel(day)}</strong><span>{dayCount} cards</span></div>;
           })}
@@ -822,7 +752,7 @@ export default function AllocationBoard({
                 <strong>{staff}</strong>
                 <span>{cards.filter((card) => card.staff === staff).length} cards</span>
               </div>
-              {activeDays.map((day) => {
+              {board.days.map((day) => {
                 const slotCards = cards
                   .filter((card) => card.staff === staff && card.day === day)
                   .sort((a, b) => a.jobOrder - b.jobOrder);
@@ -853,6 +783,18 @@ export default function AllocationBoard({
                                   <strong>{item.value}</strong>
                                 </div>
                               ))}
+                              <div className="allocation-card-assignee" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+                                <label htmlFor={`assignee-weekly-${card.id}`}>Assignee</label>
+                                <select
+                                  id={`assignee-weekly-${card.id}`}
+                                  value={card.staff || 'Unallocated'}
+                                  onChange={(event) => handleAssigneeChange(card.id, event.target.value)}
+                                >
+                                  {board.staff.map((staffOption) => (
+                                    <option key={`${card.id}-weekly-${staffOption}`} value={staffOption}>{staffOption}</option>
+                                  ))}
+                                </select>
+                              </div>
                               {card.issueNote ? <p className="allocation-card-note">{card.issueNote}</p> : null}
                             </div>
                           )}
@@ -865,7 +807,6 @@ export default function AllocationBoard({
               })}
             </div>
           ))}
-          </div>
         </div>
       )}
     </section>

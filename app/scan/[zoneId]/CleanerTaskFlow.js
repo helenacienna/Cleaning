@@ -1,11 +1,20 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+const REFRESH_DEBOUNCE_MS = 450;
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
+function isTaskCompleted(task) {
+  return Number(task?.score) >= 3 || task?.status === 'completed';
+}
+
 function formatStatusLabel(task) {
-  if (task.score) {
-    return `Grade ${task.score}/5 recorded`;
+  if (Number(task?.score) >= 3) {
+    return `Completed · Grade ${task.score}/5`;
+  }
+  if (Number(task?.score) > 0) {
+    return `Follow-up needed · Grade ${task.score}/5`;
   }
   if (task.status === 'completed') {
     return 'Completed already';
@@ -17,23 +26,44 @@ function formatStatusLabel(task) {
 }
 
 function createInitialTaskState(tasks) {
-  return Object.fromEntries(tasks.map((task) => [task.id, {
-    grade: task.score ?? null,
-    note: task.note ?? '',
-    saving: false,
-    saved: Boolean(task.score),
-    photoCount: task.photoCount ?? 0,
-    photos: task.photos ?? [],
-    statusMessage: task.score ? 'Saved earlier' : '',
-    statusTone: task.score ? 'tone-green' : 'muted',
-  }]));
+  return Object.fromEntries(tasks.map((task) => {
+    const completed = isTaskCompleted(task);
+    const hasGrade = Number(task?.score) > 0;
+    return [task.id, {
+      grade: task.score ?? null,
+      note: task.note ?? '',
+      saving: false,
+      saved: completed,
+      photoCount: task.photoCount ?? 0,
+      photos: task.photos ?? [],
+      statusMessage: hasGrade ? (completed ? 'Completed earlier' : 'Saved earlier for follow-up') : '',
+      statusTone: completed ? 'tone-green' : hasGrade ? 'tone-amber' : 'muted',
+    }];
+  }));
 }
 
-export default function CleanerTaskFlow({ tasks }) {
+export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const cardRefs = useRef([]);
   const listRef = useRef(null);
+  const refreshTimerRef = useRef(null);
+  const endCardRef = useRef(null);
+
+  function queueRefresh() {
+    if (!onTaskSaved) {
+      return;
+    }
+
+    if (refreshTimerRef.current) {
+      window.clearTimeout(refreshTimerRef.current);
+    }
+
+    refreshTimerRef.current = window.setTimeout(() => {
+      refreshTimerRef.current = null;
+      onTaskSaved();
+    }, REFRESH_DEBOUNCE_MS);
+  }
 
   function focusJob(index) {
     setCurrentIndex(index);
@@ -55,6 +85,21 @@ export default function CleanerTaskFlow({ tasks }) {
 
   async function gradeTask(taskId, grade, index) {
     const current = taskState[taskId] || {};
+
+    if (index >= tasks.length - 1) {
+      window.setTimeout(() => {
+        endCardRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 20);
+    } else {
+      const nextIndex = Math.min(index + 1, tasks.length - 1);
+      window.setTimeout(() => {
+        focusJob(nextIndex);
+      }, 20);
+    }
+
     updateTask(taskId, {
       grade,
       saving: true,
@@ -88,10 +133,7 @@ export default function CleanerTaskFlow({ tasks }) {
         statusMessage: result.message || 'Task saved',
         statusTone: 'tone-green',
       });
-      const nextIndex = Math.min(index + 1, tasks.length - 1);
-      window.setTimeout(() => {
-        focusJob(nextIndex);
-      }, 120);
+      queueRefresh();
     } catch {
       updateTask(taskId, {
         grade: current.grade ?? null,
@@ -100,6 +142,9 @@ export default function CleanerTaskFlow({ tasks }) {
         statusMessage: 'Save failed — tap a grade to retry',
         statusTone: 'tone-red',
       });
+      window.setTimeout(() => {
+        focusJob(index);
+      }, 20);
     }
   }
 
@@ -145,6 +190,7 @@ export default function CleanerTaskFlow({ tasks }) {
         statusMessage: result.message || 'Photo uploaded',
         statusTone: 'tone-green',
       });
+      queueRefresh();
     } catch {
       updateTask(taskId, {
         saving: false,
@@ -153,6 +199,12 @@ export default function CleanerTaskFlow({ tasks }) {
       });
     }
   }
+
+  useEffect(() => () => {
+    if (refreshTimerRef.current) {
+      window.clearTimeout(refreshTimerRef.current);
+    }
+  }, []);
 
   function trackManualScroll() {
     const list = listRef.current;
@@ -179,11 +231,46 @@ export default function CleanerTaskFlow({ tasks }) {
     }
   }
 
+  function findNextIncompleteIndex(startIndex = currentIndex) {
+    if (!tasks.length) {
+      return -1;
+    }
+
+    for (let offset = 1; offset <= tasks.length; offset += 1) {
+      const index = (startIndex + offset) % tasks.length;
+      const task = tasks[index];
+      const localState = taskState[task.id] || {};
+      if (!isTaskCompleted({ ...task, score: localState.grade ?? task.score })) {
+        return index;
+      }
+    }
+
+    return -1;
+  }
+
+  const completedCount = tasks.filter((task) => {
+    const localState = taskState[task.id] || {};
+    return isTaskCompleted({ ...task, score: localState.grade ?? task.score });
+  }).length;
+  const allTasksCompleted = tasks.length > 0 && completedCount === tasks.length;
+  const nextIncompleteIndex = findNextIncompleteIndex();
+
   return (
     <div className="compact-flow">
       <div className="flow-position">
-        <span className="badge">Current job {currentIndex + 1} of {tasks.length}</span>
-        <span className="muted">Tap a grade to save this task and jump to the next one.</span>
+        <button
+          className="button secondary"
+          type="button"
+          onClick={() => {
+            if (nextIncompleteIndex >= 0) {
+              focusJob(nextIncompleteIndex);
+            }
+          }}
+          disabled={nextIncompleteIndex < 0}
+        >
+          {nextIncompleteIndex >= 0 ? 'Jump to next open task' : 'All tasks completed'}
+        </button>
+        <span className="badge">Current job {Math.min(currentIndex + 1, tasks.length)} of {tasks.length}</span>
       </div>
 
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
@@ -200,25 +287,15 @@ export default function CleanerTaskFlow({ tasks }) {
               ref={(node) => { cardRefs.current[index] = node; }}
               onClick={() => focusJob(index)}
             >
-              <span className={`completion-bubble ${selectedGrade ? 'completion-done' : 'completion-open'}`}>
-                {selectedGrade ? 'Completed' : 'Open'}
+              <span className={`completion-bubble ${isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'completion-done' : selectedGrade ? 'completion-open' : 'completion-open'}`}>
+                {isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'Completed' : selectedGrade ? 'Follow-up' : 'Open'}
               </span>
 
               <div className="compact-task-top">
                 <div className="task-number">{index + 1}</div>
-                <div>
-                  <h3>{task.title}</h3>
-                  <div className="muted">
-                    {task.zone ? `${task.zone} · ` : ''}{localState.saving
-                      ? 'Saving…'
-                      : localState.saved || task.score
-                        ? formatStatusLabel({ ...task, score: selectedGrade || task.score })
-                        : isCurrent
-                          ? 'Current job'
-                          : index < currentIndex
-                            ? 'Previous job'
-                            : 'Coming up next'}
-                  </div>
+                <div className="compact-task-copy">
+                  {task.zone ? <div className="compact-task-zone">{task.zone}</div> : null}
+                  <div className="compact-task-title">{task.title}</div>
                 </div>
               </div>
 
@@ -243,7 +320,11 @@ export default function CleanerTaskFlow({ tasks }) {
                       className={`grade-button grade-${grade} ${selectedGrade === grade ? 'selected-grade' : ''}`}
                       type="button"
                       key={grade}
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onTouchStart={(event) => event.stopPropagation()}
                       onClick={(event) => {
+                        event.preventDefault();
                         event.stopPropagation();
                         void gradeTask(task.id, grade, index);
                       }}
@@ -292,6 +373,21 @@ export default function CleanerTaskFlow({ tasks }) {
             </article>
           );
         })}
+
+        {allTasksCompleted ? (
+          <article className="compact-task-card current-task-card graded-task-card" ref={endCardRef}>
+            <span className="completion-bubble completion-done">Finished</span>
+            <div>
+              <h3>All tasks submitted</h3>
+              <div className="muted">Everything on this active list has been graded. Submit to go back.</div>
+            </div>
+            <div className="compact-actions">
+              <button className="button primary" type="button" onClick={() => onComplete?.()}>
+                Submit and go back
+              </button>
+            </div>
+          </article>
+        ) : null}
       </div>
     </div>
   );

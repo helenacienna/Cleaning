@@ -35,6 +35,7 @@ export default function InboxWorkspace({
   participantOptions = [],
   audienceLabel = 'Manager',
 }) {
+  const liveDataAvailable = source === 'prisma';
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -92,7 +93,7 @@ export default function InboxWorkspace({
   }, [selectedThread?.id, senderOptions]);
 
   useEffect(() => {
-    if (source === 'demo') return undefined;
+    if (!liveDataAvailable) return undefined;
 
     const intervalId = window.setInterval(async () => {
       const audienceParam = audienceLabel.toLowerCase();
@@ -115,7 +116,7 @@ export default function InboxWorkspace({
     }, 15000);
 
     return () => window.clearInterval(intervalId);
-  }, [selectedThread?.id, source, audienceLabel]);
+  }, [selectedThread?.id, liveDataAvailable, audienceLabel]);
 
   const filteredThreads = useMemo(() => {
     const term = searchValue.trim().toLowerCase();
@@ -207,7 +208,7 @@ export default function InboxWorkspace({
 
     setMessageBody('');
     setAttachments([{ label: '', url: '' }]);
-    setComposerState({ saving: false, error: '', success: source === 'demo' ? 'Saved as demo reply.' : 'Reply sent.' });
+    setComposerState({ saving: false, error: '', success: 'Reply sent.' });
   }
 
   function updateAttachment(index, field, value) {
@@ -289,7 +290,7 @@ export default function InboxWorkspace({
       senderStaffCode: senderOptions[0]?.value ?? 'MGR001',
       participantStaffCodes: [],
     });
-    setThreadCreateState({ saving: false, error: '', success: source === 'demo' ? 'Created in demo mode.' : 'Thread created.' });
+    setThreadCreateState({ saving: false, error: '', success: 'Thread created.' });
     const params = new URLSearchParams(searchParams.toString());
     params.set('thread', createdThread.id);
     startTransition(() => {
@@ -335,6 +336,7 @@ export default function InboxWorkspace({
                 type="button"
                 className={`inbox-filter-chip ${activeFilter === filter.key ? 'inbox-filter-chip-active' : ''}`}
                 onClick={() => setActiveFilter(filter.key)}
+                disabled={!liveDataAvailable}
               >
                 <span>{filter.label}</span>
                 <strong>{filterCounts[filter.key] ?? 0}</strong>
@@ -344,13 +346,13 @@ export default function InboxWorkspace({
 
           <div className="inbox-sidebar-actions">
             <span className={`badge ${unreadCount ? 'tone-red' : ''}`}>{unreadCount} unread</span>
-            <button className="button secondary" type="button" onClick={() => setShowNewThread((current) => !current)}>
+            <button className="button secondary" type="button" onClick={() => setShowNewThread((current) => !current)} disabled={!liveDataAvailable}>
               {showNewThread ? 'Close composer' : 'New thread'}
             </button>
           </div>
         </div>
 
-        {showNewThread && (
+        {showNewThread && liveDataAvailable && (
           <form className="inbox-new-thread-card" onSubmit={handleCreateThread}>
             <div className="panel-title" style={{ marginBottom: 0 }}>
               <div>
@@ -423,7 +425,7 @@ export default function InboxWorkspace({
                 {threadCreateState.error && <div className="tone-red">{threadCreateState.error}</div>}
                 {threadCreateState.success && <div className="tone-green">{threadCreateState.success}</div>}
               </div>
-              <button className="button primary" type="submit" disabled={threadCreateState.saving || isPending}>
+              <button className="button primary" type="submit" disabled={threadCreateState.saving || isPending || !liveDataAvailable}>
                 {threadCreateState.saving ? 'Creating…' : 'Create thread'}
               </button>
             </div>
@@ -454,7 +456,8 @@ export default function InboxWorkspace({
               </button>
             );
           })}
-          {!filteredThreads.length && <div className="inbox-empty-list muted">No threads match this filter.</div>}
+          {!liveDataAvailable && <div className="inbox-empty-list muted">Live inbox data is unavailable.</div>}
+          {liveDataAvailable && !filteredThreads.length && <div className="inbox-empty-list muted">No threads match this filter.</div>}
         </div>
       </aside>
 
@@ -481,13 +484,13 @@ export default function InboxWorkspace({
                   type="button"
                   className={`inbox-filter-chip ${selectedThread.status === status ? 'inbox-filter-chip-active' : ''}`}
                   onClick={() => handleStatusChange(status)}
-                  disabled={statusState.saving}
+                  disabled={statusState.saving || !liveDataAvailable}
                 >
                   {status}
                 </button>
               ))}
               <div className="muted">
-                {statusState.error || statusState.success || 'Use status to keep threads open, watched, or resolved.'}
+                {statusState.error || statusState.success || (liveDataAvailable ? 'Use status to keep threads open, watched, or resolved.' : 'Status changes are disabled until live inbox data is available.')}
               </div>
             </div>
 
@@ -525,13 +528,13 @@ export default function InboxWorkspace({
               <div className="inbox-composer-toolbar">
                 <label className="field-label inbox-field-compact">
                   <span>Reply as</span>
-                  <select value={senderStaffCode} onChange={(event) => setSenderStaffCode(event.target.value)}>
+                  <select value={senderStaffCode} onChange={(event) => setSenderStaffCode(event.target.value)} disabled={!liveDataAvailable}>
                     {senderOptions.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
                 </label>
-                <div className="muted">{source === 'demo' ? 'Demo mode keeps the no-DB fallback alive.' : 'Live refresh runs every 15 seconds for active threads.'}</div>
+                <div className="muted">{liveDataAvailable ? 'Live refresh runs every 15 seconds for active threads.' : 'Replying is disabled until live inbox data is available.'}</div>
               </div>
               <textarea
                 className="inbox-composer-input"
@@ -539,6 +542,7 @@ export default function InboxWorkspace({
                 value={messageBody}
                 onChange={(event) => setMessageBody(event.target.value)}
                 placeholder="Write a clear operational update…"
+                disabled={!liveDataAvailable}
               />
               <div className="inbox-attachment-block">
                 <div className="panel-title" style={{ marginBottom: 0 }}>
@@ -546,7 +550,7 @@ export default function InboxWorkspace({
                     <h4>Attachments</h4>
                     <p className="muted">Add links to evidence, checklists, or related operational screens.</p>
                   </div>
-                  <button className="button secondary" type="button" onClick={addAttachmentRow}>Add link</button>
+                  <button className="button secondary" type="button" onClick={addAttachmentRow} disabled={!liveDataAvailable}>Add link</button>
                 </div>
 
                 <div className="inbox-attachment-list">
@@ -557,14 +561,16 @@ export default function InboxWorkspace({
                         onChange={(event) => updateAttachment(index, 'label', event.target.value)}
                         placeholder="Label"
                         type="text"
+                        disabled={!liveDataAvailable}
                       />
                       <input
                         value={item.url}
                         onChange={(event) => updateAttachment(index, 'url', event.target.value)}
                         placeholder="/admin/inbox or https://…"
                         type="text"
+                        disabled={!liveDataAvailable}
                       />
-                      <button className="button secondary" type="button" onClick={() => removeAttachmentRow(index)}>Remove</button>
+                      <button className="button secondary" type="button" onClick={() => removeAttachmentRow(index)} disabled={!liveDataAvailable}>Remove</button>
                     </div>
                   ))}
                 </div>
@@ -574,7 +580,7 @@ export default function InboxWorkspace({
                   {composerState.error && <div className="tone-red">{composerState.error}</div>}
                   {composerState.success && <div className="tone-green">{composerState.success}</div>}
                 </div>
-                <button className="button primary" type="submit" disabled={composerState.saving || isPending || !messageBody.trim()}>
+                <button className="button primary" type="submit" disabled={composerState.saving || isPending || !messageBody.trim() || !liveDataAvailable}>
                   {composerState.saving ? 'Sending…' : 'Send reply'}
                 </button>
               </div>
@@ -629,7 +635,7 @@ export default function InboxWorkspace({
             </div>
             <div className="cta-row">
               <Link className="button secondary" href="/admin/manager">Back to manager view</Link>
-              <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
+              <Link className="button secondary" href="/">Open dashboard</Link>
             </div>
           </div>
         ) : (

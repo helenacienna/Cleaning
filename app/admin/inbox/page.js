@@ -24,9 +24,8 @@ export default async function InboxPage({ searchParams }) {
         <div className="badge-row">
           <Link className="button secondary" href="/">Back to dashboard</Link>
           <Link className="button secondary" href="/admin/manager">Manager overview</Link>
-          <Link className="button secondary" href="/admin/daily-hierarchy">Organiser board</Link>
-          <Link className="button secondary" href="/scan/assignment-1?tab=inbox">Cleaner mobile view</Link>
-          <span className="badge">{workspace.source === 'prisma' ? 'Live inbox' : 'Demo fallback'}</span>
+          <Link className="button secondary" href="/cleaner">Staff landing</Link>
+          <span className="badge">{workspace.source === 'prisma' ? 'Live inbox' : 'Live data unavailable'}</span>
         </div>
       </div>
 
@@ -43,6 +42,13 @@ export default async function InboxPage({ searchParams }) {
           <span className={`badge ${workspace.unreadCount ? 'tone-red' : ''}`}>{workspace.unreadCount} unread</span>
         </div>
       </section>
+
+      {workspace.source !== 'prisma' && (
+        <section className="card" style={{ marginBottom: 16 }}>
+          <strong>Live inbox data is unavailable</strong>
+          <div className="muted">This screen no longer falls back to simulated operational threads. It will populate once the inbox runtime path is available.</div>
+        </section>
+      )}
 
       <InboxWorkspace
         initialThreads={workspace.threads}

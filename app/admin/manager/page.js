@@ -49,9 +49,8 @@ export default async function ManagerOverviewPage() {
         </div>
         <div className="badge-row">
           <Link className="button secondary" href="/">Back to dashboard</Link>
-          <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
           <span className="badge">Oversight view</span>
-          <span className="badge">{source === 'prisma' ? 'Live runtime data' : 'Demo fallback'}</span>
+          <span className="badge">{source === 'prisma' ? 'Live runtime data' : 'Live data unavailable'}</span>
         </div>
       </div>
 
@@ -64,10 +63,15 @@ export default async function ManagerOverviewPage() {
           <Link className="button secondary" href="/admin/inbox">Open inbox</Link>
           <Link className="button secondary" href="/admin/inbox?audience=supervisor">Supervisor inbox</Link>
           <Link className="button secondary" href="/admin/inbox?audience=cleaner">Cleaner inbox</Link>
-          <Link className="button secondary" href="/admin/daily-hierarchy">Open organiser board</Link>
-          <Link className="button secondary" href="/admin/calendar">Open weekly overview</Link>
         </div>
       </section>
+
+      {source !== 'prisma' && (
+        <section className="card" style={{ marginBottom: 16 }}>
+          <strong>Live operational manager data is unavailable</strong>
+          <div className="muted">This view no longer falls back to simulated manager activity. It will populate once runtime data is available.</div>
+        </section>
+      )}
 
       <section className="supervisor-grid manager-kpi-grid">
         <div className="card">

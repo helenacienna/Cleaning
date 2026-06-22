@@ -3,7 +3,7 @@ import { getOrganiserBoardData } from '../../../lib/app-data';
 import { getManagerOverviewData } from '../../../lib/manager-data';
 import { getPrisma } from '../../../lib/prisma';
 import { alignAnchoredWeeklyDueAt, calculatePlanningDueAt, getRecurrenceBasis, refreshTemplateStatus } from '../../../lib/task-scheduling';
-import { deriveOrganiserSchedule, formatBoardDayKey } from '../../../lib/task-effective-day.mjs';
+import { deriveOrganiserSchedule, formatBoardDayKey, getTaskInstanceBoardDate } from '../../../lib/task-effective-day.mjs';
 
 function getNextStatus(currentStatus, hasShiftRun) {
   if (['completed', 'in_progress', 'cancelled', 'skipped'].includes(currentStatus)) {
@@ -19,6 +19,28 @@ function getNextStatus(currentStatus, hasShiftRun) {
   }
 
   return 'unscheduled';
+}
+
+function isStaleCardUpdate(card, current) {
+  if (!card?.updatedAt || !current?.updatedAt) {
+    return false;
+  }
+
+  const cardUpdatedAt = new Date(card.updatedAt).getTime();
+  const currentUpdatedAt = new Date(current.updatedAt).getTime();
+
+  if (!Number.isFinite(cardUpdatedAt) || !Number.isFinite(currentUpdatedAt)) {
+    return false;
+  }
+
+  return cardUpdatedAt < currentUpdatedAt;
+}
+
+function isAssignmentChangeWithoutVersion(card, current, nextAssignedStaffId, nextShiftRunId) {
+  return !card?.updatedAt && (
+    (current?.assignedStaffId ?? null) !== (nextAssignedStaffId ?? null)
+    || (current?.shiftRunId ?? null) !== (nextShiftRunId ?? null)
+  );
 }
 
 export async function GET() {
@@ -44,12 +66,37 @@ export async function POST(request) {
   }
 
   const body = await request.json().catch(() => null);
-  const cards = Array.isArray(body?.cards) ? body.cards : null;
-  const shiftState = body?.shiftState === 'published' ? 'published' : 'draft';
+  let cards = Array.isArray(body?.cards) ? body.cards : null;
+  const shiftState = body?.shiftState === 'published'
+    ? 'published'
+    : body?.shiftState === 'draft'
+      ? 'draft'
+      : null;
+
+  if (!cards?.length && body?.action === 'assignGroup' && Array.isArray(body?.cardIds) && body.cardIds.length) {
+    console.warn(JSON.stringify({
+      scope: 'organiser-board-assign-group-retired',
+      requestedIds: [...new Set(body.cardIds.filter(Boolean))],
+      requestedStaff: body?.staff ?? null,
+    }));
+    return NextResponse.json({
+      ok: false,
+      error: 'This assignment path has been retired. Refresh the dashboard and try again.',
+      retired: true,
+    }, { status: 410 });
+  }
 
   if (!cards?.length) {
     return NextResponse.json({ error: 'No board cards supplied' }, { status: 400 });
   }
+
+  console.log(JSON.stringify({
+    scope: 'organiser-board-request',
+    action: body?.action ?? null,
+    cardsCount: Array.isArray(cards) ? cards.length : 0,
+    cardIdsCount: Array.isArray(body?.cardIds) ? body.cardIds.length : 0,
+    shiftState,
+  }));
 
   const instanceIds = [...new Set(cards.map((card) => card?.id).filter(Boolean))];
 
@@ -60,6 +107,9 @@ export async function POST(request) {
         id: true,
         status: true,
         dueAt: true,
+        updatedAt: true,
+        assignedStaffId: true,
+        shiftRunId: true,
         taskTemplateId: true,
         taskTemplate: {
           select: {
@@ -98,10 +148,17 @@ export async function POST(request) {
   const zoneMap = new Map(zones.map((zone) => [`${zone.facilityId}::${zone.name}`, zone]));
   const taskGroupMap = new Map(taskGroups.map((taskGroup) => [`${taskGroup.zoneId}::${taskGroup.name}`, taskGroup]));
 
+  const staleCardIds = [];
+  const missingVersionCardIds = [];
+
   const updates = cards
     .filter((card) => instanceMap.has(card.id))
     .map((card, index) => {
       const current = instanceMap.get(card.id);
+      if (isStaleCardUpdate(card, current)) {
+        staleCardIds.push(card.id);
+        return null;
+      }
       const assignedStaff = card.staff && card.staff !== 'Unallocated' ? staffMap.get(card.staff) : null;
       const laneIndex = Number.isInteger(card.laneIndex) ? card.laneIndex : 0;
       const recurrenceBasis = getRecurrenceBasis(current.taskTemplate);
@@ -125,6 +182,46 @@ export async function POST(request) {
       const plannedZone = plannedFacility && card.zone ? zoneMap.get(`${plannedFacility.id}::${card.zone}`) : null;
       const plannedTaskGroup = plannedZone && card.taskGroup ? taskGroupMap.get(`${plannedZone.id}::${card.taskGroup}`) : null;
 
+      if (isAssignmentChangeWithoutVersion(card, current, assignedStaff?.id ?? null, effectiveShiftRun?.id ?? null)) {
+        missingVersionCardIds.push(card.id);
+        console.warn(JSON.stringify({
+          scope: 'organiser-board-missing-version-skip',
+          taskInstanceId: card.id,
+          instanceCode: card.instanceCode ?? null,
+          fromStaffId: current.assignedStaffId ?? null,
+          toStaffId: assignedStaff?.id ?? null,
+          fromShiftRunId: current.shiftRunId ?? null,
+          toShiftRunId: effectiveShiftRun?.id ?? null,
+          day: actualBoardDay,
+          facility: card.facility ?? null,
+          zone: card.zone ?? null,
+          taskGroup: card.taskGroup ?? null,
+        }));
+        return null;
+      }
+
+      if (
+        (current.assignedStaffId ?? null) !== (assignedStaff?.id ?? null)
+        || (current.shiftRunId ?? null) !== (effectiveShiftRun?.id ?? null)
+      ) {
+        console.log(JSON.stringify({
+          scope: 'organiser-board-assignment-change',
+          taskInstanceId: card.id,
+          instanceCode: card.instanceCode ?? null,
+          fromStaffId: current.assignedStaffId ?? null,
+          toStaffId: assignedStaff?.id ?? null,
+          toStaffName: assignedStaff?.fullName ?? null,
+          fromShiftRunId: current.shiftRunId ?? null,
+          toShiftRunId: effectiveShiftRun?.id ?? null,
+          day: actualBoardDay,
+          facility: card.facility ?? null,
+          zone: card.zone ?? null,
+          taskGroup: card.taskGroup ?? null,
+          staleGuardCardUpdatedAt: card.updatedAt ?? null,
+          rowUpdatedAt: current.updatedAt ?? null,
+        }));
+      }
+
       return prisma.taskInstance.update({
         where: { id: card.id },
         data: {
@@ -141,7 +238,8 @@ export async function POST(request) {
           status: getNextStatus(current.status, Boolean(effectiveShiftRun)),
         },
       });
-    });
+    })
+    .filter(Boolean);
 
   const shiftRunIds = shiftRuns.map((shiftRun) => shiftRun.id);
   const chunkSize = 25;
@@ -167,10 +265,19 @@ export async function POST(request) {
     });
   }
 
-  await prisma.shiftRun.updateMany({
-    where: { id: { in: shiftRunIds } },
-    data: { organiserState: shiftState },
-  });
+  if (shiftState) {
+    await prisma.shiftRun.updateMany({
+      where: { id: { in: shiftRunIds } },
+      data: { organiserState: shiftState },
+    });
+  }
 
-  return NextResponse.json({ ok: true, message: 'Live organiser board saved' });
+  return NextResponse.json({
+    ok: true,
+    message: (staleCardIds.length || missingVersionCardIds.length)
+      ? `Live organiser board saved (${staleCardIds.length} stale card updates ignored, ${missingVersionCardIds.length} unversioned assignment updates ignored)`
+      : 'Live organiser board saved',
+    staleCardIds,
+    missingVersionCardIds,
+  });
 }
