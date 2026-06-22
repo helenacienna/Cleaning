@@ -1080,11 +1080,12 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
 
     const gradeLabel = formatTaskGradeLabel(task.score ?? task.auditScore);
     const completionBadge = getTaskCompletionBadge(task);
+    const gradeToneClass = gradeLabel ? `grade-${gradeLabel}` : '';
 
     return (
       <span className="task-assignment-display">
         {showStatusInfo ? <span className={`${statusClass(completionBadge.tone)} task-inline-status task-inline-status-info`}>{completionBadge.label}</span> : null}
-        {showGradeInfo && gradeLabel ? <span className="flag task-inline-flag task-grade-flag">{gradeLabel}</span> : null}
+        {showGradeInfo && gradeLabel ? <span className={`flag task-inline-flag task-grade-flag ${gradeToneClass}`}>{gradeLabel}</span> : null}
         <BadgeTag
           type={canApplySuggested ? 'button' : undefined}
           className={`button slim staff-tag ${displayStaff === 'Unallocated' ? 'secondary' : 'primary'} ${displayStaff !== 'Unallocated' ? `staff-theme-${slugifyThemeKey(displayStaff)}` : ''} ${canApplySuggested ? 'staff-tag-suggested-pulse' : ''}`}
