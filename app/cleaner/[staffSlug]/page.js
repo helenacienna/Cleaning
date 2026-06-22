@@ -204,20 +204,6 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
           </div>
         </div>
 
-        <div className="cleaner-strip">
-          <div>
-            <span className="muted">Day</span>
-            <strong>{list.day ?? 'Current run'}</strong>
-          </div>
-          <div>
-            <span className="muted">Shift</span>
-            <strong>{list.shift}</strong>
-          </div>
-          <div>
-            <span className="muted">Roster</span>
-            <strong>{list.roster?.summary || 'Not set yet'}</strong>
-          </div>
-        </div>
         {renderProgressBar(list.stats.completed, list.stats.total, list.stats.issues)}
         <div className="stat-row">
           <span className="flag">{list.stats.completed}/{list.stats.total} completed</span>
