@@ -364,8 +364,11 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
                                     disabled={!liveDataAvailable || state.savingId === member.id}
                                   />
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                                  <div className="muted">• {facilityLabel(shift, facilitiesById)} {formatRosterWindow(shift.start, shift.finish)}</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+                                  <div className="muted" style={{ display: 'grid', gap: 2 }}>
+                                    <div>• {facilityLabel(shift, facilitiesById)}</div>
+                                    <div>{formatRosterWindow(shift.start, shift.finish) || 'No time set'}</div>
+                                  </div>
                                   <button
                                     type="button"
                                     className="button secondary slim"
