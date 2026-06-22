@@ -71,6 +71,24 @@ function getWeeklyShiftDisplay(day) {
   };
 }
 
+function formatShiftTime(value) {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return new Intl.DateTimeFormat('en-AU', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Australia/Brisbane',
+  }).format(date).replace(' am', 'am').replace(' pm', 'pm');
+}
+
 function groupFacilityTasks(tasks = []) {
   const groups = new Map();
 
@@ -179,7 +197,6 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
                 })}
               </div>
             ) : null}
-            <p className="muted">Your assigned facilities, shown in a board-style layout.</p>
           </div>
           <div className="workflow-banner-actions" style={{ justifyContent: 'center' }}>
             <Link className="button secondary" href="/cleaner">All staff lists</Link>
@@ -221,7 +238,12 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
                   <div className="button secondary facility-card-title-button" style={{ pointerEvents: 'none' }}>
                     {section.facility}
                   </div>
-                  {section.shiftWindow ? <div className="muted" style={{ marginTop: 6 }}>{section.shiftWindow}</div> : null}
+                  {section.shiftStartAt || section.shiftEndAt ? (
+                    <div className="muted" style={{ marginTop: 6, display: 'grid', gap: 2 }}>
+                      {section.shiftStartAt ? <div>{formatShiftTime(section.shiftStartAt)}</div> : null}
+                      {section.shiftEndAt ? <div>{formatShiftTime(section.shiftEndAt)}</div> : null}
+                    </div>
+                  ) : section.shiftWindow ? <div className="muted" style={{ marginTop: 6 }}>{section.shiftWindow}</div> : null}
                 </div>
               </div>
 

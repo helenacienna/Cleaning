@@ -2309,7 +2309,7 @@ code {
   font-style: normal;
   font-size: 10px;
   font-weight: 700;
-  color: rgba(255,255,255,0.82);
+  color: rgba(15,23,42,0.64);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2341,7 +2341,7 @@ code {
 }
 
 .staff-week-day-current em {
-  color: #8ad8ff;
+  color: #2b7fa6;
 }
 
 .cleaner-task-list {
