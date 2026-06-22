@@ -1263,7 +1263,6 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
           <div className="task-inline-top-row">
             <div className="task-inline-main">
               <strong>{task.title}</strong>
-              {task.zone ? <span className="task-inline-zone">{task.zone}</span> : null}
             </div>
             {showTopStatus ? <span className={`${statusClass(completionBadge.tone)} task-inline-status task-inline-status-info`}>{completionBadge.label}</span> : null}
           </div>
