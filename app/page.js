@@ -45,7 +45,22 @@ function formatTaskGradeLabel(score) {
     return '';
   }
 
-  return `Grade ${numericScore}/5`;
+  return String(numericScore);
+}
+
+function getTaskCompletionBadge(task = {}) {
+  const numericScore = Number(task?.score ?? task?.auditScore);
+  if (Number.isFinite(numericScore) && numericScore > 0) {
+    return {
+      label: numericScore >= 4 ? 'completed' : 'follow-up',
+      tone: numericScore >= 4 ? 'completed' : 'carried-forward',
+    };
+  }
+
+  return {
+    label: formatTaskLabel(task?.status ?? ''),
+    tone: task?.status ?? '',
+  };
 }
 
 function normalizeTaskStatus(status = '') {
@@ -1062,10 +1077,11 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
     const BadgeTag = canApplySuggested ? 'button' : 'span';
 
     const gradeLabel = formatTaskGradeLabel(task.score ?? task.auditScore);
+    const completionBadge = getTaskCompletionBadge(task);
 
     return (
       <span className="task-assignment-display">
-        {showStatusInfo ? <span className={`${statusClass(task.status)} task-inline-status task-inline-status-info`}>{formatTaskLabel(task.status)}</span> : null}
+        {showStatusInfo ? <span className={`${statusClass(completionBadge.tone)} task-inline-status task-inline-status-info`}>{completionBadge.label}</span> : null}
         {showStatusInfo && gradeLabel ? <span className="flag task-inline-flag task-grade-flag">{gradeLabel}</span> : null}
         <BadgeTag
           type={canApplySuggested ? 'button' : undefined}
