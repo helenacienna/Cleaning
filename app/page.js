@@ -1258,20 +1258,25 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
     return (
       <details className="task-disclosure task-disclosure-compact" key={`${suffix}-${task.id}`}>
         <summary className="task-row task-row-disclosure task-row-disclosure-compact">
-          <div className="task-inline-main">
-            <div className="task-inline-copy">
+          <div className="task-inline-top-row">
+            <div className="task-inline-main">
               <strong>{task.title}</strong>
-              {subtitle ? <span className="muted">{subtitle}</span> : null}
+              {task.zone ? <span className="task-inline-zone">{task.zone}</span> : null}
             </div>
           </div>
-          <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
-            {task.photoRequired && <span className="flag task-inline-flag">Photo</span>}
-            {task.commentRequired && <span className="flag task-inline-flag">Comment</span>}
-            <span className="task-inline-staff-tags">{renderTaskAssignmentDisplay(task, `${suffix}-assignment`, {
-              alwaysShowRecommendation,
-              showStatusInfo: showStatusBadge && shouldShowTaskStatusBadge(task.status),
-            })}</span>
-            <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+          <div className="task-inline-bottom-row">
+            <div className="task-inline-copy">
+              {subtitle ? <span className="muted">{subtitle}</span> : null}
+            </div>
+            <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+              {task.photoRequired && <span className="flag task-inline-flag">Photo</span>}
+              {task.commentRequired && <span className="flag task-inline-flag">Comment</span>}
+              <span className="task-inline-staff-tags">{renderTaskAssignmentDisplay(task, `${suffix}-assignment`, {
+                alwaysShowRecommendation,
+                showStatusInfo: showStatusBadge && shouldShowTaskStatusBadge(task.status),
+              })}</span>
+              <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+            </div>
           </div>
         </summary>
         <div className="task-disclosure-body">
