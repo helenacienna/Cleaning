@@ -1068,7 +1068,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
   }
 
   function renderTaskAssignmentDisplay(task, suffix = 'task', options = {}) {
-    const { alwaysShowRecommendation = false, showStatusInfo = false } = options;
+    const { alwaysShowRecommendation = false, showStatusInfo = false, showGradeInfo = showStatusInfo } = options;
     const effectiveRecommendedStaff = getEffectiveRecommendedStaff(task, { alwaysShowRecommendation });
     const displayStaff = task.staff && task.staff !== 'Unallocated'
       ? task.staff
@@ -1084,7 +1084,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
     return (
       <span className="task-assignment-display">
         {showStatusInfo ? <span className={`${statusClass(completionBadge.tone)} task-inline-status task-inline-status-info`}>{completionBadge.label}</span> : null}
-        {showStatusInfo && gradeLabel ? <span className="flag task-inline-flag task-grade-flag">{gradeLabel}</span> : null}
+        {showGradeInfo && gradeLabel ? <span className="flag task-inline-flag task-grade-flag">{gradeLabel}</span> : null}
         <BadgeTag
           type={canApplySuggested ? 'button' : undefined}
           className={`button slim staff-tag ${displayStaff === 'Unallocated' ? 'secondary' : 'primary'} ${displayStaff !== 'Unallocated' ? `staff-theme-${slugifyThemeKey(displayStaff)}` : ''} ${canApplySuggested ? 'staff-tag-suggested-pulse' : ''}`}
@@ -1254,6 +1254,8 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
       alwaysShowRecommendation = false,
     } = options;
     const taskCardDetails = makeTaskCardDetails(task);
+    const completionBadge = getTaskCompletionBadge(task);
+    const showTopStatus = showStatusBadge && shouldShowTaskStatusBadge(task.status);
 
     return (
       <details className="task-disclosure task-disclosure-compact" key={`${suffix}-${task.id}`}>
@@ -1263,6 +1265,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
               <strong>{task.title}</strong>
               {task.zone ? <span className="task-inline-zone">{task.zone}</span> : null}
             </div>
+            {showTopStatus ? <span className={`${statusClass(completionBadge.tone)} task-inline-status task-inline-status-info`}>{completionBadge.label}</span> : null}
           </div>
           <div className="task-inline-bottom-row">
             <div className="task-inline-copy">
@@ -1273,7 +1276,8 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
               {task.commentRequired && <span className="flag task-inline-flag">Comment</span>}
               <span className="task-inline-staff-tags">{renderTaskAssignmentDisplay(task, `${suffix}-assignment`, {
                 alwaysShowRecommendation,
-                showStatusInfo: showStatusBadge && shouldShowTaskStatusBadge(task.status),
+                showStatusInfo: false,
+                showGradeInfo: showTopStatus,
               })}</span>
               <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
             </div>

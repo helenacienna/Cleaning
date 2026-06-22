@@ -721,6 +721,10 @@ a { color: inherit; text-decoration: none; }
   min-width: 0;
 }
 
+.task-inline-top-row {
+  justify-content: space-between;
+}
+
 .task-inline-bottom-row {
   justify-content: space-between;
 }
@@ -810,7 +814,7 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .task-assignment-display .staff-tag {
