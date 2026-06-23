@@ -333,6 +333,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
           ) : (
             <span className="button secondary slim sticky-board-nav-button sticky-board-link-disabled" aria-disabled="true">← Prev</span>
           )}
+          <div className="button secondary slim sticky-board-nav-date">{list.day ?? 'Current run'}</div>
           {nextBoardDay ? (
             <Link className="button secondary slim sticky-board-nav-button" href={buildDayHref(staffSlug, nextBoardDay, { historic: true })}>Next →</Link>
           ) : (
@@ -340,7 +341,6 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
           )}
         </div>
         <div className="sticky-board-center-stack">
-          <div className="sticky-board-date">{list.day ?? 'Current run'}</div>
           {todayHref && activeBoardDay !== todayBoardDay ? (
             <Link className="button secondary slim sticky-board-today-button" href={todayHref}>Back to today</Link>
           ) : (
