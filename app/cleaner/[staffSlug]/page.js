@@ -331,11 +331,18 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
       </div>
 
       <div className="sticky-board-action-bar sticky-board-action-bar-staff">
-        {previousBoardDay ? (
-          <Link className="button secondary slim" href={buildDayHref(staffSlug, previousBoardDay, { historic: true })}>← Prev</Link>
-        ) : (
-          <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">← Prev</span>
-        )}
+        <div className="sticky-board-nav-row">
+          {previousBoardDay ? (
+            <Link className="button secondary slim sticky-board-nav-button" href={buildDayHref(staffSlug, previousBoardDay, { historic: true })}>← Prev</Link>
+          ) : (
+            <span className="button secondary slim sticky-board-nav-button sticky-board-link-disabled" aria-disabled="true">← Prev</span>
+          )}
+          {nextBoardDay ? (
+            <Link className="button secondary slim sticky-board-nav-button" href={buildDayHref(staffSlug, nextBoardDay, { historic: true })}>Next →</Link>
+          ) : (
+            <span className="button secondary slim sticky-board-nav-button sticky-board-link-disabled" aria-disabled="true">Next →</span>
+          )}
+        </div>
         <div className="sticky-board-center-stack">
           <div className="sticky-board-date">{list.day ?? 'Current run'}</div>
           {todayHref && activeBoardDay !== todayBoardDay ? (
@@ -344,11 +351,6 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
             <span className="button secondary slim sticky-board-today-button sticky-board-link-disabled" aria-disabled="true">Back to today</span>
           )}
         </div>
-        {nextBoardDay ? (
-          <Link className="button secondary slim" href={buildDayHref(staffSlug, nextBoardDay, { historic: true })}>Next →</Link>
-        ) : (
-          <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">Next →</span>
-        )}
       </div>
     </main>
   );
