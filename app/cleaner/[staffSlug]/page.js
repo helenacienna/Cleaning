@@ -198,10 +198,6 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
               </div>
             ) : null}
           </div>
-          <div className="workflow-banner-actions" style={{ justifyContent: 'center' }}>
-            <Link className="button secondary" href="/cleaner">All staff lists</Link>
-            <Link className="button secondary" href="/">Admin dashboard</Link>
-          </div>
         </div>
 
         {renderProgressBar(list.stats.completed, list.stats.total, list.stats.issues)}
