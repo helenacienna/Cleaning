@@ -1,25 +1,57 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import CleanerTaskFlow from './CleanerTaskFlow';
+
+const CHECKLIST_REFRESH_MS = 2000;
 
 export default function CleanerChecklistModal({ tasks, label }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [, startTransition] = useTransition();
+  const router = useRouter();
+
+  function refreshProgress() {
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
+  function handleOpen() {
+    refreshProgress();
+    setIsOpen(true);
+  }
+
+  function handleComplete() {
+    refreshProgress();
+    setIsOpen(false);
+  }
 
   useEffect(() => {
     document.body.classList.toggle('modal-open', isOpen);
     return () => document.body.classList.remove('modal-open');
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshProgress();
+      }
+    }, CHECKLIST_REFRESH_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isOpen]);
+
   return (
     <>
       <section className="card checklist-launch-card">
-        <div>
-          <span className="badge">Active run sheet</span>
-          <h2>Today&apos;s checklist</h2>
-          <p className="muted">Open the full-screen cleaner workflow when you&apos;re ready to move through the jobs.</p>
-        </div>
-        <button className="button primary launch-checklist-button" type="button" onClick={() => setIsOpen(true)}>
+        <button className="button primary launch-checklist-button" type="button" onClick={handleOpen}>
           Open active checklist
         </button>
       </section>
@@ -29,18 +61,17 @@ export default function CleanerChecklistModal({ tasks, label }) {
           <div className="fullscreen-checklist">
             <header className="modal-header compact-modal-header">
               <div>
-                <span className="badge">Active checklist</span>
-                <strong>{label}</strong>
+                <strong>{label} Active List</strong>
               </div>
               <div className="workflow-banner-actions">
-                <button className="button secondary" type="button" onClick={() => window.location.reload()}>
+                <button className="button secondary" type="button" onClick={refreshProgress}>
                   Refresh progress
                 </button>
                 <button className="button secondary close-modal-button" type="button" onClick={() => setIsOpen(false)}>Close</button>
               </div>
             </header>
 
-            <CleanerTaskFlow tasks={tasks} />
+            <CleanerTaskFlow tasks={tasks} onTaskSaved={refreshProgress} onComplete={handleComplete} />
           </div>
         </div>
       )}

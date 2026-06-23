@@ -1,4 +1,4 @@
-const facilities = ['Cienna', 'Boheme', 'Holidays'];
+const facilities = ['Cienna', 'Boheme', 'Holiday'];
 
 const makeDemoTask = (title, required = 'Standard', estimatedMinutes = 10) => ({
   title,
@@ -43,7 +43,7 @@ const zoneBlueprints = [
         key: 'rooftop-quarterly-deep-clean',
         name: 'Rooftop quarterly deep clean',
         frequency: 'Quarterly',
-        cadenceMode: '—',
+        cadenceMode: 'Suggested',
         designatedDay: '—',
         frequencyType: 'Critical',
         lastCompleted: '4 Mar 2026',
@@ -78,10 +78,10 @@ const zoneBlueprints = [
         name: 'Button sanitising',
         frequency: 'Weekly',
         cadenceMode: 'Anchored',
-        designatedDay: 'MON',
+        designatedDay: 'TUE',
         frequencyType: 'Critical',
-        lastCompleted: '25 May 2026',
-        suggestedDue: '1 Jun 2026',
+        lastCompleted: '26 May 2026',
+        suggestedDue: '2 Jun 2026',
         tasks: [
           makeDemoTask('Sanitise call buttons', 'Forced photo', 12),
           makeDemoTask('Wipe door tracks', 'Comment on exception', 10),
@@ -91,7 +91,7 @@ const zoneBlueprints = [
         key: 'lift-annual-detail',
         name: 'Lift annual detail clean',
         frequency: 'Annual',
-        cadenceMode: '—',
+        cadenceMode: 'Suggested',
         designatedDay: '—',
         frequencyType: 'Critical',
         lastCompleted: '8 Jun 2025',
@@ -125,7 +125,7 @@ const zoneBlueprints = [
         key: 'entry-every-2-days',
         name: 'Tower 4 glass cycle',
         frequency: 'Every 2 days',
-        cadenceMode: 'Rolling',
+        cadenceMode: 'Suggested',
         designatedDay: '—',
         frequencyType: 'Suggestive',
         lastCompleted: '3 Jun 2026',
@@ -173,11 +173,11 @@ const zoneBlueprints = [
         key: 'entry-t3-weekly-rolling',
         name: 'Tower 3 foyer detail cycle',
         frequency: 'Weekly',
-        cadenceMode: 'Rolling',
-        designatedDay: '—',
+        cadenceMode: 'Suggested',
+        designatedDay: 'WED',
         frequencyType: 'Suggestive',
-        lastCompleted: '29 May 2026',
-        suggestedDue: '5 Jun 2026',
+        lastCompleted: '27 May 2026',
+        suggestedDue: '3 Jun 2026',
         tasks: [
           makeDemoTask('Detail clean skirting corners', 'Comment on exception', 14),
           makeDemoTask('Dust behind lobby seating', 'Standard', 12),
@@ -235,7 +235,7 @@ const zoneBlueprints = [
         key: 'lounge-quarterly',
         name: 'Residents lounge quarterly recovery',
         frequency: 'Quarterly',
-        cadenceMode: '—',
+        cadenceMode: 'Suggested',
         designatedDay: '—',
         frequencyType: 'Critical',
         lastCompleted: '5 Mar 2026',
@@ -270,10 +270,10 @@ const zoneBlueprints = [
         name: 'Pool amenities weekly check',
         frequency: 'Weekly',
         cadenceMode: 'Anchored',
-        designatedDay: 'FRI',
+        designatedDay: 'THU',
         frequencyType: 'Critical',
-        lastCompleted: '29 May 2026',
-        suggestedDue: '5 Jun 2026',
+        lastCompleted: '28 May 2026',
+        suggestedDue: '4 Jun 2026',
         tasks: [
           makeDemoTask('Inspect pool safety signage', 'Forced photo', 14),
           makeDemoTask('Detail clean shower fixtures', 'Comment on exception', 12),
@@ -317,7 +317,7 @@ const zoneBlueprints = [
         key: 'carpark-every-2-days',
         name: 'Carpark access ramp cycle',
         frequency: 'Every 2 days',
-        cadenceMode: 'Rolling',
+        cadenceMode: 'Suggested',
         designatedDay: '—',
         frequencyType: 'Suggestive',
         lastCompleted: '3 Jun 2026',
@@ -331,7 +331,7 @@ const zoneBlueprints = [
         key: 'carpark-annual',
         name: 'Carpark annual presentation works',
         frequency: 'Annual',
-        cadenceMode: '—',
+        cadenceMode: 'Suggested',
         designatedDay: '—',
         frequencyType: 'Critical',
         lastCompleted: '8 Jun 2025',
@@ -365,8 +365,8 @@ const zoneBlueprints = [
         key: 'gym-weekly-rolling',
         name: 'Gym equipment recovery cycle',
         frequency: 'Weekly',
-        cadenceMode: 'Rolling',
-        designatedDay: '—',
+        cadenceMode: 'Suggested',
+        designatedDay: 'FRI',
         frequencyType: 'Critical',
         lastCompleted: '29 May 2026',
         suggestedDue: '5 Jun 2026',
@@ -379,7 +379,7 @@ const zoneBlueprints = [
         key: 'gym-quarterly',
         name: 'Gym quarterly edge scrub',
         frequency: 'Quarterly',
-        cadenceMode: '—',
+        cadenceMode: 'Suggested',
         designatedDay: '—',
         frequencyType: 'Critical',
         lastCompleted: '6 Mar 2026',
@@ -475,7 +475,7 @@ const zoneBlueprints = [
         key: 'dock-quarterly',
         name: 'Loading dock quarterly deep clean',
         frequency: 'Quarterly',
-        cadenceMode: '—',
+        cadenceMode: 'Suggested',
         designatedDay: '—',
         frequencyType: 'Critical',
         lastCompleted: '3 Mar 2026',
@@ -489,14 +489,174 @@ const zoneBlueprints = [
   },
 ];
 
+function makeUndatedZoneBlueprint(id, zone, tasks = []) {
+  return {
+    id,
+    zone,
+    groups: [
+      {
+        key: `${id}-undated-demo`,
+        name: `${zone} walk-through`,
+        frequency: 'Daily',
+        cadenceMode: '—',
+        designatedDay: '—',
+        frequencyType: 'Critical',
+        lastCompleted: '4 Jun 2026',
+        suggestedDue: '5 Jun 2026',
+        tasks: tasks.map((title) => makeDemoTask(title, 'Standard', 8)),
+      },
+    ],
+  };
+}
+
+const ciennaZoneBlueprints = [
+  makeUndatedZoneBlueprint('zone-1', 'Visitor Carpark', [
+    'Parcel locker cleaned',
+    'Cobweb Inspection',
+    'Rubbish Inspection',
+    'Floor to be blown for dust',
+    'Height bar cleaned',
+    'Height bar inspected',
+    'Exit signs cleaned',
+    'Parking & fire signs clean and visible',
+  ]),
+  makeUndatedZoneBlueprint('zone-2', 'Driveway and loading bay', [
+    'Clean signs - loading bay',
+    'Inspect signs - loading bay',
+    'Fire pump area for leaves and rubbish',
+    'Inspect clearance bar',
+    'Check for overgrown trees and scrubs',
+  ]),
+  makeUndatedZoneBlueprint('zone-3', 'B2 Carpark', [
+    'General rubbish laying around',
+    'Mailboxes T3 for cobwebs and rubbish',
+    'Mailboxes T4 for cobwebs and rubbish',
+    'Inspect fire hose reels',
+    'Inspect fire extinguishers',
+    'Inspect lights',
+    'Inspect signage and mirrors',
+    'Clean Signage and mirrors',
+    'Check for cobwebs on cameras',
+    'Check for cobwebs on lights',
+    'Check for cobwebs sprinkler system',
+    'Check for cobwebs on exit signs',
+    'Check fire stairs for rubbish & leaves',
+    'Check fire stairs drains and cobwebs',
+    'Clean power points',
+  ]),
+  makeUndatedZoneBlueprint('zone-4', 'Stairs from visitor carpark to B1 near cafe lift', [
+    'Check hand rails all the way up to ground floor',
+    'Check for cobwebs',
+    'Check for lower floor lift area just under cafe (Leaves etc)',
+    'Check lights along stairwell and check black lights near lifts',
+    'Check exit signs',
+    'Dust air vent towards cafe',
+    'Check white fence along cafe pathway',
+    'Check stairs from cafe toilets to reception for weeds',
+    'Check stairs from cafe toilets to reception leaves & rubbish',
+    'Cafe toilets to reception check hand rails',
+    'Check glass at top of stairs',
+    'Check air vents near cafe toilets',
+    'Check drain in front of cafe toilets',
+  ]),
+  makeUndatedZoneBlueprint('zone-5', 'Reception outdoor area', [
+    'Check for rubbish',
+    'Check mini lift',
+    'Check for cobwebs',
+    'Check for weeds',
+    'Check seat and reception signs',
+    'Check white rails',
+    'Check cameras',
+    'Check walls for dog urine',
+  ]),
+  makeUndatedZoneBlueprint('zone-6', 'Main Foyer Building 4', [
+    'Inspect window sills of main door',
+    'Inspect all corners of walls for cobwebs',
+    'Inspect artificial plants for cobwebs and insects',
+    'Check on-top of defibrillator for dust',
+    'Check big mirror in lobby',
+    'Check the standing lights',
+    'Check for dust on-top of paintings',
+    'Check sliding door sills',
+    'Clean skirting boards',
+    'Check and clean air vent near bin chute',
+    'Check bin chute and bin chute floor',
+    'Check fire stairs',
+    'Check fire extinguisher',
+    'Dust air vent near lift',
+  ]),
+  makeUndatedZoneBlueprint('zone-7', 'B1 Carpark', [
+    'Check for general rubbish laying around',
+    'Check fire extinguishers and reels',
+    'Check signage and mirrors',
+    'Check for cobwebs (On lights, signage, sprinkler system, cameras)',
+    'Clean yellow safety poles (Near lifts, pipes and gym stairs)',
+    'Clean power points (More so on top of them) (Do not use product)',
+    'Check fire stairs for rubbish , leaves and cobwebs',
+    'Check and clean service lift near the gym',
+  ]),
+  makeUndatedZoneBlueprint('zone-8', 'Rooftop', [
+    'Inspect bin chute',
+    'Inspect all furniture (Sun chairs and tables)',
+    'Inspect gardens (Including the 3 big pot plants)',
+    'Check for cobwebs (Including the black garden lights and cameras)',
+    'Inspect fire blankets and fire extinguishers (Both ends)',
+    'Inspect power points',
+    'Inspect all signage for damage, cobwebs',
+    'Inspect tiled floor',
+    'Inspect bathroom is it clean',
+    'Inspect bathroom for toilet paper',
+    'Inspect fire doors (Both ends)',
+    'Inspect glass is clean',
+    'Inspect BBQ\'s are clean',
+  ]),
+];
+
+function getZoneBlueprintsForFacility(facilityName) {
+  return facilityName === 'Cienna' ? ciennaZoneBlueprints : zoneBlueprints;
+}
+
 const allocationStaff = [
   { name: 'Tony', facility: 'Cienna', shiftLabel: 'Morning walk-through shift', shiftWindow: '6:00 AM – 2:00 PM', routeLabel: 'Rooftop → Tower 4 → Residents lounge → Pool → Carparks' },
-  { name: 'Leo Nguyen', facility: 'Boheme', shiftLabel: 'Day flexible shift', shiftWindow: '7:30 AM – 3:30 PM', routeLabel: 'Boheme → Holidays → Cienna' },
-  { name: 'Ava Patel', facility: 'Holidays', shiftLabel: 'Late flexible shift', shiftWindow: '9:00 AM – 5:00 PM', routeLabel: 'Holidays → Cienna → Boheme' },
+  { name: 'Leo Nguyen', facility: 'Boheme', shiftLabel: 'Day flexible shift', shiftWindow: '8:00 AM – 4:00 PM', routeLabel: 'Boheme → Holiday → Cienna' },
+  { name: 'Ava Patel', facility: 'Holiday', shiftLabel: 'Late flexible shift', shiftWindow: '10:00 AM – 6:00 PM', routeLabel: 'Holiday → Cienna → Boheme' },
 ];
-const allocationDays = ['Mon 1', 'Tue 2', 'Wed 3', 'Thu 4', 'Fri 5', 'Sat 6', 'Sun 7', 'Mon 8', 'Tue 9', 'Wed 10'];
-const DEMO_TODAY = new Date('2026-06-05T00:00:00');
+
+function getBrisbaneToday() {
+  const formatted = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Australia/Brisbane',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
+  const [year, month, day] = formatted.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+const DEMO_TODAY = getBrisbaneToday();
+
+function formatDemoBoardDay(date) {
+  return date.toLocaleDateString('en-AU', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Australia/Brisbane',
+  }).replace(',', '');
+}
+
+function buildAllocationDays(startDate, totalDays) {
+  return Array.from({ length: totalDays }, (_, index) => {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + index);
+    return formatDemoBoardDay(date);
+  });
+}
+
+const allocationDays = buildAllocationDays(DEMO_TODAY, 5);
 const TARGET_TASKS_PER_SHIFT = 50;
+const MIN_TASKS_PER_GROUP = 4;
+const MAX_TASKS_PER_GROUP = 6;
 const COMPLETION_RATIO = 0.6;
 
 const supplementalTaskBlueprints = [];
@@ -517,11 +677,11 @@ const allocationRoutes = {
   ],
   'Leo Nguyen': [
     { facility: 'Boheme', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3', 'Residents lounge'], laneIndexes: [1, 2] },
-    { facility: 'Holidays', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
+    { facility: 'Holiday', zones: ['Pool area', 'Carparks', 'Gym'], laneIndexes: [3] },
     { facility: 'Cienna', zones: ['Mail room', 'Loading dock'], laneIndexes: [4] },
   ],
   'Ava Patel': [
-    { facility: 'Holidays', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
+    { facility: 'Holiday', zones: ['Rooftop', 'Lifts', 'Entry t4', 'Entry t3'], laneIndexes: [3] },
     { facility: 'Cienna', zones: ['Residents lounge', 'Pool area', 'Carparks', 'Gym'], laneIndexes: [4, 5] },
     { facility: 'Boheme', zones: ['Mail room', 'Loading dock'], laneIndexes: [6] },
   ],
@@ -545,11 +705,182 @@ function makeDemoInstanceCode(hierarchyCode, boardDayLabel, timeText = '0900') {
   return `${hierarchyCode}-D${stamp}-T${timeText}`;
 }
 
+function formatDemoDate(date) {
+  return date.toLocaleDateString('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Australia/Brisbane',
+  });
+}
+
+function normalizeDemoCadenceMode(value) {
+  return String(value ?? '').toLowerCase() === 'anchored' ? 'anchored' : 'suggested';
+}
+
+function getDemoDesignatedWeekday(template) {
+  const weekday = String(template.designatedDay ?? 'MON').slice(0, 3).toLowerCase();
+  return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].indexOf(weekday);
+}
+
+function getNextDemoAnchoredWeeklyDate(referenceDate, template) {
+  const base = startOfDay(referenceDate);
+  const designatedWeekday = getDemoDesignatedWeekday(template);
+  const next = addDays(base, 1);
+  const offset = (designatedWeekday - next.getDay() + 7) % 7;
+  return addDays(next, offset);
+}
+
+function getDemoWeekdayDistributedDate(referenceDate, templateIndex, options = {}) {
+  const {
+    weekSpan = 4,
+    weekdayCount = 5,
+    weekOffset = 0,
+    dayOffset = 0,
+  } = options;
+
+  const base = startOfDay(referenceDate);
+  const slot = Math.max(0, templateIndex + dayOffset);
+  const weekIndex = weekSpan > 0 ? Math.floor(slot / weekdayCount) % weekSpan : 0;
+  const weekdayIndex = ((slot % weekdayCount) + weekdayCount) % weekdayCount;
+  return addDays(base, weekOffset * 7 + weekIndex * 7 + weekdayIndex);
+}
+
+function getDemoWeekdayPlacement(templateIndex, options = {}) {
+  const {
+    weekSpan = 4,
+    weekdayCount = 5,
+    dayOffset = 0,
+  } = options;
+
+  const slot = Math.max(0, templateIndex + dayOffset);
+  return {
+    weekIndex: weekSpan > 0 ? Math.floor(slot / weekdayCount) % weekSpan : 0,
+    weekdayIndex: ((slot % weekdayCount) + weekdayCount) % weekdayCount,
+  };
+}
+
+function getDemoWeekdayDateInMonth(referenceDate, weekdayIndex = 0, weekIndex = 0) {
+  const firstOfMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+  const targetWeekday = 1 + Math.max(0, Math.min(4, weekdayIndex));
+  const offset = (targetWeekday - firstOfMonth.getDay() + 7) % 7;
+  const candidate = addDays(firstOfMonth, offset + Math.max(0, weekIndex) * 7);
+
+  if (candidate.getMonth() !== firstOfMonth.getMonth()) {
+    return addDays(candidate, -7);
+  }
+
+  return candidate;
+}
+
+function buildDemoScheduleSpread(template, templateIndex) {
+  const frequency = String(template.frequency || '').toLowerCase();
+  const cadenceMode = normalizeDemoCadenceMode(template.cadenceMode);
+  const anchor = startOfDay(new Date('2026-06-01T00:00:00'));
+
+  if (frequency === 'as required') {
+    return {
+      ...template,
+      lastCompleted: '—',
+      suggestedDue: 'As triggered',
+    };
+  }
+
+  if (frequency === 'daily') {
+    const lastCompleted = addDays(anchor, -((templateIndex % 2) + 1));
+    return {
+      ...template,
+      lastCompleted: formatDemoDate(lastCompleted),
+      suggestedDue: formatDemoDate(addDays(lastCompleted, 1)),
+    };
+  }
+
+  if (frequency === 'every 2 days') {
+    const nextDue = getDemoWeekdayDistributedDate(anchor, templateIndex, {
+      weekSpan: 2,
+      dayOffset: 2,
+    });
+    const lastCompleted = addDays(nextDue, -2);
+    return {
+      ...template,
+      lastCompleted: formatDemoDate(lastCompleted),
+      suggestedDue: formatDemoDate(nextDue),
+    };
+  }
+
+  if (frequency === 'weekly' || frequency === 'weekdays') {
+    if (cadenceMode === 'anchored') {
+      const nextDue = getNextDemoAnchoredWeeklyDate(anchor, template);
+      return {
+        ...template,
+        lastCompleted: formatDemoDate(addDays(nextDue, -7)),
+        suggestedDue: formatDemoDate(nextDue),
+      };
+    }
+
+    const suggestedAnchor = getNextDemoAnchoredWeeklyDate(anchor, template);
+    const lastCompleted = addDays(suggestedAnchor, -7);
+    return {
+      ...template,
+      lastCompleted: formatDemoDate(lastCompleted),
+      suggestedDue: formatDemoDate(suggestedAnchor),
+    };
+  }
+
+  if (frequency === 'monthly') {
+    const placement = getDemoWeekdayPlacement(templateIndex, {
+      weekSpan: 4,
+      dayOffset: 1,
+    });
+    const nextDue = getDemoWeekdayDateInMonth(new Date('2026-06-01T00:00:00'), placement.weekdayIndex, placement.weekIndex);
+    return {
+      ...template,
+      lastCompleted: formatDemoDate(addMonths(nextDue, -1)),
+      suggestedDue: formatDemoDate(nextDue),
+    };
+  }
+
+  if (frequency === 'quarterly') {
+    const monthOffset = templateIndex % 3;
+    const placement = getDemoWeekdayPlacement(templateIndex, {
+      weekSpan: 3,
+      dayOffset: 2,
+    });
+    const quarterBase = new Date('2026-06-01T00:00:00');
+    quarterBase.setMonth(quarterBase.getMonth() + monthOffset);
+    const nextDue = getDemoWeekdayDateInMonth(quarterBase, placement.weekdayIndex, placement.weekIndex);
+    return {
+      ...template,
+      lastCompleted: formatDemoDate(addMonths(nextDue, -3)),
+      suggestedDue: formatDemoDate(nextDue),
+    };
+  }
+
+  if (frequency === 'annual') {
+    const placement = getDemoWeekdayPlacement(templateIndex, {
+      weekSpan: 4,
+      dayOffset: 3,
+    });
+    const annualBase = new Date('2026-06-01T00:00:00');
+    annualBase.setMonth((templateIndex * 3) % 12);
+    const nextDue = getDemoWeekdayDateInMonth(annualBase, placement.weekdayIndex, placement.weekIndex);
+    return {
+      ...template,
+      lastCompleted: formatDemoDate(addMonths(nextDue, -12)),
+      suggestedDue: formatDemoDate(nextDue),
+    };
+  }
+
+  return template;
+}
+
 function buildTaskCatalog() {
   const templates = [];
 
   facilities.forEach((facilityName, facilityIndex) => {
-    zoneBlueprints.forEach((zoneBlueprint, zoneIndex) => {
+    const facilityZoneBlueprints = getZoneBlueprintsForFacility(facilityName);
+
+    facilityZoneBlueprints.forEach((zoneBlueprint, zoneIndex) => {
       zoneBlueprint.groups.forEach((group, groupIndex) => {
         group.tasks.forEach((taskBlueprint, taskIndex) => {
           const templateIndex = templates.length;
@@ -583,7 +914,7 @@ function buildTaskCatalog() {
 
   facilities.forEach((facilityName, facilityIndex) => {
     supplementalTaskBlueprints.forEach((taskBlueprint, supplementalIndex) => {
-      const zoneBlueprint = zoneBlueprints.find((zone) => zone.zone === taskBlueprint.zone);
+      const zoneBlueprint = getZoneBlueprintsForFacility(facilityName).find((zone) => zone.zone === taskBlueprint.zone);
       if (!zoneBlueprint) {
         return;
       }
@@ -612,7 +943,7 @@ function buildTaskCatalog() {
     });
   });
 
-  return templates;
+  return templates.map((template, templateIndex) => buildDemoScheduleSpread(template, templateIndex));
 }
 
 export const taskCardTemplates = buildTaskCatalog();
@@ -639,10 +970,44 @@ function buildAssignmentTasks(facilityName, zoneName, customTasks = null) {
       zone: task.zone,
     })));
 
-  const completedTarget = Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO);
+  const tasksByGroup = new Map();
 
-  return Array.from({ length: TARGET_TASKS_PER_SHIFT }, (_, index) => {
-    const task = zoneTasks[index % zoneTasks.length];
+  zoneTasks.forEach((task) => {
+    const key = `${task.zone}__${task.taskGroup}`;
+    if (!tasksByGroup.has(key)) {
+      tasksByGroup.set(key, []);
+    }
+    tasksByGroup.get(key).push(task);
+  });
+
+  const expandedTasks = Array.from(tasksByGroup.values()).flatMap((groupTasks) => {
+    const safeGroupTasks = groupTasks.length ? groupTasks : [];
+    if (!safeGroupTasks.length) {
+      return [];
+    }
+
+    const repeatCount = Math.max(1, Math.ceil(MIN_TASKS_PER_GROUP / safeGroupTasks.length));
+    const expanded = [];
+
+    for (let repeatIndex = 0; repeatIndex < repeatCount; repeatIndex += 1) {
+      for (const task of safeGroupTasks) {
+        if (expanded.length >= MAX_TASKS_PER_GROUP) {
+          break;
+        }
+        expanded.push(task);
+      }
+      if (expanded.length >= MAX_TASKS_PER_GROUP) {
+        break;
+      }
+    }
+
+    return expanded;
+  });
+
+  const assignmentTasks = expandedTasks.length ? expandedTasks : zoneTasks;
+  const completedTarget = Math.round(assignmentTasks.length * COMPLETION_RATIO);
+
+  return assignmentTasks.map((task, index) => {
     return {
       id: `assignment-${facilityName}-${zoneName}-${index + 1}`,
       title: task.title,
@@ -678,21 +1043,25 @@ export const appSummary = {
 export const cleanerAssignments = allocationStaff.map((staff, index) => ({
   id: `assignment-${index + 1}`,
   location: staff.facility,
-  zone: zoneBlueprints[index].zone,
+  zone: getZoneBlueprintsForFacility(staff.facility)[index]?.zone,
   shift: staff.shiftLabel,
-  progress: Math.round(COMPLETION_RATIO * 100),
+  tasks: buildAssignmentTasks(staff.facility, getZoneBlueprintsForFacility(staff.facility)[index]?.zone),
+})).map((assignment) => ({
+  ...assignment,
+  progress: assignment.tasks.length
+    ? Math.round((assignment.tasks.filter((task) => task.status === 'completed').length / assignment.tasks.length) * 100)
+    : 0,
   stats: {
-    total: TARGET_TASKS_PER_SHIFT,
-    completed: Math.round(TARGET_TASKS_PER_SHIFT * COMPLETION_RATIO),
-    photoRequired: Math.round(TARGET_TASKS_PER_SHIFT * 0.18),
+    total: assignment.tasks.length,
+    completed: assignment.tasks.filter((task) => task.status === 'completed').length,
+    photoRequired: assignment.tasks.filter((task) => task.photoRequired).length,
   },
-  tasks: buildAssignmentTasks(staff.facility, zoneBlueprints[index].zone),
 }));
 
 const staffMetaByName = Object.fromEntries(allocationStaff.map((staff) => [staff.name, staff]));
 
 export const qrZones = facilities.flatMap((facilityName, facilityIndex) => (
-  zoneBlueprints.map((zoneBlueprint) => ({
+  getZoneBlueprintsForFacility(facilityName).map((zoneBlueprint) => ({
     id: `facility-${facilityIndex + 1}-${zoneBlueprint.id}`,
     label: zoneBlueprint.zone,
     location: facilityName,
@@ -708,7 +1077,7 @@ export const cleanerProfile = {
 };
 
 export const supervisorCards = [
-  { title: 'Live completion', value: '126 / 180', note: 'Across 3 Cienna facilities', tone: 'green' },
+  { title: 'Live completion', value: '126 / 180', note: 'Across Cienna, Boheme, and Holiday', tone: 'green' },
   { title: 'Missed tasks', value: '9', note: '4 carried forward automatically', tone: 'amber' },
   { title: 'Photo audits', value: '24', note: '9 random verifications still open', tone: 'blue' },
   { title: 'Issues raised', value: '6', note: '2 marked urgent', tone: 'red' },
@@ -727,7 +1096,7 @@ export const taskLibrary = Array.from(
 
 export const reports = [
   ['Facilities in sample', String(facilities.length)],
-  ['Zones per facility', String(zoneBlueprints.length)],
+  ['Zones per facility', String(Math.max(...facilities.map((facilityName) => getZoneBlueprintsForFacility(facilityName).length)))],
   ['Task groups per zone', '3'],
   ['Minimum tasks per group', '2'],
   ['Completion rate', '94%'],
@@ -735,14 +1104,8 @@ export const reports = [
 ];
 
 function parseBoardDateLabel(day) {
-  const match = String(day).match(/^(\w{3})\s(\d{1,2})$/);
-  if (!match) {
-    return new Date(Number.NaN);
-  }
-
-  const [, , dayNumber] = match;
-  const paddedDay = String(dayNumber).padStart(2, '0');
-  return new Date(`2026-06-${paddedDay}T00:00:00`);
+  const parsed = new Date(`${String(day).replace(/^(\w{3})\s/, '')} 2026`);
+  return Number.isNaN(parsed.getTime()) ? new Date(Number.NaN) : parsed;
 }
 
 function parseTemplateDateLabel(value) {
@@ -782,7 +1145,7 @@ function diffCalendarDays(left, right) {
 
 function calculateDemoNextDueDate(template) {
   const frequency = String(template.frequency || '').toLowerCase();
-  const cadenceMode = String(template.cadenceMode || 'Rolling').toLowerCase();
+  const cadenceMode = normalizeDemoCadenceMode(template.cadenceMode);
   const lastCompleted = parseTemplateDateLabel(template.lastCompleted);
   const suggestedDue = parseTemplateDateLabel(template.suggestedDue);
 
@@ -795,31 +1158,31 @@ function calculateDemoNextDueDate(template) {
   }
 
   if (frequency === 'every 2 days') {
-    return cadenceMode === 'rolling'
+    return cadenceMode === 'suggested'
       ? (lastCompleted ? addDays(startOfDay(lastCompleted), 2) : suggestedDue)
       : suggestedDue;
   }
 
   if (frequency === 'weekly') {
-    return cadenceMode === 'rolling'
+    return cadenceMode === 'suggested'
       ? (lastCompleted ? addDays(startOfDay(lastCompleted), 7) : suggestedDue)
       : suggestedDue;
   }
 
   if (frequency === 'monthly') {
-    return cadenceMode === 'rolling'
+    return cadenceMode === 'suggested'
       ? (lastCompleted ? addMonths(startOfDay(lastCompleted), 1) : suggestedDue)
       : suggestedDue;
   }
 
   if (frequency === 'quarterly') {
-    return cadenceMode === 'rolling'
+    return cadenceMode === 'suggested'
       ? (lastCompleted ? addMonths(startOfDay(lastCompleted), 3) : suggestedDue)
       : suggestedDue;
   }
 
   if (frequency === 'annual') {
-    return cadenceMode === 'rolling'
+    return cadenceMode === 'suggested'
       ? (lastCompleted ? addMonths(startOfDay(lastCompleted), 12) : suggestedDue)
       : suggestedDue;
   }
@@ -995,6 +1358,39 @@ function buildAllocationCardsForDay(day, dayIndex) {
 
 const allocationCards = allocationDays.flatMap((day, dayIndex) => buildAllocationCardsForDay(day, dayIndex));
 
+function buildGeneratedInstanceSummary(days) {
+  return days.map((day, index) => [
+    day,
+    'Allocated demo jobs',
+    `scheduled_demo_${String(index + 1).padStart(3, '0')}`,
+  ]);
+}
+
+function buildCalendarDaySummary(days, cards) {
+  return days.map((day, index) => {
+    const boardDate = parseBoardDateLabel(day);
+    const dayCards = cards.filter((card) => card.day === day);
+    const groupedJobs = Array.from(new Map(
+      dayCards.map((card) => [`${card.facility}|${card.zone}|${card.groupName}`, card])
+    ).values())
+      .slice(0, 3)
+      .map((card) => ({
+        jobOrderStart: String(card.jobOrder).padStart(3, '0'),
+        facility: card.facility,
+        zone: card.zone,
+        groupName: card.groupName,
+        count: dayCards.filter((item) => item.facility === card.facility && item.zone === card.zone && item.groupName === card.groupName).length,
+        type: card.type,
+      }));
+
+    return {
+      date: day,
+      dayType: [0, 6].includes(boardDate.getDay()) ? 'weekend' : 'weekday',
+      jobs: groupedJobs,
+    };
+  });
+}
+
 const uniqueGroupKeys = Array.from(new Set(allocationCards.map((card) => `${card.day}:${card.groupId}:${card.staff}`)));
 const taskGroups = uniqueGroupKeys.map((groupKey) => {
   const groupCards = allocationCards.filter((card) => `${card.day}:${card.groupId}:${card.staff}` === groupKey);
@@ -1099,20 +1495,8 @@ export const scheduleBuilder = {
     lastCompleted: task.lastCompleted,
     suggestedDue: task.suggestedDue,
   })),
-  generatedInstances: [
-    ['Mon 1 Jun', '180 task instances', 'scheduled_cienna_2026-06-01'],
-    ['Tue 2 Jun', '180 task instances', 'scheduled_cienna_2026-06-02'],
-    ['Wed 3 Jun', '180 task instances', 'scheduled_cienna_2026-06-03'],
-  ],
-  calendarDays: [
-    { date: 'Mon 1', dayType: 'weekday', jobs: [{ jobOrderStart: '001', facility: 'Cienna', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '061', facility: 'Boheme', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }, { jobOrderStart: '121', facility: 'Holidays', zone: 'Entry t4', groupName: 'Toilet block', count: 2, type: 'critical' }] },
-    { date: 'Tue 2', dayType: 'weekday', jobs: [{ jobOrderStart: '019', facility: 'Cienna', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '079', facility: 'Boheme', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }, { jobOrderStart: '139', facility: 'Holidays', zone: 'Pool area', groupName: 'Pool deck reset', count: 2, type: 'critical' }] },
-    { date: 'Wed 3', dayType: 'weekday', jobs: [{ jobOrderStart: '031', facility: 'Cienna', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '091', facility: 'Boheme', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }, { jobOrderStart: '151', facility: 'Holidays', zone: 'Gym', groupName: 'Gym floor care', count: 2, type: 'suggestive' }] },
-    { date: 'Thu 4', dayType: 'weekday', jobs: [{ jobOrderStart: '043', facility: 'Cienna', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '103', facility: 'Boheme', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }, { jobOrderStart: '163', facility: 'Holidays', zone: 'Loading dock', groupName: 'Dock sweep', count: 2, type: 'suggestive' }] },
-    { date: 'Fri 5', dayType: 'weekday', jobs: [{ jobOrderStart: '013', facility: 'Cienna', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '073', facility: 'Boheme', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }, { jobOrderStart: '133', facility: 'Holidays', zone: 'Residents lounge', groupName: 'Residents lounge touch-up', count: 2, type: 'critical' }] },
-    { date: 'Sat 6', dayType: 'weekend', jobs: [{ jobOrderStart: '025', facility: 'Cienna', zone: 'Carparks', groupName: 'Carpark round', count: 2, type: 'suggestive' }] },
-    { date: 'Sun 7', dayType: 'weekend', jobs: [] },
-  ],
+  generatedInstances: buildGeneratedInstanceSummary(allocationDays),
+  calendarDays: buildCalendarDaySummary(allocationDays, allocationCards),
   allocationBoard: {
     staff: [...allocationStaff.map((staff) => staff.name), 'Unallocated'],
     staffMeta: Object.fromEntries([
@@ -1125,7 +1509,7 @@ export const scheduleBuilder = {
       ...denseScoreDemoCards,
       { id: 'alloc-unassigned-1', title: 'Check dock spill kit', templateId: 'custom_001', staff: 'Unallocated', day: 'Mon 1', jobOrder: 61, status: 'pending', facility: 'Cienna', zone: 'Loading dock', taskGroup: 'Back-of-house tidy', type: 'suggestive', groupId: 'group-unassigned-dock', groupName: 'Back-of-house tidy' },
       { id: 'alloc-unassigned-2', title: 'Recheck sauna entry mat', templateId: 'custom_002', staff: 'Unallocated', day: 'Wed 3', jobOrder: 62, status: 'in-progress', facility: 'Boheme', zone: 'Pool area', taskGroup: 'Amenities wipe-down', type: 'critical', groupId: 'group-unassigned-pool', groupName: 'Amenities wipe-down' },
-      { id: 'alloc-unassigned-3', title: 'Inspect parcel overflow shelf', templateId: 'custom_003', staff: 'Unallocated', day: 'Fri 5', jobOrder: 63, status: 'pending', facility: 'Holidays', zone: 'Mail room', taskGroup: 'Parcel room reset', type: 'suggestive', groupId: 'group-unassigned-mail', groupName: 'Parcel room reset' },
+      { id: 'alloc-unassigned-3', title: 'Inspect parcel overflow shelf', templateId: 'custom_003', staff: 'Unallocated', day: 'Fri 5', jobOrder: 63, status: 'pending', facility: 'Holiday', zone: 'Mail room', taskGroup: 'Parcel room reset', type: 'suggestive', groupId: 'group-unassigned-mail', groupName: 'Parcel room reset' },
     ],
   },
   exceptionWorkflow: {
