@@ -2344,6 +2344,19 @@ code {
   color: #2b7fa6;
 }
 
+.cleaner-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cleaner-stat-row .flag {
+  justify-content: center;
+  padding: 8px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .cleaner-task-list {
   display: grid;
   gap: 14px;

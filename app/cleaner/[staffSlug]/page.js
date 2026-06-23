@@ -205,7 +205,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
         </div>
 
         {renderProgressBar(list.stats.completed, list.stats.total, list.stats.issues)}
-        <div className="stat-row">
+        <div className="stat-row cleaner-stat-row">
           <span className="flag">{list.stats.completed}/{list.stats.total} completed</span>
           <span className="flag">{list.stats.photoRequired} photo checks</span>
           <span className="flag">{list.stats.commentRequired} comment checks</span>
