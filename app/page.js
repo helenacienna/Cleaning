@@ -11,7 +11,8 @@ import Link from 'next/link';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const ADMIN_BOARD_REFRESH_MS = 2000;
+const ADMIN_BOARD_REFRESH_MS = 2 * 60 * 1000;
+const ADMIN_BOARD_ACTIVE_WINDOW_MS = 10 * 60 * 1000;
 const APP_NAME = 'Cienna Cleaning';
 const FACILITY_NAME_ALIASES = {
   'Cienna North': 'Cienna',
@@ -1654,6 +1655,7 @@ export default function HomePage() {
   const pendingFlushTimerRef = useRef(null);
   const saveInFlightRef = useRef(null);
   const mutationCounterRef = useRef(0);
+  const lastBoardActivityRef = useRef(Date.now());
 
   async function loadDashboardBoard() {
     const response = await fetch('/api/dashboard-board', { cache: 'no-store' }).catch(() => null);
@@ -1705,8 +1707,18 @@ export default function HomePage() {
       })
       .catch(() => {});
 
+    function markBoardActivity() {
+      lastBoardActivityRef.current = Date.now();
+    }
+
+    const activityEvents = ['pointerdown', 'pointermove', 'touchstart', 'scroll', 'keydown'];
+    activityEvents.forEach((eventName) => {
+      window.addEventListener(eventName, markBoardActivity, { passive: true });
+    });
+
     const intervalId = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
+      const recentActivity = Date.now() - lastBoardActivityRef.current <= ADMIN_BOARD_ACTIVE_WINDOW_MS;
+      if (document.visibilityState === 'visible' && recentActivity) {
         loadDashboardBoard().catch(() => {});
       }
     }, ADMIN_BOARD_REFRESH_MS);
@@ -1714,6 +1726,9 @@ export default function HomePage() {
     return () => {
       cancelled = true;
       window.clearInterval(intervalId);
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, markBoardActivity);
+      });
     };
   }, []);
 
