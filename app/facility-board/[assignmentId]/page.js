@@ -333,6 +333,10 @@ export default async function FacilityBoardPage({ params, searchParams }) {
     notFound();
   }
 
+  const dailyTasks = assignment.tasks.filter((task) => !task.frequency || String(task.frequency).toLowerCase() === 'daily');
+  const periodicTasks = assignment.tasks.filter((task) => task.frequency && String(task.frequency).toLowerCase() !== 'daily');
+  const dailyGroups = groupAssignmentTasks(dailyTasks);
+  const periodicGroups = groupAssignmentTasks(periodicTasks);
   const grouped = groupAssignmentTasks(assignment.tasks);
   const groupedByStaff = groupTasksByStaff(assignment.tasks, board?.staffMeta);
   const totalZones = new Set(grouped.map((group) => group.zone)).size;
@@ -375,11 +379,30 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             <p className="muted">Board day {assignment.boardDay} · {totalZones} zones · {assignment.stats.staffCount || 0} assigned staff</p>
           </div>
           <div className="cta-row no-top-gap facility-board-detail-actions">
-            <Link className="button secondary" href="/">Back to dashboard</Link>
-            <Link className="button secondary" href="/">Organise from dashboard</Link>
-            <Link className={`button ${view === 'tasks' ? 'primary' : 'secondary'}`} href={`${queryBase}&view=tasks`}>Task view</Link>
-            <Link className={`button ${view === 'staff' ? 'primary' : 'secondary'}`} href={`${queryBase}&view=staff`}>Staff view</Link>
-            <Link className={`button ${view === 'time' ? 'primary' : 'secondary'}`} href={`${queryBase}&view=time`}>Time view</Link>
+            <details className="facility-board-view-menu">
+              <summary className="button secondary facility-board-view-trigger">View options<span aria-hidden="true">⌄</span></summary>
+              <div className="facility-board-view-dropdown">
+                <Link className="facility-board-view-link facility-board-view-link-action" href="/">Back to dashboard</Link>
+                <Link className="facility-board-view-link facility-board-view-link-action" href="/">Organise from dashboard</Link>
+                <Link className={`facility-board-view-link ${view === 'tasks' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=tasks`}>Task view</Link>
+                <Link className={`facility-board-view-link ${view === 'staff' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=staff`}>Staff view</Link>
+                <Link className={`facility-board-view-link ${view === 'time' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=time`}>Time view</Link>
+              </div>
+            </details>
+            <div className="facility-board-inline-day-nav">
+              <div className="facility-board-inline-day-nav-row">
+                {previousBoardDay ? <Link className="button secondary slim" href={`?day=${previousBoardDay}&view=${view}`}>← Prev</Link> : <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">← Prev</span>}
+                <div className="button secondary slim facility-board-inline-day-label">{formatBoardDateLabel(assignment.boardDay, timeZone)}</div>
+                {nextBoardDay ? <Link className="button secondary slim" href={`?day=${nextBoardDay}&view=${view}`}>Next →</Link> : <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">Next →</span>}
+              </div>
+              <div className="facility-board-day-chip-row">
+                {boardDays.map((day) => (
+                  <Link key={day} className={`button slim ${day === assignment.boardDay ? 'primary' : 'secondary'}`} href={`?day=${day}&view=${view}`}>
+                    {formatBoardDateLabel(day, timeZone)}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -394,34 +417,130 @@ export default async function FacilityBoardPage({ params, searchParams }) {
       )}
 
       {view === 'tasks' ? (
-        <section className="facility-board-detail-zones">
-          {grouped.map((group) => (
-            <article className="card facility-board-zone-card" key={`${assignment.id}-${group.zone}-${group.taskGroup}`}>
-              <div className="facility-board-zone-header">
-                <div className="facility-board-zone-title">
-                  <h3>{group.taskGroup}</h3>
-                  <p className="muted">{group.zone}</p>
+        <section className="facility-board-task-columns">
+          {[{
+            key: 'daily',
+            title: 'Daily tasks',
+            subtitle: 'Routine work for this board day',
+            groups: dailyGroups,
+            summary: {
+              completed: dailyTasks.filter((task) => task.status === 'completed').length,
+              total: dailyTasks.length,
+              progress: dailyTasks.length ? Math.round((dailyTasks.filter((task) => task.status === 'completed').length / dailyTasks.length) * 100) : 0,
+            },
+          }, {
+            key: 'periodic',
+            title: 'Periodic tasks',
+            subtitle: '',
+            groups: periodicGroups,
+            summary: {
+              completed: periodicTasks.filter((task) => task.status === 'completed').length,
+              total: periodicTasks.length,
+              progress: periodicTasks.length ? Math.round((periodicTasks.filter((task) => task.status === 'completed').length / periodicTasks.length) * 100) : 0,
+            },
+          }, {
+            key: 'extra',
+            title: 'Extra tasks',
+            subtitle: 'Suitable standby work',
+            groups: [],
+            tasks: [],
+            summary: { count: 0 },
+          }].map((section) => (
+            <article className={`card facility-board-task-column facility-board-task-column-${section.key}`} key={`${assignment.id}-${section.key}`}>
+              <div className="facility-board-task-column-header">
+                <div>
+                  <h2>{section.title}</h2>
+                  {section.subtitle ? <p className="muted">{section.subtitle}</p> : null}
                 </div>
-                <div className="badge">{formatGroupSummaryLabel(group.tasks)}</div>
+                <div className="facility-board-task-column-header-actions">
+                  {section.key === 'daily' ? <button className="button secondary slim facility-board-expand-button" type="button">Expand all zones</button> : null}
+                  {section.key === 'extra' ? <div className="badge">{section.summary.count} tasks</div> : <div className="badge">{section.summary.completed}/{section.summary.total} complete</div>}
+                </div>
               </div>
+              {section.key !== 'extra' ? <div className="progress"><span style={{ width: `${section.summary.progress}%` }} /></div> : null}
 
-              <div className="progress"><span style={{ width: `${group.progress}%` }} /></div>
-
-              <div className="facility-board-task-list">
-                {group.tasks.map((task) => (
-                  <div className="task-row facility-board-task-row" key={task.id}>
+              {section.key === 'extra' ? (
+                <div className="facility-board-extra-list">
+                  <div className="task-row unscheduled-task-empty">
                     <div>
-                      <strong>#{String(task.displayOrder).padStart(3, '0')} · {task.title}</strong>
-                      <div className="facility-board-task-meta-row">
-                        <span className="flag">{task.staff || 'Unallocated'}</span>
-                        {task.photoRequired ? <span className="flag">Photo</span> : null}
-                        {task.commentRequired ? <span className="flag">Comment</span> : null}
-                      </div>
+                      <strong>No extra tasks available</strong>
+                      <div className="muted">Everything in this facility is already on the board for this day.</div>
                     </div>
-                    <span className={`${statusClass(task.status)}`}>{formatTaskLabel(task.status)}</span>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="facility-board-task-column-groups">
+                  {section.groups.length ? section.groups.map((group, groupIndex) => {
+                    const isDaily = section.key === 'daily';
+                    return (
+                      <details
+                        className={`task-disclosure facility-board-zone-card ${isDaily ? 'facility-board-zone-card-daily' : ''}`}
+                        key={`${assignment.id}-${section.key}-${group.zone}-${group.taskGroup}`}
+                        open={!isDaily}
+                      >
+                        <summary className={`task-row task-row-disclosure zone-summary-row ${isDaily ? 'zone-summary-row-compact' : ''}`}>
+                          <div className={`zone-summary-left ${isDaily ? 'zone-summary-left-compact' : ''}`}>
+                            {isDaily ? (
+                              <div className="zone-summary-top-row">
+                                <strong>{group.zone}</strong>
+                                <span className="task-group-progress-label zone-summary-progress-label-compact">{group.completed}/{group.total} complete</span>
+                              </div>
+                            ) : <strong>{group.zone}</strong>}
+                            <div className="task-group-progress-stack"><div className="task-group-progress"><span style={{ width: `${group.progress}%` }} /></div></div>
+                          </div>
+                          {section.key === 'periodic' ? <div className="task-disclosure-summary-right zone-summary-right"><span className="badge">{formatGroupSummaryLabel(group.tasks)}</span></div> : null}
+                        </summary>
+                        <div className="task-group-body">
+                          {isDaily ? group.tasks.map((task) => {
+                            const showStatus = String(task.status || '').toLowerCase() !== 'scheduled';
+                            return (
+                              <details className="task-disclosure task-disclosure-compact" key={task.id}>
+                                <summary className="task-row task-row-disclosure task-row-disclosure-compact task-row-disclosure-daily-tight">
+                                  <div className="task-inline-top-row">
+                                    <div className="task-inline-main"><span className="facility-board-task-bullet" aria-hidden="true">•</span><strong>{task.title}</strong></div>
+                                    <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+                                      {showStatus ? <span className={`${statusClass(task.status)} task-inline-status task-inline-status-info`}>{formatTaskLabel(task.status)}</span> : null}
+                                      <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+                                    </div>
+                                  </div>
+                                </summary>
+                                <div className="task-disclosure-body">
+                                  <div className="task-detail-grid">
+                                    <div><span className="muted">Task #</span><strong>{String(task.displayOrder).padStart(3, '0')}</strong></div>
+                                    <div><span className="muted">Group</span><strong>{task.taskGroup}</strong></div>
+                                    <div><span className="muted">Zone</span><strong>{task.zone}</strong></div>
+                                    <div><span className="muted">Status</span><strong>{formatTaskLabel(task.status)}</strong></div>
+                                    <div><span className="muted">Assigned</span><strong>{task.staff || 'Unallocated'}</strong></div>
+                                  </div>
+                                </div>
+                              </details>
+                            );
+                          }) : (
+                            <div className={`facility-board-task-list ${group.tasks.length === 1 ? 'facility-board-task-list-single' : ''}`}>
+                              {group.tasks.map((task) => (
+                                <div className="task-row facility-board-task-row" key={task.id}>
+                                  <div>
+                                    <strong>#{String(task.displayOrder).padStart(3, '0')} · {task.title}</strong>
+                                    <div className="muted">{task.taskGroup}</div>
+                                    <div className="facility-board-task-meta-row">
+                                      <span className={`button slim staff-tag ${task.staff && task.staff !== 'Unallocated' ? `primary staff-theme-${slugifyValue(task.staff)}` : 'secondary'}`}>{task.staff || 'Unallocated'}</span>
+                                      {task.photoRequired ? <span className="flag">Photo</span> : null}
+                                      {task.commentRequired ? <span className="flag">Comment</span> : null}
+                                    </div>
+                                  </div>
+                                  <span className={`${statusClass(task.status)}`}>{formatTaskLabel(task.status)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    );
+                  }) : (
+                    <div className="task-row unscheduled-task-empty"><div><strong>No {section.key} tasks in this facility run</strong><div className="muted">Nothing is scheduled here for this board day.</div></div></div>
+                  )}
+                </div>
+              )}
             </article>
           ))}
         </section>
