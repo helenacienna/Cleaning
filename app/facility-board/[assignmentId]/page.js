@@ -101,14 +101,6 @@ function formatGroupSummaryLabel(tasks = []) {
   return `${formatGroupStatusLabel(tasks)} ${formatAssignedStaffLabel(tasks)}`;
 }
 
-function isPeriodicTask(task = {}) {
-  return Boolean(task.frequency && String(task.frequency).toLowerCase() !== 'daily');
-}
-
-function isPeriodicGroup(tasks = []) {
-  return tasks.length > 0 && tasks.every((task) => isPeriodicTask(task));
-}
-
 function formatBoardDateLabel(dayKey, timeZone = DEFAULT_APP_TIME_ZONE) {
   if (!dayKey) {
     return 'No board day selected';
@@ -410,7 +402,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                   <h3>{group.taskGroup}</h3>
                   <p className="muted">{group.zone}</p>
                 </div>
-                {!isPeriodicGroup(group.tasks) ? <div className="badge">{formatGroupSummaryLabel(group.tasks)}</div> : null}
               </div>
 
               <div className="progress"><span style={{ width: `${group.progress}%` }} /></div>
@@ -421,12 +412,10 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                     <div>
                       <strong>#{String(task.displayOrder).padStart(3, '0')} · {task.title}</strong>
                       <div className="facility-board-task-meta-row">
-                        {!isPeriodicTask(task) ? <span className="flag">{task.staff || 'Unallocated'}</span> : null}
                         {task.photoRequired ? <span className="flag">Photo</span> : null}
                         {task.commentRequired ? <span className="flag">Comment</span> : null}
                       </div>
                     </div>
-                    {!isPeriodicTask(task) ? <span className={`${statusClass(task.status)}`}>{formatTaskLabel(task.status)}</span> : null}
                   </div>
                 ))}
               </div>
