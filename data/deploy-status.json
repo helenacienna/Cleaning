@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-09T13:02:18.606Z",
-  "version": "8c4262a+local",
-  "summary": "Harden organiser board live data fallback"
+  "deployedAt": "2026-07-11T03:53:57.521Z",
+  "version": "9acea76",
+  "summary": "Remove periodic task status chips"
 }
