@@ -1252,6 +1252,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
       showGroupField = true,
       showZoneField = true,
       showStatusBadge = true,
+      showAssignmentDisplay = true,
       alwaysShowRecommendation = false,
     } = options;
     const taskCardDetails = makeTaskCardDetails(task);
@@ -1274,11 +1275,13 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
             <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
               {task.photoRequired && <span className="flag task-inline-flag">Photo</span>}
               {task.commentRequired && <span className="flag task-inline-flag">Comment</span>}
-              <span className="task-inline-staff-tags">{renderTaskAssignmentDisplay(task, `${suffix}-assignment`, {
-                alwaysShowRecommendation,
-                showStatusInfo: false,
-                showGradeInfo: showTopStatus,
-              })}</span>
+              {showAssignmentDisplay ? (
+                <span className="task-inline-staff-tags">{renderTaskAssignmentDisplay(task, `${suffix}-assignment`, {
+                  alwaysShowRecommendation,
+                  showStatusInfo: false,
+                  showGradeInfo: showTopStatus,
+                })}</span>
+              ) : null}
               <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
             </div>
           </div>
@@ -1361,6 +1364,8 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
   }
 
   function renderFlatSection(title, subtitle, tasks, sectionKey) {
+    const isPeriodicSection = sectionKey === 'periodic';
+
     return (
       <details className={`task-group-disclosure facility-section ${sectionKey === 'daily' ? 'facility-section-daily' : 'facility-section-periodic'}`} open>
         <summary className="task-group-summary">
@@ -1368,12 +1373,14 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
             <strong>{title}</strong>
             <div className="muted">{subtitle}</div>
             {renderInlineProgressBar(tasks, `${assignment.id}-${sectionKey}-progress`)}
-            <div className="task-group-progress-row">
-              {renderGroupSummaryControl(tasks, `${assignment.id}-${sectionKey}-summary`, {
-                reorderSectionKey: sectionKey,
-                displayStaffNames: sectionKey === 'daily' ? assignment.taskGroups.dailyStaffOrder : assignment.taskGroups.periodicStaffOrder,
-              })}
-            </div>
+            {!isPeriodicSection ? (
+              <div className="task-group-progress-row">
+                {renderGroupSummaryControl(tasks, `${assignment.id}-${sectionKey}-summary`, {
+                  reorderSectionKey: sectionKey,
+                  displayStaffNames: sectionKey === 'daily' ? assignment.taskGroups.dailyStaffOrder : assignment.taskGroups.periodicStaffOrder,
+                })}
+              </div>
+            ) : null}
           </div>
           <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
         </summary>
@@ -1383,7 +1390,8 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
             subtitle: `${task.zone} · ${task.taskGroup}`,
             showGroupField: true,
             showZoneField: true,
-            showStatusBadge: true,
+            showStatusBadge: !isPeriodicSection,
+            showAssignmentDisplay: !isPeriodicSection,
             alwaysShowRecommendation: true,
           })) : (
             <div className="task-row unscheduled-task-empty">
@@ -1400,6 +1408,8 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
 
   function renderHolidayPreferredSection(title, subtitle, zoneEntries, sectionKey) {
     const allTasks = zoneEntries.flatMap((zone) => zone.tasks);
+    const isPeriodicSection = sectionKey === 'periodic';
+
     return (
       <details className={`task-group-disclosure facility-section ${sectionKey === 'daily' ? 'facility-section-daily' : 'facility-section-periodic'}`} open>
         <summary className="task-group-summary">
@@ -1407,12 +1417,14 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
             <strong>{title}</strong>
             <div className="muted">{subtitle}</div>
             {renderInlineProgressBar(allTasks, `${assignment.id}-${sectionKey}-progress`)}
-            <div className="task-group-progress-row">
-              {renderGroupSummaryControl(allTasks, `${assignment.id}-${sectionKey}-summary`, {
-                reorderSectionKey: sectionKey,
-                displayStaffNames: sectionKey === 'daily' ? assignment.taskGroups.dailyStaffOrder : assignment.taskGroups.periodicStaffOrder,
-              })}
-            </div>
+            {!isPeriodicSection ? (
+              <div className="task-group-progress-row">
+                {renderGroupSummaryControl(allTasks, `${assignment.id}-${sectionKey}-summary`, {
+                  reorderSectionKey: sectionKey,
+                  displayStaffNames: sectionKey === 'daily' ? assignment.taskGroups.dailyStaffOrder : assignment.taskGroups.periodicStaffOrder,
+                })}
+              </div>
+            ) : null}
           </div>
           <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
         </summary>
@@ -1425,7 +1437,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
                   {renderInlineProgressBar(zone.tasks, `${assignment.id}-${sectionKey}-${zone.zone}-progress`)}
                 </div>
                 <div className="task-disclosure-summary-right zone-summary-right">
-                  {renderGroupSummaryControl(zone.tasks, `${assignment.id}-${sectionKey}-${zone.zone}`)}
+                  {!isPeriodicSection ? renderGroupSummaryControl(zone.tasks, `${assignment.id}-${sectionKey}-${zone.zone}`) : null}
                   <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
                 </div>
               </summary>
@@ -1434,7 +1446,8 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
                   suffix: `${sectionKey}-${zone.zone}`,
                   subtitle: task.taskGroup,
                   showZoneField: false,
-                  showStatusBadge: true,
+                  showStatusBadge: !isPeriodicSection,
+                  showAssignmentDisplay: !isPeriodicSection,
                   alwaysShowRecommendation: true,
                 }))}
               </div>
