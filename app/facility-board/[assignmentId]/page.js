@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ViewOptionsMenu from './ViewOptionsMenu';
 import { taskCardTemplates as demoTaskCardTemplates } from '../../../data/demo-data';
 import { notFound } from 'next/navigation';
 import { getOrganiserBoardData } from '../../../lib/app-data';
@@ -489,16 +490,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             <p className="muted">Board day {assignment.boardDay} · {totalZones} zones · {assignment.stats.staffCount || 0} assigned staff</p>
           </div>
           <div className="cta-row no-top-gap facility-board-detail-actions">
-            <details className="facility-board-view-menu">
-              <summary className="button secondary facility-board-view-trigger">View options<span aria-hidden="true">⌄</span></summary>
-              <div className="facility-board-view-dropdown">
-                <Link className="facility-board-view-link facility-board-view-link-action" href="/">Back to dashboard</Link>
-                <Link className="facility-board-view-link facility-board-view-link-action" href="/">Organise from dashboard</Link>
-                <Link className={`facility-board-view-link ${view === 'tasks' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=tasks`}>Task view</Link>
-                <Link className={`facility-board-view-link ${view === 'staff' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=staff`}>Staff view</Link>
-                <Link className={`facility-board-view-link ${view === 'time' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=time`}>Time view</Link>
-              </div>
-            </details>
+            <ViewOptionsMenu queryBase={queryBase} view={view} />
             <div className="facility-board-inline-day-nav">
               <div className="facility-board-inline-day-nav-row">
                 {previousBoardDay ? <Link className="button secondary slim" href={`?day=${previousBoardDay}&view=${view}`}>← Prev</Link> : <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">← Prev</span>}
