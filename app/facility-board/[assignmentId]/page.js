@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { taskCardTemplates as demoTaskCardTemplates } from '../../../data/demo-data';
 import { notFound } from 'next/navigation';
 import { getOrganiserBoardData } from '../../../lib/app-data';
 import { DEFAULT_APP_TIME_ZONE, formatBoardDayKeyForTimeZone, getTimeZoneFormatter } from '../../../lib/app-timezone.js';
@@ -19,6 +20,113 @@ const FACILITY_ROUTE_ALIASES = {
   'board-boheme': 'boheme',
   'board-holiday': 'holiday',
 };
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+function parseScheduleDate(value) {
+  if (!value || value === '—' || value === 'As triggered') {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function diffInDays(targetDate, baseDate = new Date()) {
+  if (!targetDate) {
+    return null;
+  }
+
+  const target = new Date(targetDate);
+  target.setHours(0, 0, 0, 0);
+  const base = new Date(baseDate);
+  base.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - base.getTime()) / DAY_IN_MS);
+}
+
+function parseBoardDayDate(dayKey) {
+  return dayKey ? new Date(`${dayKey}T00:00:00+10:00`) : new Date();
+}
+
+function formatLastCompletedAge(value, baseDate = new Date()) {
+  const days = diffInDays(parseScheduleDate(value), baseDate);
+  if (days === null) return 'Not completed yet';
+  if (days === 0) return 'Done today';
+  if (days < 0) return `${Math.abs(days)} days ago`;
+  return `In ${days} days`;
+}
+
+function formatNextScheduleTiming(value, baseDate = new Date()) {
+  const days = diffInDays(parseScheduleDate(value), baseDate);
+  if (days === null) return 'Triggered manually';
+  if (days === 0) return 'Due today';
+  if (days < 0) return `${Math.abs(days)} days overdue`;
+  return `Due in ${days} days`;
+}
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function getStandbySuitability(task, baseDate = new Date()) {
+  const nextDueDate = parseScheduleDate(task.suggestedDue);
+  const lastCompletedDate = parseScheduleDate(task.lastCompleted);
+  const daysUntilDue = diffInDays(nextDueDate, baseDate);
+  const daysSinceDone = lastCompletedDate ? Math.max(0, -diffInDays(lastCompletedDate, baseDate)) : 999;
+  const estimatedMinutes = Number(task.estimatedMinutes) || 0;
+
+  let urgencyScore = 20;
+  if (daysUntilDue === null) urgencyScore = 45;
+  else if (daysUntilDue <= 0) urgencyScore = 100;
+  else if (daysUntilDue <= 2) urgencyScore = 85;
+  else if (daysUntilDue <= 7) urgencyScore = 65;
+  else if (daysUntilDue <= 14) urgencyScore = 45;
+
+  let staleScore = 35;
+  if (!lastCompletedDate) staleScore = 100;
+  else if (daysSinceDone >= 30) staleScore = 90;
+  else if (daysSinceDone >= 14) staleScore = 70;
+  else if (daysSinceDone >= 7) staleScore = 50;
+  else if (daysSinceDone >= 3) staleScore = 30;
+  else staleScore = 10;
+
+  let effortScore = 60;
+  if (!estimatedMinutes) effortScore = 50;
+  else if (estimatedMinutes <= 10) effortScore = 100;
+  else if (estimatedMinutes <= 20) effortScore = 80;
+  else if (estimatedMinutes <= 30) effortScore = 60;
+  else if (estimatedMinutes <= 45) effortScore = 40;
+  else effortScore = 20;
+
+  const score = clampScore((urgencyScore * 0.45) + (staleScore * 0.35) + (effortScore * 0.20));
+  const label = score >= 80 ? 'Strong standby' : score >= 60 ? 'Good standby' : score >= 40 ? 'Possible standby' : 'Low standby';
+  return { score, label, urgencyScore, staleScore, effortScore, daysUntilDue, daysSinceDone };
+}
+
+function getLastCompletedSortValue(task) {
+  const days = diffInDays(parseScheduleDate(task.lastCompleted));
+  return days === null ? -1 : -days;
+}
+
+function getExtraFacilityTasks(assignment, options = {}) {
+  const scheduledTemplateIds = new Set(assignment.tasks.map((task) => task.templateId).filter(Boolean));
+  const baseDate = options.baseDate ?? new Date();
+  const facilityName = getFacilityDisplayName(assignment.location);
+  const allTaskTemplates = Array.isArray(options.taskTemplates) && options.taskTemplates.length ? options.taskTemplates : demoTaskCardTemplates;
+
+  return allTaskTemplates
+    .filter((task) => getFacilityDisplayName(task.facility) === facilityName && !scheduledTemplateIds.has(task.templateId))
+    .map((task) => ({ ...task, standbySuitability: getStandbySuitability(task, baseDate) }))
+    .sort((a, b) => {
+      const scoreDiff = (b.standbySuitability?.score ?? 0) - (a.standbySuitability?.score ?? 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      const lastCompletedDiff = getLastCompletedSortValue(b) - getLastCompletedSortValue(a);
+      if (lastCompletedDiff !== 0) return lastCompletedDiff;
+      if (a.zone !== b.zone) return String(a.zone || '').localeCompare(String(b.zone || ''));
+      if (a.taskGroup !== b.taskGroup) return String(a.taskGroup || '').localeCompare(String(b.taskGroup || ''));
+      return String(a.title || '').localeCompare(String(b.title || ''));
+    });
+}
 
 function getFacilityDisplayName(value = '') {
   return FACILITY_NAME_ALIASES[value] ?? value;
@@ -267,6 +375,7 @@ function buildFacilityAssignmentFromBoard(board, assignmentId, boardDay) {
     .map((card) => ({
       id: card.id,
       title: card.title,
+      templateId: card.templateId,
       status: normalizeTaskStatus(card.status),
       photoRequired: String(card.required || '').toLowerCase().includes('photo'),
       commentRequired: Boolean(card.issueNote),
@@ -335,6 +444,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
 
   const dailyTasks = assignment.tasks.filter((task) => !task.frequency || String(task.frequency).toLowerCase() === 'daily');
   const periodicTasks = assignment.tasks.filter((task) => task.frequency && String(task.frequency).toLowerCase() !== 'daily');
+  const extraTasks = getExtraFacilityTasks(assignment, { baseDate: parseBoardDayDate(assignment.boardDay) });
   const dailyGroups = groupAssignmentTasks(dailyTasks);
   const periodicGroups = groupAssignmentTasks(periodicTasks);
   const grouped = groupAssignmentTasks(assignment.tasks);
@@ -443,8 +553,8 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             title: 'Extra tasks',
             subtitle: 'Suitable standby work',
             groups: [],
-            tasks: [],
-            summary: { count: 0 },
+            tasks: extraTasks,
+            summary: { count: extraTasks.length },
           }].map((section) => (
             <article className={`card facility-board-task-column facility-board-task-column-${section.key}`} key={`${assignment.id}-${section.key}`}>
               <div className="facility-board-task-column-header">
@@ -461,12 +571,30 @@ export default async function FacilityBoardPage({ params, searchParams }) {
 
               {section.key === 'extra' ? (
                 <div className="facility-board-extra-list">
-                  <div className="task-row unscheduled-task-empty">
-                    <div>
-                      <strong>No extra tasks available</strong>
-                      <div className="muted">Everything in this facility is already on the board for this day.</div>
+                  {section.tasks.length ? section.tasks.map((task) => (
+                    <div className="task-row facility-board-task-row facility-board-extra-task-row" key={`${assignment.id}-extra-${task.templateId}`}>
+                      <div>
+                        <strong>{task.title}</strong>
+                        <div className="muted">{task.zone} · {task.taskGroup}</div>
+                        <div className="facility-board-task-meta-row">
+                          <span className="flag">{task.frequency || 'Manual'}</span>
+                          <span className="flag">{task.standbySuitability?.score ?? 0}/100</span>
+                          <span className="flag">{task.standbySuitability?.label ?? 'Standby'}</span>
+                        </div>
+                        <div className="facility-board-extra-task-meta">
+                          <span>Last done: {formatLastCompletedAge(task.lastCompleted, parseBoardDayDate(assignment.boardDay))}</span>
+                          <span>Next: {formatNextScheduleTiming(task.suggestedDue, parseBoardDayDate(assignment.boardDay))}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )) : (
+                    <div className="task-row unscheduled-task-empty">
+                      <div>
+                        <strong>No extra tasks available</strong>
+                        <div className="muted">Everything in this facility is already on the board for this day.</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="facility-board-task-column-groups">
