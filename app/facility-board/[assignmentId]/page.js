@@ -488,7 +488,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                             ) : <strong>{group.zone}</strong>}
                             <div className="task-group-progress-stack"><div className="task-group-progress"><span style={{ width: `${group.progress}%` }} /></div></div>
                           </div>
-                          {section.key === 'periodic' ? <div className="task-disclosure-summary-right zone-summary-right"><span className="badge">{formatGroupSummaryLabel(group.tasks)}</span></div> : null}
+                          {section.key === 'periodic' ? <div className="task-disclosure-summary-right zone-summary-right" /> : null}
                         </summary>
                         <div className="task-group-body">
                           {isDaily ? group.tasks.map((task) => {
@@ -523,12 +523,10 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                     <strong>#{String(task.displayOrder).padStart(3, '0')} · {task.title}</strong>
                                     <div className="muted">{task.taskGroup}</div>
                                     <div className="facility-board-task-meta-row">
-                                      <span className={`button slim staff-tag ${task.staff && task.staff !== 'Unallocated' ? `primary staff-theme-${slugifyValue(task.staff)}` : 'secondary'}`}>{task.staff || 'Unallocated'}</span>
                                       {task.photoRequired ? <span className="flag">Photo</span> : null}
                                       {task.commentRequired ? <span className="flag">Comment</span> : null}
                                     </div>
                                   </div>
-                                  <span className={`${statusClass(task.status)}`}>{formatTaskLabel(task.status)}</span>
                                 </div>
                               ))}
                             </div>
