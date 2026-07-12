@@ -72,18 +72,22 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
               <div>
                 <strong>{label} {stage === 'daily' ? 'Daily List' : stage === 'remaining' ? 'Remaining Work' : 'Assigned Active List'}</strong>
               </div>
-              <div className="workflow-banner-actions">
-                <button className="button secondary" type="button" onClick={refreshProgress}>
-                  Refresh progress
-                </button>
-                <button className="button secondary close-modal-button" type="button" onClick={() => setIsOpen(false)}>Close</button>
-              </div>
+              {stage === 'remaining' ? (
+                <div className="workflow-banner-actions">
+                  <button className="button secondary" type="button" onClick={refreshProgress}>
+                    Refresh progress
+                  </button>
+                  <button className="button secondary close-modal-button" type="button" onClick={() => setIsOpen(false)}>Close</button>
+                </div>
+              ) : null}
             </header>
 
             {stage === 'daily' ? (
               <CleanerTaskFlow
                 tasks={dailyTasks}
                 onTaskSaved={refreshProgress}
+                onRefreshProgress={refreshProgress}
+                onClose={() => setIsOpen(false)}
                 onComplete={() => {
                   refreshProgress();
                   setStage('remaining');
@@ -108,6 +112,8 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
               <CleanerTaskFlow
                 tasks={activeTasks}
                 onTaskSaved={refreshProgress}
+                onRefreshProgress={refreshProgress}
+                onClose={() => setIsOpen(false)}
                 onComplete={handleComplete}
                 completeLabel="Submit and close active list"
                 completeTitle="Remaining assigned tasks complete"

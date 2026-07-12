@@ -46,7 +46,7 @@ function createInitialTaskState(tasks) {
   }));
 }
 
-export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, completionMode = 'completed', completeLabel = 'Submit and go back', completeTitle = 'All tasks submitted', completeDescription = 'Everything on this active list has been graded. Submit to go back.' }) {
+export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefreshProgress, onClose, completionMode = 'completed', completeLabel = 'Submit and go back', completeTitle = 'All tasks submitted', completeDescription = 'Everything on this active list has been graded. Submit to go back.' }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const cardRefs = useRef([]);
@@ -261,29 +261,11 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, comple
   }).length;
   const allTasksCompleted = tasks.length > 0 && completedCount === tasks.length;
   const nextIncompleteIndex = findNextIncompleteIndex();
-  const hasPreviousTask = currentIndex > 0;
-  const hasNextTask = currentIndex < tasks.length - 1;
 
   return (
     <div className="compact-flow">
-      <div className="flow-position" aria-label="Checklist navigation">
-        <button
-          className="button secondary flow-nav-button"
-          type="button"
-          onClick={() => focusJob(Math.max(currentIndex - 1, 0))}
-          disabled={!hasPreviousTask}
-        >
-          Previous job
-        </button>
+      <div className="flow-position" aria-label="Checklist controls">
         <span className="badge flow-current-job-chip">Current job {Math.min(currentIndex + 1, tasks.length)} of {tasks.length}</span>
-        <button
-          className="button secondary flow-nav-button"
-          type="button"
-          onClick={() => focusJob(Math.min(currentIndex + 1, tasks.length - 1))}
-          disabled={!hasNextTask}
-        >
-          Next job
-        </button>
         <button
           className="button secondary flow-nav-button"
           type="button"
@@ -295,6 +277,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, comple
           disabled={nextIncompleteIndex < 0}
         >
           {nextIncompleteIndex >= 0 ? 'Next open task' : 'All tasks completed'}
+        </button>
+        <button className="button secondary flow-nav-button" type="button" onClick={onRefreshProgress}>
+          Refresh progress
+        </button>
+        <button className="button secondary flow-nav-button close-modal-button" type="button" onClick={onClose}>
+          Close
         </button>
       </div>
 

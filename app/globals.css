@@ -2620,7 +2620,6 @@ code {
 .compact-modal-header > div:first-child {
   justify-self: center;
   text-align: center;
-  padding-left: 124px;
 }
 
 .compact-modal-header strong {
