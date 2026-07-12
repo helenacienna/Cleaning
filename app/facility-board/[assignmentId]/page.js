@@ -636,7 +636,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                               </details>
                             );
                           }) : (
-                            <div className={`facility-board-task-list ${group.tasks.length === 1 ? 'facility-board-task-list-single' : ''}`}>
+                            <div className={`facility-board-task-list ${section.key === 'periodic' ? 'facility-board-task-list-periodic' : ''} ${group.tasks.length === 1 ? 'facility-board-task-list-single' : ''}`}>
                               {group.tasks.map((task) => (
                                 <div className="task-row facility-board-task-row" key={task.id}>
                                   <div>

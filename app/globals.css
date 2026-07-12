@@ -2904,7 +2904,8 @@ button.button {
   gap: 6px;
 }
 
-.facility-board-task-list-single {
+.facility-board-task-list-single,
+.facility-board-task-list-periodic {
   grid-template-columns: minmax(0, 1fr);
 }
 
