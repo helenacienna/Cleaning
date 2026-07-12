@@ -6,7 +6,11 @@ const REFRESH_DEBOUNCE_MS = 450;
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
-  return Number(task?.score) >= 3 || task?.status === 'completed';
+  return Number(task?.score) >= 4 || task?.status === 'completed';
+}
+
+function isTaskGraded(task) {
+  return Number(task?.score) >= 1;
 }
 
 function formatStatusLabel(task) {
@@ -42,7 +46,7 @@ function createInitialTaskState(tasks) {
   }));
 }
 
-export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
+export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, completionMode = 'completed', completeLabel = 'Submit and go back', completeTitle = 'All tasks submitted', completeDescription = 'Everything on this active list has been graded. Submit to go back.' }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const cardRefs = useRef([]);
@@ -250,7 +254,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
 
   const completedCount = tasks.filter((task) => {
     const localState = taskState[task.id] || {};
-    return isTaskCompleted({ ...task, score: localState.grade ?? task.score });
+    const mergedTask = { ...task, score: localState.grade ?? task.score };
+    return completionMode === 'graded' ? isTaskGraded(mergedTask) : isTaskCompleted(mergedTask);
   }).length;
   const allTasksCompleted = tasks.length > 0 && completedCount === tasks.length;
   const nextIncompleteIndex = findNextIncompleteIndex();
@@ -378,12 +383,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           <article className="compact-task-card current-task-card graded-task-card" ref={endCardRef}>
             <span className="completion-bubble completion-done">Finished</span>
             <div>
-              <h3>All tasks submitted</h3>
-              <div className="muted">Everything on this active list has been graded. Submit to go back.</div>
+              <h3>{completeTitle}</h3>
+              <div className="muted">{completeDescription}</div>
             </div>
             <div className="compact-actions">
               <button className="button primary" type="button" onClick={() => onComplete?.()}>
-                Submit and go back
+                {completeLabel}
               </button>
             </div>
           </article>
