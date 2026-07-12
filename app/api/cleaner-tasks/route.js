@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../lib/prisma';
 import { buildComment } from '../../../lib/cleaner-data';
-import { markTaskTemplateCompleted } from '../../../lib/task-scheduling';
 
 function mapGradeToAuditStatus(grade) {
   if (grade >= 4) return 'passed';
@@ -47,15 +46,17 @@ export async function POST(request) {
   const completionStatus = grade >= 4 ? 'completed' : grade === 3 ? 'partial' : 'failed';
   const taskStatus = grade >= 4 ? 'completed' : 'in_progress';
 
-  await prisma.$transaction(async (tx) => {
-    await tx.taskInstance.update({
+  const startedAt = Date.now();
+
+  try {
+    await prisma.taskInstance.update({
       where: { id: taskInstanceId },
       data: {
         status: taskStatus,
       },
     });
 
-    await tx.taskExecution.upsert({
+    await prisma.taskExecution.upsert({
       where: { taskInstanceId },
       update: {
         startedAt: taskInstance.status === 'scheduled' || taskInstance.status === 'unscheduled' ? now : undefined,
@@ -77,7 +78,7 @@ export async function POST(request) {
     });
 
     if (grade <= 3) {
-      await tx.taskAudit.create({
+      await prisma.taskAudit.create({
         data: {
           taskInstanceId,
           auditedByStaffId: null,
@@ -91,16 +92,14 @@ export async function POST(request) {
         },
       });
     }
-
-    if (grade >= 4) {
-      await markTaskTemplateCompleted(tx, taskInstanceId, now);
-    }
-  }, {
-    timeout: 20000,
-  });
+  } catch (error) {
+    console.error('cleaner-task-save-failed', { taskInstanceId, grade, code: error?.code, message: error?.message });
+    return NextResponse.json({ error: 'Unable to save cleaner task' }, { status: 500 });
+  }
 
   return NextResponse.json({
     ok: true,
+    elapsedMs: Date.now() - startedAt,
     message: grade >= 4 ? 'Task completed' : 'Task saved for follow-up',
   });
 }

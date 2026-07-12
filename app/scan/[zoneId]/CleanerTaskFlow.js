@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-const REFRESH_DEBOUNCE_MS = 450;
+const REFRESH_DEBOUNCE_MS = 2000;
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
@@ -137,7 +137,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, comple
         statusMessage: result.message || 'Task saved',
         statusTone: 'tone-green',
       });
-      queueRefresh();
+      if (grade <= 3 || index >= tasks.length - 1) {
+        queueRefresh();
+      }
     } catch {
       updateTask(taskId, {
         grade: current.grade ?? null,
