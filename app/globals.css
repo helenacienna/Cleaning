@@ -2399,16 +2399,33 @@ code {
   position: sticky;
   top: 10px;
   z-index: 2;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   padding: 10px;
   border-radius: 18px;
   background: rgba(255,255,255,0.96);
   border: 1px solid rgba(15,23,42,0.10);
   backdrop-filter: blur(10px);
   box-shadow: 0 10px 28px rgba(15,23,42,0.08);
+}
+
+.flow-position .button,
+.flow-current-job-chip {
+  width: 100%;
+  min-height: 46px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.flow-current-job-chip {
+  border: 1px solid rgba(89,195,255,0.32);
+  background: linear-gradient(135deg, rgba(89,195,255,0.18), rgba(88,240,193,0.14));
 }
 
 .flow-position .muted {
@@ -2491,18 +2508,27 @@ code {
 
 .compact-task-copy {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
 }
 
 .compact-task-zone,
 .compact-task-title {
-  font-size: 16px;
   line-height: 1.2;
   font-weight: 700;
   color: var(--text);
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.compact-task-zone {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.compact-task-title {
+  font-size: 17px;
 }
 
 .compact-flags,
@@ -2583,18 +2609,24 @@ code {
 }
 
 .modal-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(15,23,42,0.08);
 }
 
+.compact-modal-header > div:first-child {
+  justify-self: center;
+  text-align: center;
+  padding-left: 124px;
+}
+
 .compact-modal-header strong {
   display: block;
   margin-top: 6px;
-  font-size: 17px;
+  font-size: 19px;
 }
 
 .close-modal-button {

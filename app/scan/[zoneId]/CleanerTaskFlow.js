@@ -261,12 +261,31 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, comple
   }).length;
   const allTasksCompleted = tasks.length > 0 && completedCount === tasks.length;
   const nextIncompleteIndex = findNextIncompleteIndex();
+  const hasPreviousTask = currentIndex > 0;
+  const hasNextTask = currentIndex < tasks.length - 1;
 
   return (
     <div className="compact-flow">
-      <div className="flow-position">
+      <div className="flow-position" aria-label="Checklist navigation">
         <button
-          className="button secondary"
+          className="button secondary flow-nav-button"
+          type="button"
+          onClick={() => focusJob(Math.max(currentIndex - 1, 0))}
+          disabled={!hasPreviousTask}
+        >
+          Previous job
+        </button>
+        <span className="badge flow-current-job-chip">Current job {Math.min(currentIndex + 1, tasks.length)} of {tasks.length}</span>
+        <button
+          className="button secondary flow-nav-button"
+          type="button"
+          onClick={() => focusJob(Math.min(currentIndex + 1, tasks.length - 1))}
+          disabled={!hasNextTask}
+        >
+          Next job
+        </button>
+        <button
+          className="button secondary flow-nav-button"
           type="button"
           onClick={() => {
             if (nextIncompleteIndex >= 0) {
@@ -275,9 +294,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, comple
           }}
           disabled={nextIncompleteIndex < 0}
         >
-          {nextIncompleteIndex >= 0 ? 'Jump to next open task' : 'All tasks completed'}
+          {nextIncompleteIndex >= 0 ? 'Next open task' : 'All tasks completed'}
         </button>
-        <span className="badge">Current job {Math.min(currentIndex + 1, tasks.length)} of {tasks.length}</span>
       </div>
 
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
