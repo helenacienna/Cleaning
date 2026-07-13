@@ -4404,3 +4404,48 @@ button.button {
   border: 1px solid rgba(37,99,235,0.18);
   background: rgba(219,234,254,0.62);
 }
+
+.facility-board-report-metrics {
+  display: grid;
+  grid-template-columns: 1.35fr repeat(7, minmax(92px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+
+.facility-board-report-metrics .daily-report-score-card,
+.facility-board-report-metrics .daily-report-metric {
+  padding: 10px 12px;
+  border-radius: 16px;
+  min-width: 0;
+}
+
+.facility-board-report-metrics .daily-report-score-card strong {
+  font-size: 30px;
+}
+
+.facility-board-report-metrics .daily-report-metric strong {
+  font-size: 22px;
+}
+
+.facility-board-report-metrics .daily-report-score-card span,
+.facility-board-report-metrics .daily-report-metric span {
+  font-size: 10px;
+}
+
+.facility-board-report-score-card div {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 980px) {
+  .facility-board-report-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .facility-board-report-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

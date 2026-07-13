@@ -320,6 +320,31 @@ function renderOutcomeProgress(tasks = [], className = 'progress') {
   );
 }
 
+function hasNumericGrade(grade) {
+  return Number.isFinite(Number(grade));
+}
+
+function getFacilityReportTotals(tasks = []) {
+  const total = tasks.length;
+  const completed = getOutcomeCompletedCount(tasks);
+  const partial = tasks.filter((task) => hasNumericGrade(task.score) && Number(task.score) === 3).length;
+  const resolvedIssues = tasks.filter((task) => task.resolvedIssue).length;
+  const unresolvedIssues = tasks.filter((task) => !task.resolvedIssue && hasNumericGrade(task.score) && Number(task.score) <= 2).length;
+  const photoCount = tasks.reduce((sum, task) => sum + (task.photoCount ?? taskPhotos(task).length), 0);
+  const noteCount = tasks.filter((task) => String(task.issueNote ?? '').trim().length > 0).length;
+
+  return {
+    total,
+    completed,
+    completionPercent: total ? Math.round((completed / total) * 100) : 0,
+    partial,
+    resolvedIssues,
+    unresolvedIssues,
+    photoCount,
+    noteCount,
+  };
+}
+
 function taskPhotos(task = {}) {
   return task.photos ?? [];
 }
@@ -531,6 +556,10 @@ export default async function FacilityBoardPage({ params, searchParams }) {
   const pixelsPerMinute = Math.max(basePixelsPerMinute, requiredPixelsPerMinute);
   const timelineHeight = Math.max(720, Math.round(timelineRangeMinutes * pixelsPerMinute));
   const tickHeight = Math.max(24, Math.round(scaleStepMinutes * pixelsPerMinute));
+  const reportTotals = getFacilityReportTotals(assignment.tasks);
+  const facilityResultLabel = reportTotals.unresolvedIssues
+    ? 'Supervisor review required'
+    : reportTotals.resolvedIssues ? 'Issues found and resolved' : 'No low-score issues';
 
   return (
     <main className="page facility-board-detail-shell">
@@ -538,8 +567,8 @@ export default async function FacilityBoardPage({ params, searchParams }) {
         <div className="facility-board-detail-top">
           <div className="facility-board-detail-title-block">
             <span className="badge">{source === 'prisma' ? 'Facility board · live' : 'Facility board · demo task content'}</span>
-            <h1>{assignment.location}</h1>
-            <p className="muted">Board day {assignment.boardDay} · {totalZones} zones · {assignment.stats.staffCount || 0} assigned staff</p>
+            <h1>{assignment.location} facility tasks</h1>
+            <p className="muted">{formatBoardDateLabel(assignment.boardDay, timeZone)} · {assignment.stats.staffCount || 0} assigned staff · {totalZones} zones · {facilityResultLabel}</p>
           </div>
           <div className="cta-row no-top-gap facility-board-detail-actions">
             <ViewOptionsMenu queryBase={queryBase} view={view} />
@@ -559,6 +588,21 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             </div>
           </div>
         </div>
+
+        <section className="facility-board-report-metrics" aria-label="Facility task summary">
+          <div className="daily-report-score-card facility-board-report-score-card">
+            <span>Completion</span>
+            <strong>{reportTotals.completionPercent}%</strong>
+            <div>{reportTotals.completed}/{reportTotals.total} complete</div>
+          </div>
+          <div className="daily-report-metric"><span>Total tasks</span><strong>{reportTotals.total}</strong></div>
+          <div className="daily-report-metric"><span>Completed</span><strong className="tone-green">{reportTotals.completed}</strong></div>
+          <div className="daily-report-metric"><span>Partial</span><strong className="tone-amber">{reportTotals.partial}</strong></div>
+          <div className="daily-report-metric"><span>Resolved issues</span><strong className={reportTotals.resolvedIssues ? 'tone-amber' : 'tone-green'}>{reportTotals.resolvedIssues}</strong></div>
+          <div className="daily-report-metric"><span>Unresolved</span><strong className={reportTotals.unresolvedIssues ? 'tone-red' : 'tone-green'}>{reportTotals.unresolvedIssues}</strong></div>
+          <div className="daily-report-metric"><span>Photos</span><strong>{reportTotals.photoCount}</strong></div>
+          <div className="daily-report-metric"><span>Notes</span><strong>{reportTotals.noteCount}</strong></div>
+        </section>
 
         {renderOutcomeProgress(assignment.tasks)}
       </section>
