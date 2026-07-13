@@ -895,45 +895,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
         </section>
       )}
 
-      <div className="sticky-board-action-bar facility-board-day-nav-bar">
-        {previousBoardDay ? (
-          <Link className="button secondary slim" href={`?day=${previousBoardDay}&view=${view}`}>
-            ← Prev
-          </Link>
-        ) : (
-          <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">
-            ← Prev
-          </span>
-        )}
-        <div className="sticky-board-center-stack facility-board-day-nav-center">
-          <div className="sticky-board-date">{formatBoardDateLabel(assignment.boardDay, timeZone)}</div>
-          <div className="facility-board-day-chip-row">
-            {boardDays.map((day) => (
-              <Link
-                key={day}
-                className={`button slim ${day === assignment.boardDay ? 'primary' : 'secondary'}`}
-                href={`?day=${day}&view=${view}`}
-              >
-                {formatBoardDateLabel(day, timeZone)}
-              </Link>
-            ))}
-          </div>
-          {todayBoardDay && todayBoardDay !== assignment.boardDay ? (
-            <Link className="button secondary slim sticky-board-today-button" href={`?day=${todayBoardDay}&view=${view}`}>
-              Back to today
-            </Link>
-          ) : null}
-        </div>
-        {nextBoardDay ? (
-          <Link className="button secondary slim" href={`?day=${nextBoardDay}&view=${view}`}>
-            Next →
-          </Link>
-        ) : (
-          <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">
-            Next →
-          </span>
-        )}
-      </div>
     </main>
   );
 }

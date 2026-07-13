@@ -2794,7 +2794,7 @@ button.button {
 .facility-board-detail-shell {
   display: grid;
   gap: 12px;
-  padding-bottom: 170px;
+  padding-bottom: 32px;
 }
 
 .facility-board-detail-hero {
