@@ -4382,3 +4382,25 @@ button.button {
   font-size: 12px;
   font-weight: 700;
 }
+
+.zone-summary-title-with-photo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.facility-board-zone-photo-indicator {
+  min-width: 24px;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
+
+.add-another-photo-panel {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(37,99,235,0.18);
+  background: rgba(219,234,254,0.62);
+}

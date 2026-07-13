@@ -331,6 +331,13 @@ function TaskPhotoIndicator({ task }) {
   return <span className="facility-board-photo-indicator" title={`${count} photo${count === 1 ? '' : 's'} attached`} aria-label={`${count} photo${count === 1 ? '' : 's'} attached`}>📷</span>;
 }
 
+function ZonePhotoIndicator({ tasks = [] }) {
+  const count = tasks.reduce((sum, task) => sum + (task.photoCount ?? taskPhotos(task).length), 0);
+  if (!count) return null;
+
+  return <span className="facility-board-photo-indicator facility-board-zone-photo-indicator" title={`${count} photo${count === 1 ? '' : 's'} attached in this zone`} aria-label={`${count} photo${count === 1 ? '' : 's'} attached in this zone`}>📷</span>;
+}
+
 function TaskPhotoGallery({ task }) {
   const photos = taskPhotos(task);
   if (!photos.length) return null;
@@ -647,10 +654,10 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                           <div className={`zone-summary-left ${isDaily ? 'zone-summary-left-compact' : ''}`}>
                             {isDaily ? (
                               <div className="zone-summary-top-row">
-                                <strong>{group.zone}</strong>
+                                <strong className="zone-summary-title-with-photo">{group.zone}<ZonePhotoIndicator tasks={group.tasks} /></strong>
                                 <span className="task-group-progress-label zone-summary-progress-label-compact">{group.completed}/{group.total} complete</span>
                               </div>
-                            ) : <strong>{group.zone}</strong>}
+                            ) : <strong className="zone-summary-title-with-photo">{group.zone}<ZonePhotoIndicator tasks={group.tasks} /></strong>}
                             <div className="task-group-progress-stack">{renderOutcomeProgress(group.tasks, 'task-group-progress')}</div>
                           </div>
                           {section.key === 'periodic' ? <div className="task-disclosure-summary-right zone-summary-right" /> : null}

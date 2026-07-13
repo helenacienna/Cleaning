@@ -278,8 +278,8 @@ export default async function DailyReportPage({ searchParams }) {
                         <PhotoEvidence task={task} />
                       </div>
                       <div className="daily-report-task-meta">
-                        <span className={`badge tone-${initialGrade === 1 ? 'red' : 'amber'}`}>Initial {initialGrade}/5</span>
-                        <span className="badge tone-green">Corrected {grade}/5</span>
+                        <span className={`badge tone-${initialGrade === 1 ? 'red' : 'amber'}`}>Initial Score {initialGrade}</span>
+                        <span className="badge tone-green">Corrected Score {grade}</span>
                         <span className="flag">{task.execution?.photos?.length ?? 0} photos</span>
                       </div>
                     </article>

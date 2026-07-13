@@ -44,6 +44,8 @@ function createInitialTaskState(tasks) {
       issueGrade: task.initialGrade ?? null,
       issueStage: task.initialGrade && !task.resolvedIssue ? 'needs_correction' : null,
       finalGrade: task.resolvedIssue ? task.score ?? null : null,
+      lastPhotoType: null,
+      askAnotherPhoto: false,
       resolvedIssue: Boolean(task.resolvedIssue),
       statusMessage: hasGrade ? (completed ? 'Completed earlier' : 'Saved earlier for follow-up') : '',
       statusTone: completed ? 'tone-green' : hasGrade ? 'tone-amber' : 'muted',
@@ -380,14 +382,11 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         photos: nextPhotos,
         saving: false,
         saved: true,
+        lastPhotoType: photoType,
+        askAnotherPhoto: true,
         statusMessage: photoType === 'exception' ? 'Before photo uploaded' : 'After photo uploaded',
         statusTone: 'tone-green',
       });
-      if (photoType === 'exception' && current.issueStage === 'needs_issue_photo') {
-        window.setTimeout(() => {
-          void saveInitialIssue(taskId, index);
-        }, 50);
-      }
       queueRefresh();
     } catch {
       updateTask(taskId, {
@@ -487,7 +486,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
-          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0, photos: [], resolutionNote: '', issueGrade: null, issueStage: null, finalGrade: null, resolvedIssue: false, statusMessage: '', statusTone: 'muted' };
+          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0, photos: [], resolutionNote: '', issueGrade: null, issueStage: null, finalGrade: null, lastPhotoType: null, askAnotherPhoto: false, resolvedIssue: false, statusMessage: '', statusTone: 'muted' };
           const selectedGrade = localState.grade;
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
           const beforePhotos = photos.filter((photo) => photo.photoType === 'exception');
@@ -533,7 +532,44 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     <span className="flag">Before photos: {beforePhotos.length}</span>
                     <span className="flag">After photos: {afterPhotos.length}</span>
                   </div>
-                  {localState.issueStage === 'needs_issue_photo' ? (
+                  {localState.askAnotherPhoto ? (
+                    <div className="add-another-photo-panel">
+                      <strong>Would you like to add another photo?</strong>
+                      <div className="compact-actions">
+                        <label className="button secondary">
+                          Add another {localState.lastPhotoType === 'exception' ? 'before' : 'after'} photo
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              void uploadPhoto(task.id, file, localState.lastPhotoType || 'completion', index);
+                              event.target.value = '';
+                            }}
+                          />
+                        </label>
+                        <button
+                          className="button primary"
+                          type="button"
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onMouseDown={(event) => event.stopPropagation()}
+                          onTouchStart={(event) => event.stopPropagation()}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            updateTask(task.id, { askAnotherPhoto: false });
+                            if (localState.lastPhotoType === 'exception' && localState.issueStage === 'needs_issue_photo') {
+                              void saveInitialIssue(task.id, index);
+                            }
+                          }}
+                        >
+                          No, continue
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                  {localState.issueStage === 'needs_issue_photo' && !localState.askAnotherPhoto ? (
                     <div className="task-actions compact-actions">
                       <label className="button photo-required-button">
                         Add before issue photo
@@ -549,7 +585,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                         />
                       </label>
                     </div>
-                  ) : (
+                  ) : !localState.askAnotherPhoto ? (
                     <>
                       <label className="builder-field">
                         <span className="muted">Correction note</span>
@@ -613,7 +649,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                         </div>
                       ) : null}
                     </>
-                  )}
+                  ) : null}
                 </div>
               ) : localState.resolvedIssue ? (
                 <div className="resolved-issue-panel resolved-issue-panel-done">
