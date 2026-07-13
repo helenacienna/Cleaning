@@ -247,6 +247,37 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     });
   }
 
+  function deferIssueCorrection(taskId, index) {
+    const current = taskState[taskId] || {};
+    const issueGrade = Number(current.issueGrade || current.grade);
+
+    updateTask(taskId, {
+      grade: issueGrade,
+      finalGrade: null,
+      issueStage: 'deferred',
+      resolvedIssue: false,
+      saving: false,
+      saved: true,
+      statusMessage: 'Issue recorded for correction later',
+      statusTone: 'tone-amber',
+    });
+
+    if (index >= tasks.length - 1) {
+      window.setTimeout(() => {
+        endCardRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 20);
+    } else {
+      const nextIndex = Math.min(index + 1, tasks.length - 1);
+      window.setTimeout(() => {
+        focusJob(nextIndex);
+      }, 20);
+    }
+    queueRefresh();
+  }
+
   async function resolveIssue(taskId, index) {
     const current = taskState[taskId] || {};
     const issueGrade = Number(current.issueGrade || current.grade);
@@ -596,6 +627,23 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                           rows={2}
                         />
                       </label>
+                      <div className="task-actions compact-actions">
+                        <button
+                          className="button secondary"
+                          type="button"
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onMouseDown={(event) => event.stopPropagation()}
+                          onTouchStart={(event) => event.stopPropagation()}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            deferIssueCorrection(task.id, index);
+                          }}
+                          disabled={localState.saving}
+                        >
+                          Correct later
+                        </button>
+                      </div>
                       <div className="grade-buttons resolved-issue-buttons" aria-label={`Corrected score for ${task.title}`}>
                         {[3, 4, 5].map((finalGrade) => (
                           <button
