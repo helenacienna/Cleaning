@@ -4449,3 +4449,29 @@ button.button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.facility-board-detail-hero .facility-board-detail-top {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  text-align: center;
+}
+
+.facility-board-detail-hero .facility-board-detail-title-block {
+  justify-items: center;
+  max-width: 760px;
+}
+
+.facility-board-header-nav-row {
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.facility-board-header-nav-row .facility-board-inline-day-nav {
+  width: min(720px, 100%);
+}
+
+.facility-board-header-nav-row .facility-board-day-chip-row {
+  justify-content: center;
+}

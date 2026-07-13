@@ -570,21 +570,22 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             <h1>{assignment.location} facility tasks</h1>
             <p className="muted">{formatBoardDateLabel(assignment.boardDay, timeZone)} · {assignment.stats.staffCount || 0} assigned staff · {totalZones} zones · {facilityResultLabel}</p>
           </div>
-          <div className="cta-row no-top-gap facility-board-detail-actions">
-            <ViewOptionsMenu queryBase={queryBase} view={view} />
-            <div className="facility-board-inline-day-nav">
-              <div className="facility-board-inline-day-nav-row">
-                {previousBoardDay ? <Link className="button secondary slim" href={`?day=${previousBoardDay}&view=${view}`}>← Prev</Link> : <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">← Prev</span>}
-                <div className="button secondary slim facility-board-inline-day-label">{formatBoardDateLabel(assignment.boardDay, timeZone)}</div>
-                {nextBoardDay ? <Link className="button secondary slim" href={`?day=${nextBoardDay}&view=${view}`}>Next →</Link> : <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">Next →</span>}
-              </div>
-              <div className="facility-board-day-chip-row">
-                {boardDays.map((day) => (
-                  <Link key={day} className={`button slim ${day === assignment.boardDay ? 'primary' : 'secondary'}`} href={`?day=${day}&view=${view}`}>
-                    {formatBoardDateLabel(day, timeZone)}
-                  </Link>
-                ))}
-              </div>
+        </div>
+
+        <div className="cta-row no-top-gap facility-board-detail-actions facility-board-header-nav-row">
+          <ViewOptionsMenu queryBase={queryBase} view={view} />
+          <div className="facility-board-inline-day-nav">
+            <div className="facility-board-inline-day-nav-row">
+              {previousBoardDay ? <Link className="button secondary slim" href={`?day=${previousBoardDay}&view=${view}`}>← Prev</Link> : <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">← Prev</span>}
+              <div className="button secondary slim facility-board-inline-day-label">{formatBoardDateLabel(assignment.boardDay, timeZone)}</div>
+              {nextBoardDay ? <Link className="button secondary slim" href={`?day=${nextBoardDay}&view=${view}`}>Next →</Link> : <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">Next →</span>}
+            </div>
+            <div className="facility-board-day-chip-row">
+              {boardDays.map((day) => (
+                <Link key={day} className={`button slim ${day === assignment.boardDay ? 'primary' : 'secondary'}`} href={`?day=${day}&view=${view}`}>
+                  {formatBoardDateLabel(day, timeZone)}
+                </Link>
+              ))}
             </div>
           </div>
         </div>
