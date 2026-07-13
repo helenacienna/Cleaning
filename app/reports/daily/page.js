@@ -11,8 +11,12 @@ export const metadata = {
 
 function parseGrade(task) {
   const latestAudit = task.audits?.[0] ?? null;
-  const gradeMatch = task.execution?.completionComment?.match(/Grade\s+(\d)\/5/i);
+  const gradeMatch = task.execution?.completionComment?.match(/grade\s*:?\s*(\d)\/5/i);
   return latestAudit?.auditScore ?? (gradeMatch ? Number(gradeMatch[1]) : null);
+}
+
+function hasNumericGrade(grade) {
+  return Number.isFinite(Number(grade));
 }
 
 function scoreTone(grade, task) {
@@ -70,21 +74,19 @@ function buildEmailHref({ facility, staffName, day, totals, reportUrl }) {
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-async function loadReport({ facility, staffName, day }) {
+async function loadReport({ facility, staffName, day, ids }) {
   const prisma = await getPrisma();
-  if (!prisma || !facility || !staffName || !day) {
+  if (!prisma || (!ids.length && (!facility || !staffName || !day))) {
     return { source: prisma ? 'missing-input' : 'no-db', tasks: [] };
   }
 
   const range = dayRange(day);
   const tasks = await prisma.taskInstance.findMany({
-    where: {
+    where: ids.length ? {
+      id: { in: ids },
+    } : {
       assignedStaff: { fullName: staffName },
       taskTemplate: { recurrenceType: 'daily' },
-      OR: [
-        { plannedFacility: { name: facility } },
-        { facility: { name: facility } },
-      ],
       ...(range ? {
         OR: [
           { plannedFacility: { name: facility }, plannedRunDate: range.start },
@@ -92,7 +94,12 @@ async function loadReport({ facility, staffName, day }) {
           { plannedFacility: { name: facility }, dueAt: { gte: range.start, lt: range.end } },
           { facility: { name: facility }, dueAt: { gte: range.start, lt: range.end } },
         ],
-      } : {}),
+      } : {
+        OR: [
+          { plannedFacility: { name: facility } },
+          { facility: { name: facility } },
+        ],
+      }),
     },
     include: {
       facility: true,
@@ -123,24 +130,25 @@ async function loadReport({ facility, staffName, day }) {
 
 export default async function DailyReportPage({ searchParams }) {
   const params = await searchParams;
+  const ids = typeof params?.ids === 'string' ? params.ids.split(',').map((id) => id.trim()).filter(Boolean) : [];
   const facility = typeof params?.facility === 'string' ? params.facility : '';
   const staffName = typeof params?.staff === 'string' ? params.staff : '';
   const day = typeof params?.day === 'string' ? params.day : '';
-  const { source, tasks } = await loadReport({ facility, staffName, day });
+  const { source, tasks } = await loadReport({ facility, staffName, day, ids });
 
   const scored = tasks.map((task) => ({ task, grade: parseGrade(task) }));
   const totals = {
     total: tasks.length,
     completed: scored.filter(({ grade, task }) => Number(grade) >= 4 || task.status === 'completed').length,
-    partial: scored.filter(({ grade }) => Number(grade) === 3).length,
-    lowScores: scored.filter(({ grade }) => Number(grade) <= 2).length,
+    partial: scored.filter(({ grade }) => hasNumericGrade(grade) && Number(grade) === 3).length,
+    lowScores: scored.filter(({ grade }) => hasNumericGrade(grade) && Number(grade) <= 2).length,
     photoCount: tasks.reduce((sum, task) => sum + (task.execution?.photos?.length ?? 0), 0),
     noteCount: tasks.filter((task) => (task.execution?.completionComment ?? '').trim().length > 0).length,
   };
   const completionPercent = percent(totals.completed, totals.total);
-  const reportPath = `/reports/daily?facility=${encodeURIComponent(facility)}&staff=${encodeURIComponent(staffName)}&day=${encodeURIComponent(day)}`;
+  const reportPath = `/reports/daily?facility=${encodeURIComponent(facility)}&staff=${encodeURIComponent(staffName)}&day=${encodeURIComponent(day)}${ids.length ? `&ids=${encodeURIComponent(ids.join(','))}` : ''}`;
   const emailHref = buildEmailHref({ facility, staffName, day, totals, reportUrl: reportPath });
-  const followUps = scored.filter(({ grade }) => Number(grade) <= 3);
+  const followUps = scored.filter(({ grade }) => hasNumericGrade(grade) && Number(grade) <= 3);
 
   return (
     <main className="page daily-report-page">

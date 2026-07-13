@@ -92,7 +92,7 @@ export async function POST(request) {
     note,
   });
 
-  const reportUrl = `/reports/daily?facility=${encodeURIComponent(resolvedFacility)}&staff=${encodeURIComponent(resolvedStaff)}&day=${encodeURIComponent(boardDay)}`;
+  const reportUrl = `/reports/daily?facility=${encodeURIComponent(resolvedFacility)}&staff=${encodeURIComponent(resolvedStaff)}&day=${encodeURIComponent(boardDay)}&ids=${encodeURIComponent(tasks.map((task) => task.id).join(','))}`;
 
   return NextResponse.json({
     ok: true,
