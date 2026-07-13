@@ -4587,3 +4587,24 @@ button.button {
   font-size: 13px;
   font-weight: 900;
 }
+
+.facility-board-extra-task-row > div {
+  padding-bottom: 36px;
+}
+
+.facility-board-extra-task-meta {
+  font-size: inherit;
+}
+
+.facility-board-extra-task-meta span {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.facility-board-extra-standby-label {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}

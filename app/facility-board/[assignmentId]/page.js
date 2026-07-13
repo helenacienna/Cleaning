@@ -667,7 +667,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                         <div className="muted">{task.zone}</div>
                         <strong>{task.title}</strong>
                         <div className="facility-board-task-meta-row">
-                          <span className="flag">{task.standbySuitability?.label ?? 'Standby'}</span>
+                          <span className="flag facility-board-extra-standby-label">{task.standbySuitability?.label ?? 'Standby'}</span>
                         </div>
                         <div className="facility-board-extra-task-meta">
                           <span>Last done: {formatLastCompletedAge(task.lastCompleted, parseBoardDayDate(assignment.boardDay))}</span>
