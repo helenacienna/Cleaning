@@ -4282,3 +4282,39 @@ button.button {
   display: block;
   height: 100%;
 }
+
+.daily-report-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.daily-report-photo-card {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(15,23,42,0.10);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.94);
+  box-shadow: 0 10px 24px rgba(15,23,42,0.08);
+}
+
+.daily-report-photo-card img {
+  display: block;
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  background: rgba(15,23,42,0.06);
+}
+
+.daily-report-photo-card figcaption {
+  padding: 8px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.daily-report-task-row > .daily-report-photo-grid {
+  grid-column: 1 / -1;
+}

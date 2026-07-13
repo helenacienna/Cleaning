@@ -42,6 +42,26 @@ function hasNumericGrade(grade) {
   return Number.isFinite(Number(grade));
 }
 
+function taskPhotos(task) {
+  return task.execution?.photos ?? [];
+}
+
+function PhotoEvidence({ task }) {
+  const photos = taskPhotos(task);
+  if (!photos.length) return null;
+
+  return (
+    <div className="daily-report-photo-grid">
+      {photos.map((photo, index) => (
+        <figure className="daily-report-photo-card" key={photo.id}>
+          <img src={`/api/task-photos/${photo.id}`} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" />
+          <figcaption>{photo.photoType === 'issue' ? 'Issue photo' : photo.photoType === 'completion' ? 'Completion photo' : `Photo ${index + 1}`}</figcaption>
+        </figure>
+      ))}
+    </div>
+  );
+}
+
 function scoreTone(grade, task) {
   const initialGrade = parseInitialGrade(task);
   if (parseResolvedIssue(task) && initialGrade === 1) return 'red';
@@ -255,6 +275,7 @@ export default async function DailyReportPage({ searchParams }) {
                         <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
                         {parseIssueNote(task) ? <p><strong>Initial issue:</strong> {parseIssueNote(task)}</p> : null}
                         {parseResolutionNote(task) ? <p><strong>Correction:</strong> {parseResolutionNote(task)}</p> : null}
+                        <PhotoEvidence task={task} />
                       </div>
                       <div className="daily-report-task-meta">
                         <span className={`badge tone-${initialGrade === 1 ? 'red' : 'amber'}`}>Initial {initialGrade}/5</span>
@@ -282,6 +303,7 @@ export default async function DailyReportPage({ searchParams }) {
                         <strong>{task.titleSnapshot}</strong>
                         <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
                         {parseIssueNote(task) ? <p>{parseIssueNote(task)}</p> : null}
+                        <PhotoEvidence task={task} />
                       </div>
                       <div className="daily-report-task-meta">
                         <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
@@ -315,6 +337,7 @@ export default async function DailyReportPage({ searchParams }) {
                       <span className="flag">{task.execution?.photos?.length ?? 0} photos</span>
                       {(task.execution?.completionComment ?? '').trim() ? <span className="flag">Note</span> : null}
                     </div>
+                    <PhotoEvidence task={task} />
                   </article>
                 ))}
               </div>
