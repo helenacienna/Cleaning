@@ -17,6 +17,7 @@ export default function ViewOptionsMenu({ queryBase, view }) {
         <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/">Back to dashboard</Link>
         <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/">Organise from dashboard</Link>
         <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'tasks' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=tasks`}>Task view</Link>
+        <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'order' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=order`}>Task order</Link>
         <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'staff' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=staff`}>Staff view</Link>
         <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'time' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=time`}>Time view</Link>
       </div>

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import ViewOptionsMenu from './ViewOptionsMenu';
 import ExtraTaskScheduleCard from './ExtraTaskScheduleCard';
+import FacilityTaskOrderView from './FacilityTaskOrderView';
 import { taskCardTemplates as demoTaskCardTemplates } from '../../../data/demo-data';
 import { notFound } from 'next/navigation';
 import { getOrganiserBoardData } from '../../../lib/app-data';
@@ -511,7 +512,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
   const resolvedAssignmentId = normalizeFacilityRouteId(assignmentId);
   const resolvedSearchParams = await searchParams;
   const requestedDay = typeof resolvedSearchParams?.day === 'string' ? resolvedSearchParams.day : null;
-  const view = resolvedSearchParams?.view === 'staff' ? 'staff' : resolvedSearchParams?.view === 'time' ? 'time' : 'tasks';
+  const view = resolvedSearchParams?.view === 'staff' ? 'staff' : resolvedSearchParams?.view === 'time' ? 'time' : resolvedSearchParams?.view === 'order' ? 'order' : 'tasks';
   const { board, source } = await getOrganiserBoardData();
   const timeZone = board?.timeZone ?? DEFAULT_APP_TIME_ZONE;
   const boardDay = getActiveBoardDay(board?.days ?? [], requestedDay, timeZone);
@@ -616,7 +617,9 @@ export default async function FacilityBoardPage({ params, searchParams }) {
         </section>
       )}
 
-      {view === 'tasks' ? (
+      {view === 'order' ? (
+        <FacilityTaskOrderView tasks={assignment.tasks} facility={assignment.location} />
+      ) : view === 'tasks' ? (
         <section className="facility-board-task-columns">
           {[{
             key: 'daily',
