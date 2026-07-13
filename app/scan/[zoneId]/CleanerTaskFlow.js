@@ -40,6 +40,9 @@ function createInitialTaskState(tasks) {
       saved: completed,
       photoCount: task.photoCount ?? 0,
       photos: task.photos ?? [],
+      resolutionNote: task.resolutionNote ?? '',
+      issueGrade: task.initialGrade ?? null,
+      resolvedIssue: Boolean(task.resolvedIssue),
       statusMessage: hasGrade ? (completed ? 'Completed earlier' : 'Saved earlier for follow-up') : '',
       statusTone: completed ? 'tone-green' : hasGrade ? 'tone-amber' : 'muted',
     }];
@@ -137,8 +140,14 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         saved: true,
         statusMessage: result.message || 'Task saved',
         statusTone: 'tone-green',
+        issueGrade: grade <= 2 ? grade : current.issueGrade ?? null,
+        resolvedIssue: false,
       });
-      if (index >= tasks.length - 1) {
+      if (grade <= 2) {
+        window.setTimeout(() => {
+          focusJob(index);
+        }, 20);
+      } else if (index >= tasks.length - 1) {
         window.setTimeout(() => {
           endCardRef.current?.scrollIntoView({
             behavior: 'smooth',
@@ -160,6 +169,80 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         saving: false,
         saved: false,
         statusMessage: 'Save failed — tap a grade to retry',
+        statusTone: 'tone-red',
+      });
+      window.setTimeout(() => {
+        focusJob(index);
+      }, 20);
+    }
+  }
+
+  async function resolveIssue(taskId, finalGrade, index) {
+    const current = taskState[taskId] || {};
+    const issueGrade = Number(current.issueGrade || current.grade);
+
+    if (!Number.isInteger(issueGrade) || issueGrade < 1 || issueGrade > 2) {
+      updateTask(taskId, {
+        statusMessage: 'Save the initial grade 1–2 issue first',
+        statusTone: 'tone-red',
+      });
+      return;
+    }
+
+    updateTask(taskId, {
+      saving: true,
+      statusMessage: 'Saving resolved issue…',
+      statusTone: 'tone-amber',
+    });
+
+    try {
+      const response = await fetch('/api/cleaner-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taskInstanceId: taskId,
+          grade: finalGrade,
+          note: current.note || '',
+          resolvedFromGrade: issueGrade,
+          resolutionNote: current.resolutionNote || '',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to save resolved issue');
+      }
+
+      const result = await response.json();
+      updateTask(taskId, {
+        grade: finalGrade,
+        saving: false,
+        saved: true,
+        issueGrade,
+        resolvedIssue: true,
+        statusMessage: result.message || `Resolved from ${issueGrade}/5 to ${finalGrade}/5`,
+        statusTone: 'tone-green',
+      });
+
+      if (index >= tasks.length - 1) {
+        window.setTimeout(() => {
+          endCardRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }, 20);
+      } else {
+        const nextIndex = Math.min(index + 1, tasks.length - 1);
+        window.setTimeout(() => {
+          focusJob(nextIndex);
+        }, 20);
+      }
+      queueRefresh();
+    } catch {
+      updateTask(taskId, {
+        saving: false,
+        statusMessage: 'Resolved issue save failed — try again',
         statusTone: 'tone-red',
       });
       window.setTimeout(() => {
@@ -309,9 +392,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
-          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
+          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0, photos: [], resolutionNote: '', issueGrade: null, resolvedIssue: false, statusMessage: '', statusTone: 'muted' };
           const selectedGrade = localState.grade;
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
+          const unresolvedLowGrade = Number(selectedGrade) <= 2 && !localState.resolvedIssue;
 
           return (
             <article
@@ -341,6 +425,49 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
               )}
 
               {photos.length > 0 && <CleanerPhotoLightbox photos={photos} title={task.title} />}
+
+              {unresolvedLowGrade ? (
+                <div className="resolved-issue-panel" onClick={(event) => event.stopPropagation()}>
+                  <div>
+                    <strong>Issue recorded — was it corrected now?</strong>
+                    <span className="muted">Keep the initial {selectedGrade}/5 issue on record, then add the corrected final result if fixed.</span>
+                  </div>
+                  <label className="builder-field">
+                    <span className="muted">Correction note</span>
+                    <textarea
+                      value={localState.resolutionNote || ''}
+                      onChange={(event) => updateTask(task.id, { resolutionNote: event.target.value, statusMessage: '' })}
+                      placeholder="What was corrected? Optional but useful for the supervisor report."
+                      rows={2}
+                    />
+                  </label>
+                  <div className="grade-buttons resolved-issue-buttons" aria-label={`Resolve ${task.title}`}>
+                    {[3, 4, 5].map((finalGrade) => (
+                      <button
+                        className={`grade-button grade-${finalGrade}`}
+                        type="button"
+                        key={finalGrade}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onTouchStart={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          void resolveIssue(task.id, finalGrade, index);
+                        }}
+                        disabled={localState.saving}
+                      >
+                        <span>Corrected to {finalGrade}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : localState.resolvedIssue ? (
+                <div className="resolved-issue-panel resolved-issue-panel-done">
+                  <strong>Resolved issue</strong>
+                  <span className="muted">Initial {localState.issueGrade}/5 issue corrected to {selectedGrade}/5.</span>
+                </div>
+              ) : null}
 
               <div className="grade-panel compact-grade-panel">
                 <div>

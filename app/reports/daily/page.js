@@ -15,11 +15,37 @@ function parseGrade(task) {
   return latestAudit?.auditScore ?? (gradeMatch ? Number(gradeMatch[1]) : null);
 }
 
+function parseInitialGrade(task) {
+  const match = task.execution?.completionComment?.match(/initial-grade\s*:?\s*(\d)\/5/i);
+  return match ? Number(match[1]) : null;
+}
+
+function parseResolvedIssue(task) {
+  return /\[issue-resolved:true\]/i.test(task.execution?.completionComment ?? '');
+}
+
+function parseResolutionNote(task) {
+  const match = task.execution?.completionComment?.match(/\[resolution-note\]\s*([^\n]+)/i);
+  return match ? match[1].trim() : '';
+}
+
+function parseIssueNote(task) {
+  return String(task.execution?.completionComment ?? '')
+    .replace(/\[grade:\d\/5\]\s*/ig, '')
+    .replace(/\[initial-grade:\d\/5\]\s*/ig, '')
+    .replace(/\[issue-resolved:true\]\s*/ig, '')
+    .replace(/\[resolution-note\]\s*[^\n]+\s*/ig, '')
+    .trim();
+}
+
 function hasNumericGrade(grade) {
   return Number.isFinite(Number(grade));
 }
 
 function scoreTone(grade, task) {
+  const initialGrade = parseInitialGrade(task);
+  if (parseResolvedIssue(task) && initialGrade === 1) return 'red';
+  if (parseResolvedIssue(task) && initialGrade === 2) return 'amber';
   if (Number(grade) >= 4 || task.status === 'completed') return 'green';
   if (Number(grade) === 3) return 'amber';
   if (Number(grade) <= 2) return 'red';
@@ -27,6 +53,8 @@ function scoreTone(grade, task) {
 }
 
 function scoreLabel(grade, task) {
+  const initialGrade = parseInitialGrade(task);
+  if (parseResolvedIssue(task) && initialGrade) return `Resolved ${initialGrade}→${grade}`;
   if (Number(grade) >= 1) return `${grade}/5`;
   if (task.status === 'completed') return 'Complete';
   return 'Not scored';
@@ -65,7 +93,8 @@ function buildEmailHref({ facility, staffName, day, totals, reportUrl }) {
     '',
     `Completed: ${totals.completed}/${totals.total}`,
     `Partial: ${totals.partial}`,
-    `Follow-ups: ${totals.lowScores}`,
+    `Resolved issues: ${totals.resolvedIssues}`,
+    `Unresolved issues: ${totals.unresolvedIssues}`,
     `Photos: ${totals.photoCount}`,
     `Notes: ${totals.noteCount}`,
     '',
@@ -136,12 +165,19 @@ export default async function DailyReportPage({ searchParams }) {
   const day = typeof params?.day === 'string' ? params.day : '';
   const { source, tasks } = await loadReport({ facility, staffName, day, ids });
 
-  const scored = tasks.map((task) => ({ task, grade: parseGrade(task) }));
+  const scored = tasks.map((task) => ({
+    task,
+    grade: parseGrade(task),
+    initialGrade: parseInitialGrade(task),
+    resolvedIssue: parseResolvedIssue(task),
+  }));
   const totals = {
     total: tasks.length,
-    completed: scored.filter(({ grade, task }) => Number(grade) >= 4 || task.status === 'completed').length,
+    completed: scored.filter(({ grade, task }) => Number(grade) >= 3 || task.status === 'completed').length,
     partial: scored.filter(({ grade }) => hasNumericGrade(grade) && Number(grade) === 3).length,
-    lowScores: scored.filter(({ grade }) => hasNumericGrade(grade) && Number(grade) <= 2).length,
+    lowScores: scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2).length,
+    resolvedIssues: scored.filter(({ resolvedIssue }) => resolvedIssue).length,
+    unresolvedIssues: scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2).length,
     photoCount: tasks.reduce((sum, task) => sum + (task.execution?.photos?.length ?? 0), 0),
     noteCount: tasks.filter((task) => (task.execution?.completionComment ?? '').trim().length > 0).length,
   };
@@ -149,7 +185,8 @@ export default async function DailyReportPage({ searchParams }) {
   const reportPath = `/reports/daily?facility=${encodeURIComponent(facility)}&staff=${encodeURIComponent(staffName)}&day=${encodeURIComponent(day)}${ids.length ? `&ids=${encodeURIComponent(ids.join(','))}` : ''}`;
   const publicBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-3a1422.up.railway.app';
   const emailHref = buildEmailHref({ facility, staffName, day, totals, reportUrl: `${publicBaseUrl}${reportPath}` });
-  const followUps = scored.filter(({ grade }) => hasNumericGrade(grade) && Number(grade) <= 3);
+  const resolvedIssues = scored.filter(({ resolvedIssue }) => resolvedIssue);
+  const followUps = scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2);
 
   return (
     <main className="page daily-report-page">
@@ -181,7 +218,8 @@ export default async function DailyReportPage({ searchParams }) {
               <div className="daily-report-metric"><span>Total tasks</span><strong>{totals.total}</strong></div>
               <div className="daily-report-metric"><span>Completed</span><strong className="tone-green">{totals.completed}</strong></div>
               <div className="daily-report-metric"><span>Partial</span><strong className="tone-amber">{totals.partial}</strong></div>
-              <div className="daily-report-metric"><span>Follow-ups</span><strong className={totals.lowScores ? 'tone-red' : 'tone-green'}>{totals.lowScores}</strong></div>
+              <div className="daily-report-metric"><span>Resolved issues</span><strong className={totals.resolvedIssues ? 'tone-amber' : 'tone-green'}>{totals.resolvedIssues}</strong></div>
+              <div className="daily-report-metric"><span>Unresolved</span><strong className={totals.unresolvedIssues ? 'tone-red' : 'tone-green'}>{totals.unresolvedIssues}</strong></div>
               <div className="daily-report-metric"><span>Photos</span><strong>{totals.photoCount}</strong></div>
               <div className="daily-report-metric"><span>Notes</span><strong>{totals.noteCount}</strong></div>
             </section>
@@ -197,9 +235,37 @@ export default async function DailyReportPage({ searchParams }) {
                 <div><span className="muted">Facility</span><strong>{facility}</strong></div>
                 <div><span className="muted">Cleaner</span><strong>{staffName}</strong></div>
                 <div><span className="muted">Date</span><strong>{formatDayLabel(day)}</strong></div>
-                <div><span className="muted">Result</span><strong>{totals.lowScores ? 'Supervisor review recommended' : 'No low-score follow-ups'}</strong></div>
+                <div><span className="muted">Result</span><strong>{totals.unresolvedIssues ? 'Supervisor review required' : totals.resolvedIssues ? 'Issues found and resolved' : 'No low-score issues'}</strong></div>
               </div>
             </section>
+
+            {resolvedIssues.length ? (
+              <section className="card daily-report-card daily-report-followups">
+                <div className="panel-title">
+                  <div>
+                    <h2>Resolved issues</h2>
+                    <p className="muted">Problems found during the walkthrough and corrected before completion.</p>
+                  </div>
+                </div>
+                <div className="daily-report-task-list">
+                  {resolvedIssues.map(({ task, grade, initialGrade }) => (
+                    <article className="daily-report-task-row report-resolved" key={`resolved-${task.id}`}>
+                      <div>
+                        <strong>{task.titleSnapshot}</strong>
+                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                        {parseIssueNote(task) ? <p><strong>Initial issue:</strong> {parseIssueNote(task)}</p> : null}
+                        {parseResolutionNote(task) ? <p><strong>Correction:</strong> {parseResolutionNote(task)}</p> : null}
+                      </div>
+                      <div className="daily-report-task-meta">
+                        <span className={`badge tone-${initialGrade === 1 ? 'red' : 'amber'}`}>Initial {initialGrade}/5</span>
+                        <span className="badge tone-green">Corrected {grade}/5</span>
+                        <span className="flag">{task.execution?.photos?.length ?? 0} photos</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             {followUps.length ? (
               <section className="card daily-report-card daily-report-followups">
@@ -210,12 +276,12 @@ export default async function DailyReportPage({ searchParams }) {
                   </div>
                 </div>
                 <div className="daily-report-task-list">
-                  {followUps.map(({ task, grade }) => (
+                    {followUps.map(({ task, grade }) => (
                     <article className="daily-report-task-row report-attention" key={`followup-${task.id}`}>
                       <div>
                         <strong>{task.titleSnapshot}</strong>
                         <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
-                        {task.execution?.completionComment ? <p>{task.execution.completionComment}</p> : null}
+                        {parseIssueNote(task) ? <p>{parseIssueNote(task)}</p> : null}
                       </div>
                       <div className="daily-report-task-meta">
                         <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>

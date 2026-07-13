@@ -25,6 +25,9 @@ export async function POST(request) {
   const taskInstanceId = body?.taskInstanceId;
   const grade = Number(body?.grade);
   const note = typeof body?.note === 'string' ? body.note : '';
+  const resolutionNote = typeof body?.resolutionNote === 'string' ? body.resolutionNote : '';
+  const resolvedFromGrade = Number(body?.resolvedFromGrade);
+  const isResolution = Number.isInteger(resolvedFromGrade) && resolvedFromGrade >= 1 && resolvedFromGrade <= 2 && grade >= 3;
 
   if (!taskInstanceId || !Number.isInteger(grade) || grade < 1 || grade > 5) {
     return NextResponse.json({ error: 'Invalid cleaner task payload' }, { status: 400 });
@@ -53,9 +56,16 @@ export async function POST(request) {
   }
 
   const now = new Date();
-  const completionComment = buildComment({ grade, note });
-  const completionStatus = grade >= 4 ? 'completed' : grade === 3 ? 'partial' : 'failed';
-  const taskStatus = grade >= 4 ? 'completed' : 'in_progress';
+  const completionComment = isResolution
+    ? [
+        buildComment({ grade, note }),
+        `[initial-grade:${resolvedFromGrade}/5]`,
+        '[issue-resolved:true]',
+        resolutionNote.trim() ? `[resolution-note] ${resolutionNote.trim()}` : '[resolution-note] Corrected during checklist.',
+      ].join('\n')
+    : buildComment({ grade, note });
+  const completionStatus = grade >= 3 ? 'completed' : 'failed';
+  const taskStatus = grade >= 3 ? 'completed' : 'in_progress';
 
   const startedAt = Date.now();
 
@@ -75,7 +85,7 @@ export async function POST(request) {
         completedByStaffId: taskInstance.assignedStaffId,
         completionStatus,
         completionComment,
-        issueRaised: grade <= 2,
+        issueRaised: isResolution ? true : grade <= 2,
       },
       create: {
         taskInstanceId,
@@ -84,21 +94,25 @@ export async function POST(request) {
         completedByStaffId: taskInstance.assignedStaffId,
         completionStatus,
         completionComment,
-        issueRaised: grade <= 2,
+        issueRaised: isResolution ? true : grade <= 2,
       },
     });
 
-    if (grade <= 3) {
+    if (grade <= 3 || isResolution) {
       await prisma.taskAudit.create({
         data: {
           taskInstanceId,
           auditedByStaffId: null,
           auditScore: grade,
-          auditStatus: mapGradeToAuditStatus(grade),
-          auditComment: note || 'Cleaner marked this task below pass threshold.',
-          reworkRequired: grade <= 2,
-          reworkReason: grade <= 2 ? 'Cleaner reported issue during completion.' : null,
-          managerAction: mapGradeToManagerAction(grade),
+          auditStatus: isResolution ? 'passed' : mapGradeToAuditStatus(grade),
+          auditComment: isResolution
+            ? `Resolved issue: initial grade ${resolvedFromGrade}/5 corrected to ${grade}/5. ${resolutionNote || note || ''}`.trim()
+            : note || 'Cleaner marked this task below pass threshold.',
+          reworkRequired: isResolution ? false : grade <= 2,
+          reworkReason: isResolution
+            ? `Resolved grade ${resolvedFromGrade}/5 issue during checklist.`
+            : grade <= 2 ? 'Cleaner reported issue during completion.' : null,
+          managerAction: isResolution ? 'close' : mapGradeToManagerAction(grade),
           auditedAt: now,
         },
       });
@@ -111,6 +125,6 @@ export async function POST(request) {
   return NextResponse.json({
     ok: true,
     elapsedMs: Date.now() - startedAt,
-    message: grade >= 4 ? 'Task completed' : 'Task saved for follow-up',
+    message: isResolution ? 'Resolved issue saved' : grade >= 3 ? 'Task completed' : 'Task saved for follow-up',
   });
 }

@@ -8,6 +8,15 @@ function compactList(items, limit = 6) {
   return items.length > limit ? `${shown}; +${items.length - limit} more` : shown;
 }
 
+function parseInitialGrade(comment = '') {
+  const match = String(comment || '').match(/initial-grade\s*:?\s*(\d)\/5/i);
+  return match ? Number(match[1]) : null;
+}
+
+function isResolvedIssue(comment = '') {
+  return /\[issue-resolved:true\]/i.test(String(comment || ''));
+}
+
 export async function POST(request) {
   const prisma = await getPrisma();
 
@@ -57,14 +66,20 @@ export async function POST(request) {
 
   const scoredTasks = tasks.map((task) => {
     const latestAudit = task.audits?.[0] ?? null;
-    const gradeMatch = task.execution?.completionComment?.match(/Grade\s+(\d)\/5/i);
+    const gradeMatch = task.execution?.completionComment?.match(/grade\s*:?\s*(\d)\/5/i);
     const grade = latestAudit?.auditScore ?? (gradeMatch ? Number(gradeMatch[1]) : null);
-    return { task, grade };
+    return {
+      task,
+      grade,
+      initialGrade: parseInitialGrade(task.execution?.completionComment ?? ''),
+      resolvedIssue: isResolvedIssue(task.execution?.completionComment ?? ''),
+    };
   });
 
-  const completed = scoredTasks.filter(({ grade, task }) => Number(grade) >= 4 || task.status === 'completed').length;
+  const completed = scoredTasks.filter(({ grade, task }) => Number(grade) >= 3 || task.status === 'completed').length;
   const partial = scoredTasks.filter(({ grade }) => Number(grade) === 3).length;
-  const lowScores = scoredTasks.filter(({ grade }) => Number(grade) <= 2);
+  const lowScores = scoredTasks.filter(({ grade, resolvedIssue }) => !resolvedIssue && Number(grade) <= 2);
+  const resolvedIssues = scoredTasks.filter(({ resolvedIssue }) => resolvedIssue);
   const photoCount = tasks.reduce((sum, task) => sum + (task.execution?.photos?.length ?? 0), 0);
   const noteCount = tasks.filter((task) => (task.execution?.completionComment ?? '').trim().length > 0).length;
   const boardDay = day || tasks.find((task) => task.plannedRunDate || task.dueAt)?.plannedRunDate?.toISOString?.().slice(0, 10) || tasks[0]?.dueAt?.toISOString?.().slice(0, 10) || 'today';
@@ -79,14 +94,14 @@ export async function POST(request) {
   const identifier = `${resolvedFacility}:${resolvedStaff}:${boardDay}:daily-complete`;
   const note = [
     `${resolvedStaff} completed the ${resolvedFacility} daily checklist for ${boardDay}.`,
-    `${completed}/${tasks.length} complete, ${partial} partial, ${lowScores.length} low-score follow-ups.`,
+    `${completed}/${tasks.length} complete, ${partial} partial, ${resolvedIssues.length} resolved issue(s), ${lowScores.length} unresolved issue(s).`,
     `${photoCount} photo(s), ${noteCount} note(s).`,
     `Follow-ups: ${compactList(lowScoreSummary)}`,
   ].join('\n');
 
   await recordNotification('daily-report', identifier, {
     title: `${resolvedFacility} daily checklist report`,
-    tone: lowScores.length ? 'amber' : 'green',
+    tone: lowScores.length ? 'red' : resolvedIssues.length ? 'amber' : 'green',
     severity: lowScores.length ? 'warning' : 'info',
     audience: 'manager',
     note,
@@ -106,6 +121,7 @@ export async function POST(request) {
       completed,
       partial,
       lowScores: lowScores.length,
+      resolvedIssues: resolvedIssues.length,
       photoCount,
       noteCount,
     },

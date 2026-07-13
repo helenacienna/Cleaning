@@ -16,18 +16,47 @@ function isCompletedTask(task) {
 }
 
 function isIssueTask(task) {
-  return Number(task?.score) > 0 && Number(task?.score) <= 2;
+  return !task?.resolvedIssue && Number(task?.score) > 0 && Number(task?.score) <= 2;
 }
 
-function renderProgressBar(completed, total, issues = 0) {
-  const safeTotal = Math.max(0, Number(total) || 0);
-  const completedWidth = safeTotal ? Math.max(0, Math.min(100, Math.round((completed / safeTotal) * 100))) : 0;
-  const issueWidth = safeTotal ? Math.max(0, Math.min(100, Math.round((issues / safeTotal) * 100))) : 0;
+function getOutcomeCounts(tasks = []) {
+  return tasks.reduce((counts, task) => {
+    const score = Number(task?.score);
+    const initialGrade = Number(task?.initialGrade);
+    if (task?.resolvedIssue && initialGrade === 1) counts.resolvedGrade1 += 1;
+    else if (task?.resolvedIssue && initialGrade === 2) counts.resolvedGrade2 += 1;
+    else if (score >= 3 || task?.status === 'completed') counts.pass += 1;
+    else if (score === 2) counts.unresolvedGrade2 += 1;
+    else if (score === 1) counts.unresolvedGrade1 += 1;
+    else counts.pending += 1;
+    return counts;
+  }, {
+    resolvedGrade1: 0,
+    resolvedGrade2: 0,
+    pass: 0,
+    pending: 0,
+    unresolvedGrade2: 0,
+    unresolvedGrade1: 0,
+  });
+}
+
+function renderOutcomeProgressBar(tasks = []) {
+  const counts = getOutcomeCounts(tasks);
+  const total = Math.max(0, tasks.length);
+  const segments = [
+    ['resolvedGrade1', 'progress-segment-resolved-grade-1'],
+    ['resolvedGrade2', 'progress-segment-resolved-grade-2'],
+    ['pass', 'progress-segment-pass'],
+    ['pending', 'progress-segment-pending'],
+    ['unresolvedGrade2', 'progress-segment-unresolved-grade-2'],
+    ['unresolvedGrade1', 'progress-segment-unresolved-grade-1'],
+  ];
 
   return (
-    <div className="progress progress-with-issues">
-      <span style={{ width: `${completedWidth}%` }} />
-      {issueWidth ? <em style={{ width: `${issueWidth}%` }} /> : null}
+    <div className="progress outcome-progress">
+      {segments.map(([key, className]) => counts[key] ? (
+        <span key={key} className={className} style={{ width: `${total ? (counts[key] / total) * 100 : 0}%` }} />
+      ) : null)}
     </div>
   );
 }
@@ -200,7 +229,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
           </div>
         </div>
 
-        {renderProgressBar(list.stats.completed, list.stats.total, list.stats.issues)}
+        {renderOutcomeProgressBar(list.sections.flatMap((section) => section.tasks))}
         <div className="stat-row cleaner-stat-row">
           <span className="flag">{list.stats.completed}/{list.stats.total} completed</span>
           <span className="flag">{list.stats.photoRequired} photo checks</span>
@@ -250,10 +279,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
                       <strong>Assigned work</strong>
                       <div className="muted">{zoneCount} zones · {section.stats.total} tasks in this facility</div>
                       <div className="task-group-progress-row">
-                        <div className="task-group-progress task-group-progress-with-issues">
-                          <span style={{ width: `${section.stats.total ? Math.round((section.stats.completed / section.stats.total) * 100) : 0}%` }} />
-                          {section.stats.issues ? <em style={{ width: `${section.stats.total ? Math.round((section.stats.issues / section.stats.total) * 100) : 0}%` }} /> : null}
-                        </div>
+                        {renderOutcomeProgressBar(section.tasks)}
                         <span className="task-group-progress-label">{section.stats.completed}/{section.stats.total} completed</span>
                       </div>
                     </div>
