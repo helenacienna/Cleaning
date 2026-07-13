@@ -61,6 +61,29 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
     setIsOpen(true);
   }
 
+  async function createDailyReport() {
+    if (!dailyTasks.length) {
+      return;
+    }
+
+    try {
+      await fetch('/api/cleaner-daily-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taskIds: dailyTasks.map((task) => task.id),
+          facility: label,
+          staffName,
+          day: boardDay,
+        }),
+      });
+    } catch {
+      // Do not block the cleaner from continuing if report creation fails.
+    }
+  }
+
   function handleComplete() {
     refreshProgress();
     closeChecklist();
@@ -146,6 +169,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
                 onRefreshProgress={refreshProgress}
                 onClose={closeChecklist}
                 onComplete={() => {
+                  void createDailyReport();
                   refreshProgress();
                   setStage('remaining');
                 }}

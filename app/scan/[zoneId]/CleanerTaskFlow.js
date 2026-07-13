@@ -89,19 +89,20 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
 
   async function gradeTask(taskId, grade, index) {
     const current = taskState[taskId] || {};
+    const hasEvidence = String(current.note || '').trim().length > 0 || Number(current.photoCount || 0) > 0;
 
-    if (index >= tasks.length - 1) {
+    if (grade <= 2 && !hasEvidence) {
+      updateTask(taskId, {
+        grade: current.grade ?? null,
+        saving: false,
+        saved: false,
+        statusMessage: 'Grade 1–2 needs a photo or note before moving on',
+        statusTone: 'tone-red',
+      });
       window.setTimeout(() => {
-        endCardRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
+        focusJob(index);
       }, 20);
-    } else {
-      const nextIndex = Math.min(index + 1, tasks.length - 1);
-      window.setTimeout(() => {
-        focusJob(nextIndex);
-      }, 20);
+      return;
     }
 
     updateTask(taskId, {
@@ -137,6 +138,19 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         statusMessage: result.message || 'Task saved',
         statusTone: 'tone-green',
       });
+      if (index >= tasks.length - 1) {
+        window.setTimeout(() => {
+          endCardRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }, 20);
+      } else {
+        const nextIndex = Math.min(index + 1, tasks.length - 1);
+        window.setTimeout(() => {
+          focusJob(nextIndex);
+        }, 20);
+      }
       if (grade <= 3 || index >= tasks.length - 1) {
         queueRefresh();
       }

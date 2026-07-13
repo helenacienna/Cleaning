@@ -34,11 +34,22 @@ export async function POST(request) {
     where: { id: taskInstanceId },
     include: {
       assignedStaff: true,
+      execution: {
+        include: {
+          photos: true,
+        },
+      },
     },
   });
 
   if (!taskInstance) {
     return NextResponse.json({ error: 'Task instance not found' }, { status: 404 });
+  }
+
+  const hasEvidence = note.trim().length > 0 || (taskInstance.execution?.photos?.length ?? 0) > 0;
+
+  if (grade <= 2 && !hasEvidence) {
+    return NextResponse.json({ error: 'Grade 1-2 requires a photo or note before moving on' }, { status: 400 });
   }
 
   const now = new Date();
