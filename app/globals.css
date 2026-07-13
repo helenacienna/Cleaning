@@ -4515,3 +4515,48 @@ button.button {
   position: static;
   flex: 0 0 auto;
 }
+
+/* Active checklist tighter card layout */
+.compact-task-card {
+  gap: 8px;
+  padding: 10px;
+  align-content: start;
+}
+
+.compact-task-top {
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 0;
+  padding-top: 28px;
+}
+
+.compact-task-top .task-number {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.compact-task-copy {
+  gap: 8px;
+}
+
+.compact-grade-panel,
+.resolved-issue-panel,
+.add-another-photo-panel,
+.builder-field {
+  gap: 8px;
+}
+
+.compact-flags,
+.compact-actions,
+.grade-buttons {
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .compact-task-top {
+    grid-template-columns: 1fr;
+    padding: 0;
+    padding-top: 28px;
+  }
+}
