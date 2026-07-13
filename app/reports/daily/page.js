@@ -122,9 +122,10 @@ async function loadReport({ facility, staffName, day }) {
 }
 
 export default async function DailyReportPage({ searchParams }) {
-  const facility = typeof searchParams?.facility === 'string' ? searchParams.facility : '';
-  const staffName = typeof searchParams?.staff === 'string' ? searchParams.staff : '';
-  const day = typeof searchParams?.day === 'string' ? searchParams.day : '';
+  const params = await searchParams;
+  const facility = typeof params?.facility === 'string' ? params.facility : '';
+  const staffName = typeof params?.staff === 'string' ? params.staff : '';
+  const day = typeof params?.day === 'string' ? params.day : '';
   const { source, tasks } = await loadReport({ facility, staffName, day });
 
   const scored = tasks.map((task) => ({ task, grade: parseGrade(task) }));
