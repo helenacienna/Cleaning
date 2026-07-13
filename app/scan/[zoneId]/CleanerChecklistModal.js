@@ -1,18 +1,41 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import CleanerTaskFlow from './CleanerTaskFlow';
 import RemainingWorkPanel from './RemainingWorkPanel';
 
-const CHECKLIST_REFRESH_MS = 2000;
+const RESUME_REFRESH_COOLDOWN_MS = 5000;
+
+function readStoredChecklistState(label) {
+  if (typeof window === 'undefined') {
+    return { isOpen: false, stage: 'daily' };
+  }
+
+  try {
+    const stored = window.sessionStorage.getItem(`cleanerChecklist:${label}`);
+    if (!stored) {
+      return { isOpen: false, stage: 'daily' };
+    }
+
+    const parsed = JSON.parse(stored);
+    return {
+      isOpen: Boolean(parsed?.isOpen),
+      stage: ['daily', 'remaining', 'assigned'].includes(parsed?.stage) ? parsed.stage : 'daily',
+    };
+  } catch {
+    return { isOpen: false, stage: 'daily' };
+  }
+}
 
 export default function CleanerChecklistModal({ tasks, label, staffName }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [stage, setStage] = useState('daily');
+  const storedChecklistState = readStoredChecklistState(label);
+  const [isOpen, setIsOpen] = useState(storedChecklistState.isOpen);
+  const [stage, setStage] = useState(storedChecklistState.stage);
   const [assignedRemainingTasks, setAssignedRemainingTasks] = useState([]);
   const [, startTransition] = useTransition();
   const router = useRouter();
+  const lastResumeRefreshRef = useRef(0);
 
   function refreshProgress() {
     startTransition(() => {
@@ -24,6 +47,13 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
   const activeTasks = stage === 'assigned' && assignedRemainingTasks.length ? assignedRemainingTasks : tasks.filter((task) => task.frequency && task.frequency !== 'daily');
   const boardDay = tasks.find((task) => task.boardDayKey)?.boardDayKey ?? '';
 
+  function closeChecklist() {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(`cleanerChecklist:${label}`);
+    }
+    setIsOpen(false);
+  }
+
   function handleOpen() {
     refreshProgress();
     setStage('daily');
@@ -33,7 +63,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
 
   function handleComplete() {
     refreshProgress();
-    setIsOpen(false);
+    closeChecklist();
   }
 
   useEffect(() => {
@@ -42,18 +72,45 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
   }, [isOpen]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!isOpen) {
+      window.sessionStorage.removeItem(`cleanerChecklist:${label}`);
+      return;
+    }
+
+    window.sessionStorage.setItem(`cleanerChecklist:${label}`, JSON.stringify({ isOpen: true, stage }));
+  }, [isOpen, label, stage]);
+
+  useEffect(() => {
     if (!isOpen) {
       return undefined;
     }
 
-    const intervalId = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        refreshProgress();
+    function refreshAfterResume() {
+      if (document.visibilityState && document.visibilityState !== 'visible') {
+        return;
       }
-    }, CHECKLIST_REFRESH_MS);
+
+      const now = Date.now();
+      if (now - lastResumeRefreshRef.current < RESUME_REFRESH_COOLDOWN_MS) {
+        return;
+      }
+
+      lastResumeRefreshRef.current = now;
+      refreshProgress();
+    }
+
+    document.addEventListener('visibilitychange', refreshAfterResume);
+    window.addEventListener('pageshow', refreshAfterResume);
+    window.addEventListener('focus', refreshAfterResume);
 
     return () => {
-      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', refreshAfterResume);
+      window.removeEventListener('pageshow', refreshAfterResume);
+      window.removeEventListener('focus', refreshAfterResume);
     };
   }, [isOpen]);
 
@@ -77,7 +134,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
                   <button className="button secondary" type="button" onClick={refreshProgress}>
                     Refresh progress
                   </button>
-                  <button className="button secondary close-modal-button" type="button" onClick={() => setIsOpen(false)}>Close</button>
+                  <button className="button secondary close-modal-button" type="button" onClick={closeChecklist}>Close</button>
                 </div>
               ) : null}
             </header>
@@ -87,7 +144,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
                 tasks={dailyTasks}
                 onTaskSaved={refreshProgress}
                 onRefreshProgress={refreshProgress}
-                onClose={() => setIsOpen(false)}
+                onClose={closeChecklist}
                 onComplete={() => {
                   refreshProgress();
                   setStage('remaining');
@@ -113,7 +170,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
                 tasks={activeTasks}
                 onTaskSaved={refreshProgress}
                 onRefreshProgress={refreshProgress}
-                onClose={() => setIsOpen(false)}
+                onClose={closeChecklist}
                 onComplete={handleComplete}
                 completeLabel="Submit and close active list"
                 completeTitle="Remaining assigned tasks complete"
