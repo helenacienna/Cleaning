@@ -4494,3 +4494,12 @@ button.button {
 .grade-button span {
   font-size: 22px;
 }
+
+/* Keep active checklist grade boxes compact while improving number readability */
+.grade-button {
+  min-height: 44px;
+}
+
+.grade-button span {
+  font-size: 24px;
+}
