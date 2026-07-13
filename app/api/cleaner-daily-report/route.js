@@ -92,9 +92,23 @@ export async function POST(request) {
     note,
   });
 
+  const notification = await prisma.notificationEvent.findUnique({
+    where: {
+      scope_identifier: {
+        scope: 'daily-report',
+        identifier,
+      },
+    },
+    select: {
+      inboxThreadId: true,
+    },
+  });
+  const reportUrl = notification?.inboxThreadId ? `/admin/inbox?thread=${notification.inboxThreadId}` : '/admin/inbox';
+
   return NextResponse.json({
     ok: true,
     message: 'Daily report created',
+    reportUrl,
     report: {
       facility: resolvedFacility,
       staffName: resolvedStaff,

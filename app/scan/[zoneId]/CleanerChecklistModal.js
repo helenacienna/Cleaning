@@ -33,9 +33,12 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
   const [isOpen, setIsOpen] = useState(storedChecklistState.isOpen);
   const [stage, setStage] = useState(storedChecklistState.stage);
   const [assignedRemainingTasks, setAssignedRemainingTasks] = useState([]);
+  const [dailyReportUrl, setDailyReportUrl] = useState('');
+  const [dailyReportStatus, setDailyReportStatus] = useState('idle');
   const [, startTransition] = useTransition();
   const router = useRouter();
   const lastResumeRefreshRef = useRef(0);
+  const dailyReportRequestRef = useRef(null);
 
   function refreshProgress() {
     startTransition(() => {
@@ -58,30 +61,55 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
     refreshProgress();
     setStage('daily');
     setAssignedRemainingTasks([]);
+    setDailyReportUrl('');
+    setDailyReportStatus('idle');
+    dailyReportRequestRef.current = null;
     setIsOpen(true);
   }
 
   async function createDailyReport() {
     if (!dailyTasks.length) {
-      return;
+      return '';
     }
 
-    try {
-      await fetch('/api/cleaner-daily-report', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          taskIds: dailyTasks.map((task) => task.id),
-          facility: label,
-          staffName,
-          day: boardDay,
-        }),
-      });
-    } catch {
-      // Do not block the cleaner from continuing if report creation fails.
+    if (dailyReportUrl) {
+      return dailyReportUrl;
     }
+
+    if (dailyReportRequestRef.current) {
+      return dailyReportRequestRef.current;
+    }
+
+    setDailyReportStatus('creating');
+    dailyReportRequestRef.current = fetch('/api/cleaner-daily-report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        taskIds: dailyTasks.map((task) => task.id),
+        facility: label,
+        staffName,
+        day: boardDay,
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error('Unable to create daily report');
+        }
+        const result = await response.json();
+        const reportUrl = result?.reportUrl || '/admin/inbox';
+        setDailyReportUrl(reportUrl);
+        setDailyReportStatus('ready');
+        return reportUrl;
+      })
+      .catch(() => {
+        setDailyReportUrl('/admin/inbox');
+        setDailyReportStatus('error');
+        return '/admin/inbox';
+      });
+
+    return dailyReportRequestRef.current;
   }
 
   function handleComplete() {
@@ -168,6 +196,9 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
                 onTaskSaved={refreshProgress}
                 onRefreshProgress={refreshProgress}
                 onClose={closeChecklist}
+                onAllTasksCompleted={createDailyReport}
+                reportUrl={dailyReportUrl}
+                reportStatus={dailyReportStatus}
                 onComplete={() => {
                   void createDailyReport();
                   refreshProgress();
