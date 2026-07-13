@@ -578,9 +578,9 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             subtitle: 'Routine work for this board day',
             groups: dailyGroups,
             summary: {
-              completed: dailyTasks.filter((task) => task.status === 'completed').length,
+              completed: getOutcomeCompletedCount(dailyTasks),
               total: dailyTasks.length,
-              progress: dailyTasks.length ? Math.round((dailyTasks.filter((task) => task.status === 'completed').length / dailyTasks.length) * 100) : 0,
+              progress: dailyTasks.length ? Math.round((getOutcomeCompletedCount(dailyTasks) / dailyTasks.length) * 100) : 0,
             },
           }, {
             key: 'periodic',
@@ -588,9 +588,9 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             subtitle: '',
             groups: periodicGroups,
             summary: {
-              completed: periodicTasks.filter((task) => task.status === 'completed').length,
+              completed: getOutcomeCompletedCount(periodicTasks),
               total: periodicTasks.length,
-              progress: periodicTasks.length ? Math.round((periodicTasks.filter((task) => task.status === 'completed').length / periodicTasks.length) * 100) : 0,
+              progress: periodicTasks.length ? Math.round((getOutcomeCompletedCount(periodicTasks) / periodicTasks.length) * 100) : 0,
             },
           }, {
             key: 'extra',
@@ -692,18 +692,39 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                             );
                           }) : (
                             <div className={`facility-board-task-list ${section.key === 'periodic' ? 'facility-board-task-list-periodic' : ''} ${group.tasks.length === 1 ? 'facility-board-task-list-single' : ''}`}>
-                              {group.tasks.map((task) => (
-                                <div className="task-row facility-board-task-row" key={task.id}>
-                                  <div>
-                                    <strong>#{String(task.displayOrder).padStart(3, '0')} · {task.title}</strong>
-                                    <div className="muted">{task.taskGroup}</div>
-                                    <div className="facility-board-task-meta-row">
-                                      {task.photoRequired ? <span className="flag">Photo</span> : null}
-                                      {task.commentRequired ? <span className="flag">Comment</span> : null}
+                              {group.tasks.map((task) => {
+                                const showStatus = String(task.status || '').toLowerCase() !== 'scheduled';
+                                return (
+                                  <details className="task-disclosure task-disclosure-compact" key={task.id}>
+                                    <summary className="task-row task-row-disclosure task-row-disclosure-compact task-row-disclosure-daily-tight">
+                                      <div className="task-inline-top-row">
+                                        <div className="task-inline-main"><span className="facility-board-task-bullet" aria-hidden="true">•</span><strong>#{String(task.displayOrder).padStart(3, '0')} · {task.title}</strong></div>
+                                        <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+                                          <TaskPhotoIndicator task={task} />
+                                          {showStatus ? <span className={`${statusClass(task.status)} task-inline-status task-inline-status-info`}>{formatTaskLabel(task.status)}</span> : null}
+                                          <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+                                        </div>
+                                      </div>
+                                    </summary>
+                                    <div className="task-disclosure-body">
+                                      <div className="task-detail-grid">
+                                        <div><span className="muted">Task #</span><strong>{String(task.displayOrder).padStart(3, '0')}</strong></div>
+                                        <div><span className="muted">Group</span><strong>{task.taskGroup}</strong></div>
+                                        <div><span className="muted">Zone</span><strong>{task.zone}</strong></div>
+                                        <div><span className="muted">Status</span><strong>{formatTaskLabel(task.status)}</strong></div>
+                                        <div><span className="muted">Assigned</span><strong>{task.staff || 'Unallocated'}</strong></div>
+                                        <div><span className="muted">Frequency</span><strong>{task.frequency || 'Periodic'}</strong></div>
+                                        <div><span className="muted">Photos</span><strong>{task.photoCount ?? taskPhotos(task).length}</strong></div>
+                                      </div>
+                                      <div className="facility-board-task-meta-row">
+                                        {task.photoRequired ? <span className="flag">Photo</span> : null}
+                                        {task.commentRequired ? <span className="flag">Comment</span> : null}
+                                      </div>
+                                      <TaskPhotoGallery task={task} />
                                     </div>
-                                  </div>
-                                </div>
-                              ))}
+                                  </details>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
