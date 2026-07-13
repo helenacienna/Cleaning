@@ -736,16 +736,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               </div>
 
-              <label className="builder-field" onClick={(event) => event.stopPropagation()}>
-                <span className="muted">Cleaner note</span>
-                <textarea
-                  value={localState.note}
-                  onChange={(event) => updateTask(task.id, { note: event.target.value, saved: false, statusMessage: '' })}
-                  placeholder={task.commentRequired ? 'Add the required note here' : 'Optional note'}
-                  rows={3}
-                />
-              </label>
-
               <div className="task-actions compact-actions">
                 <label className={task.photoRequired ? 'button photo-required-button' : 'button secondary'}>
                   {task.photoRequired ? 'Upload required photo' : 'Upload photo'}
@@ -760,9 +750,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     }}
                   />
                 </label>
-                <button className="button secondary" type="button" onClick={(event) => event.stopPropagation()}>
-                  {task.commentRequired ? 'Required note' : 'Optional note'}
-                </button>
               </div>
 
               {localState.statusMessage && (
