@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import ViewOptionsMenu from './ViewOptionsMenu';
+import ExtraTaskScheduleCard from './ExtraTaskScheduleCard';
 import { taskCardTemplates as demoTaskCardTemplates } from '../../../data/demo-data';
 import { notFound } from 'next/navigation';
 import { getOrganiserBoardData } from '../../../lib/app-data';
@@ -661,20 +662,15 @@ export default async function FacilityBoardPage({ params, searchParams }) {
               {section.key === 'extra' ? (
                 <div className="facility-board-extra-list">
                   {section.tasks.length ? section.tasks.map((task) => (
-                    <div className="task-row facility-board-task-row facility-board-extra-task-row" key={`${assignment.id}-extra-${task.templateId}`}>
-                      <div className="facility-board-extra-score-wrap">
-                        <div className={`facility-board-extra-score-ring ${(task.standbySuitability?.score ?? 0) >= 90 ? 'score-ring-green' : 'score-ring-amber'}`} style={{ '--score': `${Math.max(0, Math.min(100, task.standbySuitability?.score ?? 0))}%` }}>
-                          <span>{task.standbySuitability?.score ?? 0}%</span>
-                        </div>
-                      </div>
-                      <div className="facility-board-extra-copy">
-                        <div className="facility-board-extra-zone">{task.zone}</div>
-                        <strong className="facility-board-extra-title">{task.title}</strong>
-                        <div className="facility-board-extra-task-meta">
-                          <span>◷ Last done: {formatLastCompletedAge(task.lastCompleted, parseBoardDayDate(assignment.boardDay))}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <ExtraTaskScheduleCard
+                      key={`${assignment.id}-extra-${task.templateId}`}
+                      task={{
+                        ...task,
+                        lastCompletedLabel: formatLastCompletedAge(task.lastCompleted, parseBoardDayDate(assignment.boardDay)),
+                      }}
+                      facility={assignment.location}
+                      day={assignment.boardDay}
+                    />
                   )) : (
                     <div className="task-row unscheduled-task-empty">
                       <div>
