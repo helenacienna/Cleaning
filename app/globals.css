@@ -4318,3 +4318,21 @@ button.button {
 .daily-report-task-row > .daily-report-photo-grid {
   grid-column: 1 / -1;
 }
+
+.outcome-progress > .progress-segment-resolved-grade-1,
+.hierarchy-outcome-progress > .progress-segment-resolved-grade-1 { background: rgba(255,123,145,0.92); }
+
+.outcome-progress > .progress-segment-resolved-grade-2,
+.hierarchy-outcome-progress > .progress-segment-resolved-grade-2 { background: rgba(255,160,110,0.92); }
+
+.outcome-progress > .progress-segment-pass,
+.hierarchy-outcome-progress > .progress-segment-pass { background: linear-gradient(90deg, var(--success), #58f0c1); }
+
+.outcome-progress > .progress-segment-pending,
+.hierarchy-outcome-progress > .progress-segment-pending { background: rgba(148,163,184,0.24); }
+
+.outcome-progress > .progress-segment-unresolved-grade-2,
+.hierarchy-outcome-progress > .progress-segment-unresolved-grade-2 { background: rgba(255,160,110,0.98); }
+
+.outcome-progress > .progress-segment-unresolved-grade-1,
+.hierarchy-outcome-progress > .progress-segment-unresolved-grade-1 { background: rgba(225,64,93,1); }
