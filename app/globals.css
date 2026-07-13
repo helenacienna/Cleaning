@@ -4475,3 +4475,22 @@ button.button {
 .facility-board-header-nav-row .facility-board-day-chip-row {
   justify-content: center;
 }
+
+/* Active checklist readability tuning */
+.compact-task-zone {
+  font-size: 40px;
+  line-height: 1.08;
+}
+
+.compact-task-title {
+  font-size: 34px;
+  line-height: 1.12;
+}
+
+.grade-button {
+  min-height: 82px;
+}
+
+.grade-button span {
+  font-size: 22px;
+}
