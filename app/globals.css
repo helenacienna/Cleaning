@@ -4633,3 +4633,10 @@ button.button {
   right: 10px;
   bottom: 10px;
 }
+
+.facility-board-extra-standby-score {
+  min-width: 64px;
+  min-height: 42px;
+  padding: 6px 12px;
+  font-size: 18px;
+}
