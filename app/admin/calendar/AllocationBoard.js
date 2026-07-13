@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { makeCleanerShiftAssignmentId } from '../../../data/demo-data';
+import { getOutcomeCompletedCount, getOutcomeCounts, OUTCOME_PROGRESS_SEGMENTS } from '../../../lib/task-outcomes.js';
 
 const STORAGE_KEY = 'cienna-allocation-board-state-v1';
 
@@ -179,10 +180,23 @@ function groupHierarchy(cards) {
 }
 
 function getCompletionStats(cards) {
-  const completed = cards.filter((card) => card.status === 'completed').length;
+  const completed = getOutcomeCompletedCount(cards);
   const total = cards.length;
   const percent = total ? Math.round((completed / total) * 100) : 0;
   return { completed, total, percent };
+}
+
+function renderHierarchyOutcomeFill(cards) {
+  const counts = getOutcomeCounts(cards);
+  const total = Math.max(0, cards.length);
+
+  return (
+    <span className="hierarchy-outcome-progress" aria-hidden="true">
+      {OUTCOME_PROGRESS_SEGMENTS.map(([key, segmentClass]) => counts[key] ? (
+        <span key={key} className={segmentClass} style={{ width: `${total ? (counts[key] / total) * 100 : 0}%` }} />
+      ) : null)}
+    </span>
+  );
 }
 
 function buildFacilityRuns(staffCards, timeLanes, shiftMeta) {
@@ -568,7 +582,7 @@ export default function AllocationBoard({
                         <section className={`hierarchy-facility-box hierarchy-facility-box-continuous hierarchy-facility-${hierarchyMode} facility-theme-${slugifyFacility(facilityName)}`} key={`${staff}-${facilityName}-${runIndex}`}>
                           <div className="hierarchy-facility-title">
                             <div className={`hierarchy-facility-progress hierarchy-section-progress ${facilityProgress.percent === 100 ? 'complete' : ''}`}>
-                              <span className="hierarchy-facility-progress-fill" style={{ width: `${facilityProgress.percent}%` }} />
+                              {renderHierarchyOutcomeFill(run.details.flatMap((detail) => detail.laneCards))}
                               <span className="hierarchy-facility-progress-copy">
                                 <strong>{facilityName}</strong>
                                 <strong>{facilityProgress.completed}/{facilityProgress.total} complete</strong>
@@ -598,7 +612,7 @@ export default function AllocationBoard({
                                           <>
                                             <div className="hierarchy-zone-row">
                                               <button className={`hierarchy-zone-toggle hierarchy-section-progress ${zoneProgress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleZoneGroups(zoneKey)}>
-                                                <span className="hierarchy-zone-progress-fill" style={{ width: `${zoneProgress.percent}%` }} />
+                                                {renderHierarchyOutcomeFill(zone.groups.flatMap((group) => group.cards))}
                                                 <span className="hierarchy-zone-toggle-copy">
                                                   <strong>{zone.zoneName}</strong>
                                                   <strong>{zoneProgress.completed}/{zoneProgress.total} complete</strong>
@@ -648,7 +662,7 @@ export default function AllocationBoard({
                                                             if (activeDropKey === dropKey) setActiveDropKey('');
                                                           }} onDrop={(event) => handleHierarchyDrop(event, groupDropUpdates)}>
                                                             <button className={`hierarchy-group-toggle hierarchy-section-progress ${progress.percent === 100 ? 'complete' : ''}`} type="button" onClick={() => toggleGroup(groupKey)}>
-                                                              <span className="hierarchy-group-progress-fill" style={{ width: `${progress.percent}%` }} />
+                                                              {renderHierarchyOutcomeFill(group.cards)}
                                                               <span className="hierarchy-group-toggle-copy">
                                                                 <strong>{group.groupName}</strong>
                                                                 <strong>{progress.completed}/{progress.total} complete</strong>

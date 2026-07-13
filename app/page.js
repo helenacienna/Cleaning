@@ -7,6 +7,7 @@ import {
 } from '../data/demo-data';
 import { DEFAULT_APP_TIME_ZONE, formatBoardDayKeyForTimeZone, getTimeZoneFormatter } from '../lib/app-timezone-shared.js';
 import deployStatus from '../data/deploy-status.json';
+import { getOutcomeCompletedCount, getOutcomeCounts, OUTCOME_PROGRESS_SEGMENTS } from '../lib/task-outcomes.js';
 import Link from 'next/link';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -53,8 +54,8 @@ function getTaskCompletionBadge(task = {}) {
   const numericScore = Number(task?.score ?? task?.auditScore);
   if (Number.isFinite(numericScore) && numericScore > 0) {
     return {
-      label: numericScore >= 4 ? 'completed' : 'follow-up',
-      tone: numericScore >= 4 ? 'completed' : 'carried-forward',
+      label: numericScore >= 3 ? 'completed' : 'follow-up',
+      tone: numericScore >= 3 ? 'completed' : 'carried-forward',
     };
   }
 
@@ -386,12 +387,25 @@ function formatGroupStatusLabel(tasks = []) {
 
 function getGroupProgress(tasks = []) {
   const total = tasks.length;
-  const completed = tasks.filter((task) => normalizeTaskStatus(task.status) === 'completed').length;
+  const completed = getOutcomeCompletedCount(tasks);
   return {
     completed,
     total,
     percent: total ? Math.round((completed / total) * 100) : 0,
   };
+}
+
+function renderOutcomeProgress(tasks = [], className = 'task-group-progress') {
+  const counts = getOutcomeCounts(tasks);
+  const total = Math.max(0, tasks.length);
+
+  return (
+    <div className={`${className} outcome-progress`}>
+      {OUTCOME_PROGRESS_SEGMENTS.map(([key, segmentClass]) => counts[key] ? (
+        <span key={key} className={segmentClass} style={{ width: `${total ? (counts[key] / total) * 100 : 0}%` }} />
+      ) : null)}
+    </div>
+  );
 }
 
 function formatGroupSummaryLabel(tasks = []) {
@@ -1144,7 +1158,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
     const progress = getGroupProgress(tasks);
     return (
       <div className="task-group-progress-stack" key={key}>
-        <div className="task-group-progress"><span style={{ width: `${progress.percent}%` }} /></div>
+        {renderOutcomeProgress(tasks)}
         <span className="task-group-progress-label">{progress.completed}/{progress.total} complete</span>
       </div>
     );

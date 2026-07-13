@@ -7,6 +7,7 @@ import ManagerReporting from './ManagerReporting';
 import ManagerReviewActions from './ManagerReviewActions';
 import ManagerReviewHistory from './ManagerReviewHistory';
 import { getManagerOverviewData } from '../../../lib/manager-data';
+import { OUTCOME_PROGRESS_SEGMENTS } from '../../../lib/task-outcomes.js';
 
 export const metadata = {
   title: 'Manager Overview · Cienna Cleaning',
@@ -16,6 +17,16 @@ export const dynamic = 'force-dynamic';
 
 function getStatusTone(value, warnAt = 1) {
   return value >= warnAt ? 'tone-red' : 'tone-green';
+}
+
+function renderOutcomeProgressFromCounts(counts = {}, total = 0) {
+  return (
+    <div className="progress outcome-progress">
+      {OUTCOME_PROGRESS_SEGMENTS.map(([key, segmentClass]) => counts[key] ? (
+        <span key={key} className={segmentClass} style={{ width: `${total ? (counts[key] / total) * 100 : 0}%` }} />
+      ) : null)}
+    </div>
+  );
 }
 
 export default async function ManagerOverviewPage() {
@@ -127,7 +138,7 @@ export default async function ManagerOverviewPage() {
                   <div className="manager-facility-copy">
                     <strong>{facility.location}</strong>
                     <div className="muted">{facility.zoneCount} zones · {facility.completed}/{facility.total} tasks complete</div>
-                    <div className="progress"><span style={{ width: `${facility.completion}%` }} /></div>
+                    {renderOutcomeProgressFromCounts(facility.outcomeCounts, facility.total)}
                   </div>
                   <div className="manager-facility-meta">
                     <span className="flag">{facility.completion}% complete</span>

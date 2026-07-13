@@ -4,6 +4,7 @@ import { taskCardTemplates as demoTaskCardTemplates } from '../../../data/demo-d
 import { notFound } from 'next/navigation';
 import { getOrganiserBoardData } from '../../../lib/app-data';
 import { DEFAULT_APP_TIME_ZONE, formatBoardDayKeyForTimeZone, getTimeZoneFormatter } from '../../../lib/app-timezone.js';
+import { getOutcomeCompletedCount, getOutcomeCounts, OUTCOME_PROGRESS_SEGMENTS } from '../../../lib/task-outcomes.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -295,7 +296,7 @@ function groupAssignmentTasks(tasks = []) {
   });
 
   return Array.from(groups.values()).map((group) => {
-    const completed = group.tasks.filter((task) => task.status === 'completed').length;
+    const completed = getOutcomeCompletedCount(group.tasks);
     const total = group.tasks.length;
     return {
       ...group,
@@ -304,6 +305,19 @@ function groupAssignmentTasks(tasks = []) {
       progress: total ? Math.round((completed / total) * 100) : 0,
     };
   });
+}
+
+function renderOutcomeProgress(tasks = [], className = 'progress') {
+  const counts = getOutcomeCounts(tasks);
+  const total = Math.max(0, tasks.length);
+
+  return (
+    <div className={`${className} outcome-progress`}>
+      {OUTCOME_PROGRESS_SEGMENTS.map(([key, segmentClass]) => counts[key] ? (
+        <span key={key} className={segmentClass} style={{ width: `${total ? (counts[key] / total) * 100 : 0}%` }} />
+      ) : null)}
+    </div>
+  );
 }
 
 function groupTasksByStaff(tasks = [], staffMeta = {}) {
@@ -321,7 +335,7 @@ function groupTasksByStaff(tasks = [], staffMeta = {}) {
   return Array.from(staffMap.entries())
     .map(([staff, staffTasks]) => {
       const groups = groupAssignmentTasks(staffTasks);
-      const completed = staffTasks.filter((task) => task.status === 'completed').length;
+      const completed = getOutcomeCompletedCount(staffTasks);
       const total = staffTasks.length;
       const totalZones = new Set(staffTasks.map((task) => task.zone)).size;
       const estimatedMinutes = staffTasks.reduce((sum, task) => sum + (Number(task.estimatedMinutes) || 0), 0);
@@ -382,6 +396,8 @@ function buildFacilityAssignmentFromBoard(board, assignmentId, boardDay) {
       commentRequired: Boolean(card.issueNote),
       taskGroup: card.groupName || card.taskGroup,
       score: card.auditScore ?? null,
+      initialGrade: card.initialGrade ?? null,
+      resolvedIssue: Boolean(card.resolvedIssue),
       zone: card.zone,
       staff: card.staff || 'Unallocated',
       displayOrder: card.jobOrder,
@@ -395,7 +411,7 @@ function buildFacilityAssignmentFromBoard(board, assignmentId, boardDay) {
   }
 
   const location = getFacilityDisplayName(tasks[0]?.facility ?? board.cards.find((card) => slugifyValue(getFacilityDisplayName(card.facility)) === assignmentId)?.facility ?? assignmentId);
-  const completed = tasks.filter((task) => task.status === 'completed').length;
+  const completed = getOutcomeCompletedCount(tasks);
   const photoRequired = tasks.filter((task) => task.photoRequired).length;
   const staffSet = new Set(tasks.map((task) => task.staff).filter((staff) => staff && staff !== 'Unallocated'));
   const unallocated = tasks.filter((task) => !task.staff || task.staff === 'Unallocated').length;
@@ -508,7 +524,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
           </div>
         </div>
 
-        <div className="progress"><span style={{ width: `${assignment.progress}%` }} /></div>
+        {renderOutcomeProgress(assignment.tasks)}
       </section>
 
       {source !== 'prisma' && (
@@ -559,7 +575,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                   {section.key === 'extra' ? <div className="badge">{section.summary.count} tasks</div> : <div className="badge">{section.summary.completed}/{section.summary.total} complete</div>}
                 </div>
               </div>
-              {section.key !== 'extra' ? <div className="progress"><span style={{ width: `${section.summary.progress}%` }} /></div> : null}
+              {section.key !== 'extra' ? renderOutcomeProgress(section.groups.flatMap((group) => group.tasks)) : null}
 
               {section.key === 'extra' ? (
                 <div className="facility-board-extra-list">
@@ -606,7 +622,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                 <span className="task-group-progress-label zone-summary-progress-label-compact">{group.completed}/{group.total} complete</span>
                               </div>
                             ) : <strong>{group.zone}</strong>}
-                            <div className="task-group-progress-stack"><div className="task-group-progress"><span style={{ width: `${group.progress}%` }} /></div></div>
+                            <div className="task-group-progress-stack">{renderOutcomeProgress(group.tasks, 'task-group-progress')}</div>
                           </div>
                           {section.key === 'periodic' ? <div className="task-disclosure-summary-right zone-summary-right" /> : null}
                         </summary>
@@ -676,7 +692,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                 <div className="badge">{staffGroup.completed}/{staffGroup.total} complete</div>
               </div>
 
-              <div className="progress"><span style={{ width: `${staffGroup.progress}%` }} /></div>
+              {renderOutcomeProgress(staffGroup.tasks)}
 
               <div className="facility-board-staff-task-list">
                 {staffGroup.tasks.map((task) => (
@@ -735,7 +751,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                         <div className="badge">{staffGroup.completed}/{staffGroup.total} complete</div>
                       </div>
 
-                      <div className="progress"><span style={{ width: `${staffGroup.progress}%` }} /></div>
+                      {renderOutcomeProgress(staffGroup.tasks)}
 
                       <div className="facility-board-staff-groups facility-board-time-groups">
                         {staffGroup.groups.map((group) => (
@@ -747,7 +763,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                               </div>
                               <div className="badge">{group.completed}/{group.total}</div>
                             </div>
-                            <div className="progress"><span style={{ width: `${group.progress}%` }} /></div>
+                            {renderOutcomeProgress(group.tasks)}
                             <div className="muted">{formatGroupStatusLabel(group.tasks)} · {group.total} tasks</div>
                           </div>
                         ))}

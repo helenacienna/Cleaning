@@ -4268,3 +4268,17 @@ button.button {
   background: rgba(236,253,245,0.92);
   border-color: rgba(99,230,165,0.34);
 }
+
+.hierarchy-outcome-progress {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.hierarchy-outcome-progress > span {
+  display: block;
+  height: 100%;
+}
