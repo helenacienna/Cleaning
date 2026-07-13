@@ -662,15 +662,16 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                 <div className="facility-board-extra-list">
                   {section.tasks.length ? section.tasks.map((task) => (
                     <div className="task-row facility-board-task-row facility-board-extra-task-row" key={`${assignment.id}-extra-${task.templateId}`}>
-                      <div>
-                        <span className="facility-board-extra-standby-score">{task.standbySuitability?.score ?? 0}%</span>
-                        <div className="muted">{task.zone}</div>
-                        <strong>{task.title}</strong>
-                        <div className="facility-board-task-meta-row">
-                          <span className="flag facility-board-extra-standby-label">{task.standbySuitability?.label ?? 'Standby'}</span>
+                      <div className="facility-board-extra-score-wrap">
+                        <div className={`facility-board-extra-score-ring ${(task.standbySuitability?.score ?? 0) >= 90 ? 'score-ring-green' : 'score-ring-amber'}`} style={{ '--score': `${Math.max(0, Math.min(100, task.standbySuitability?.score ?? 0))}%` }}>
+                          <span>{task.standbySuitability?.score ?? 0}%</span>
                         </div>
+                      </div>
+                      <div className="facility-board-extra-copy">
+                        <div className="facility-board-extra-zone">{task.zone}</div>
+                        <strong className="facility-board-extra-title">{task.title}</strong>
                         <div className="facility-board-extra-task-meta">
-                          <span>Last done: {formatLastCompletedAge(task.lastCompleted, parseBoardDayDate(assignment.boardDay))}</span>
+                          <span>◷ Last done: {formatLastCompletedAge(task.lastCompleted, parseBoardDayDate(assignment.boardDay))}</span>
                         </div>
                       </div>
                     </div>
