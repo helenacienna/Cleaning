@@ -320,6 +320,33 @@ function renderOutcomeProgress(tasks = [], className = 'progress') {
   );
 }
 
+function taskPhotos(task = {}) {
+  return task.photos ?? [];
+}
+
+function TaskPhotoIndicator({ task }) {
+  const count = task.photoCount ?? taskPhotos(task).length;
+  if (!count) return null;
+
+  return <span className="facility-board-photo-indicator" title={`${count} photo${count === 1 ? '' : 's'} attached`} aria-label={`${count} photo${count === 1 ? '' : 's'} attached`}>📷</span>;
+}
+
+function TaskPhotoGallery({ task }) {
+  const photos = taskPhotos(task);
+  if (!photos.length) return null;
+
+  return (
+    <div className="facility-board-photo-gallery">
+      {photos.map((photo, index) => (
+        <figure className="facility-board-photo-card" key={photo.id ?? `${task.id}-photo-${index}`}>
+          <img src={photo.photoUrl || `/api/task-photos/${photo.id}`} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" />
+          <figcaption>{photo.photoType === 'issue' ? 'Issue photo' : photo.photoType === 'completion' ? 'Completion photo' : `Photo ${index + 1}`}</figcaption>
+        </figure>
+      ))}
+    </div>
+  );
+}
+
 function groupTasksByStaff(tasks = [], staffMeta = {}) {
   const staffMap = new Map();
 
@@ -398,6 +425,8 @@ function buildFacilityAssignmentFromBoard(board, assignmentId, boardDay) {
       score: card.auditScore ?? null,
       initialGrade: card.initialGrade ?? null,
       resolvedIssue: Boolean(card.resolvedIssue),
+      photoCount: card.photoCount ?? card.photos?.length ?? 0,
+      photos: card.photos ?? [],
       zone: card.zone,
       staff: card.staff || 'Unallocated',
       displayOrder: card.jobOrder,
@@ -635,6 +664,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                   <div className="task-inline-top-row">
                                     <div className="task-inline-main"><span className="facility-board-task-bullet" aria-hidden="true">•</span><strong>{task.title}</strong></div>
                                     <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+                                      <TaskPhotoIndicator task={task} />
                                       {showStatus ? <span className={`${statusClass(task.status)} task-inline-status task-inline-status-info`}>{formatTaskLabel(task.status)}</span> : null}
                                       <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
                                     </div>
@@ -647,7 +677,9 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                     <div><span className="muted">Zone</span><strong>{task.zone}</strong></div>
                                     <div><span className="muted">Status</span><strong>{formatTaskLabel(task.status)}</strong></div>
                                     <div><span className="muted">Assigned</span><strong>{task.staff || 'Unallocated'}</strong></div>
+                                    <div><span className="muted">Photos</span><strong>{task.photoCount ?? taskPhotos(task).length}</strong></div>
                                   </div>
+                                  <TaskPhotoGallery task={task} />
                                 </div>
                               </details>
                             );
