@@ -3450,6 +3450,81 @@ button.button {
   margin-top: 4px;
 }
 
+.compact-select-label {
+  min-width: 160px;
+}
+
+.compact-select-label select {
+  padding: 9px 12px;
+}
+
+.task-order-shell {
+  display: grid;
+  gap: 14px;
+}
+
+.task-order-header,
+.task-order-card {
+  border-radius: 18px;
+  border: 1px solid rgba(15,23,42,0.08);
+  background: #ffffff;
+}
+
+.task-order-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px;
+}
+
+.task-order-header h3 {
+  margin: 0 0 4px;
+}
+
+.task-order-list {
+  display: grid;
+  gap: 10px;
+}
+
+.task-order-card {
+  display: grid;
+  grid-template-columns: 34px 90px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 13px 15px;
+  cursor: grab;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.task-order-card:hover {
+  border-color: rgba(37,99,235,0.28);
+  box-shadow: 0 10px 24px rgba(15,23,42,0.08);
+}
+
+.task-order-card.dragging {
+  opacity: 0.55;
+  transform: scale(0.995);
+}
+
+.task-order-handle {
+  color: var(--muted);
+  font-weight: 900;
+  letter-spacing: -4px;
+  cursor: grab;
+}
+
+.task-order-number {
+  color: #2563eb;
+  font-variant-numeric: tabular-nums;
+}
+
+.task-order-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
 .inbox-shell {
   display: grid;
   grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.45fr) minmax(280px, 0.78fr);
