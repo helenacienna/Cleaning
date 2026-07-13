@@ -4608,3 +4608,28 @@ button.button {
   right: 0;
   bottom: 0;
 }
+
+/* Keep extra task card corner badges fixed on mobile and desktop */
+.facility-board-extra-task-row.task-row {
+  display: block;
+  position: relative;
+  width: 100%;
+}
+
+.facility-board-extra-task-row > div {
+  position: static;
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 66px;
+  padding-bottom: 38px;
+}
+
+.facility-board-extra-standby-score {
+  top: 10px;
+  right: 10px;
+}
+
+.facility-board-extra-standby-label {
+  right: 10px;
+  bottom: 10px;
+}
