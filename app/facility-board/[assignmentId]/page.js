@@ -663,16 +663,14 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                   {section.tasks.length ? section.tasks.map((task) => (
                     <div className="task-row facility-board-task-row facility-board-extra-task-row" key={`${assignment.id}-extra-${task.templateId}`}>
                       <div>
+                        <span className="facility-board-extra-standby-score">{task.standbySuitability?.score ?? 0}%</span>
                         <div className="muted">{task.zone}</div>
                         <strong>{task.title}</strong>
-                        <div className="muted">{task.taskGroup}</div>
                         <div className="facility-board-task-meta-row">
-                          <span className="flag">{task.standbySuitability?.score ?? 0}/100</span>
                           <span className="flag">{task.standbySuitability?.label ?? 'Standby'}</span>
                         </div>
                         <div className="facility-board-extra-task-meta">
                           <span>Last done: {formatLastCompletedAge(task.lastCompleted, parseBoardDayDate(assignment.boardDay))}</span>
-                          <span>Next: {formatNextScheduleTiming(task.suggestedDue, parseBoardDayDate(assignment.boardDay))}</span>
                         </div>
                       </div>
                     </div>
