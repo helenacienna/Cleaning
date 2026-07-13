@@ -523,6 +523,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
           const beforePhotos = photos.filter((photo) => photo.photoType === 'exception');
           const afterPhotos = photos.filter((photo) => photo.photoType === 'completion');
           const unresolvedLowGrade = Number(selectedGrade) >= 1 && Number(selectedGrade) <= 2 && !localState.resolvedIssue;
+          const completionChipClass = isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'completion-done' : selectedGrade ? 'completion-open' : 'completion-open';
+          const completionChipLabel = isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'Completed' : selectedGrade ? 'Follow-up' : 'Open';
 
           return (
             <article
@@ -531,10 +533,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
               ref={(node) => { cardRefs.current[index] = node; }}
               onClick={() => focusJob(index)}
             >
-              <span className={`completion-bubble ${isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'completion-done' : selectedGrade ? 'completion-open' : 'completion-open'}`}>
-                {isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'Completed' : selectedGrade ? 'Follow-up' : 'Open'}
-              </span>
-
               <div className="compact-task-top">
                 <div className="task-number">{index + 1}</div>
                 <div className="compact-task-copy">
@@ -707,9 +705,14 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
               ) : null}
 
               <div className="grade-panel compact-grade-panel">
-                <div>
-                  <strong>Grade completion</strong>
-                  <span className="muted">1-2 flags follow-up, 3 partial, 4-5 complete</span>
+                <div className="grade-panel-header-row">
+                  <div>
+                    <strong>Grade completion</strong>
+                    <span className="muted">1-2 flags follow-up, 3 partial, 4-5 complete</span>
+                  </div>
+                  <span className={`completion-bubble grade-panel-completion-bubble ${completionChipClass}`}>
+                    {completionChipLabel}
+                  </span>
                 </div>
                 <div className="grade-buttons" aria-label={`Grade ${task.title}`}>
                   {[1, 2, 3, 4, 5].map((grade) => (
