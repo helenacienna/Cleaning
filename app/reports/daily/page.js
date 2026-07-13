@@ -147,7 +147,8 @@ export default async function DailyReportPage({ searchParams }) {
   };
   const completionPercent = percent(totals.completed, totals.total);
   const reportPath = `/reports/daily?facility=${encodeURIComponent(facility)}&staff=${encodeURIComponent(staffName)}&day=${encodeURIComponent(day)}${ids.length ? `&ids=${encodeURIComponent(ids.join(','))}` : ''}`;
-  const emailHref = buildEmailHref({ facility, staffName, day, totals, reportUrl: reportPath });
+  const publicBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-3a1422.up.railway.app';
+  const emailHref = buildEmailHref({ facility, staffName, day, totals, reportUrl: `${publicBaseUrl}${reportPath}` });
   const followUps = scored.filter(({ grade }) => hasNumericGrade(grade) && Number(grade) <= 3);
 
   return (
