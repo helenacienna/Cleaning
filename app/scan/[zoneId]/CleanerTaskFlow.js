@@ -6,7 +6,7 @@ const REFRESH_DEBOUNCE_MS = 2000;
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
-  return Number(task?.score) >= 4 || task?.status === 'completed';
+  return Number(task?.score) >= 3 || task?.status === 'completed';
 }
 
 function isTaskGraded(task) {
@@ -42,6 +42,8 @@ function createInitialTaskState(tasks) {
       photos: task.photos ?? [],
       resolutionNote: task.resolutionNote ?? '',
       issueGrade: task.initialGrade ?? null,
+      issueStage: task.initialGrade && !task.resolvedIssue ? 'needs_correction' : null,
+      finalGrade: task.resolvedIssue ? task.score ?? null : null,
       resolvedIssue: Boolean(task.resolvedIssue),
       statusMessage: hasGrade ? (completed ? 'Completed earlier' : 'Saved earlier for follow-up') : '',
       statusTone: completed ? 'tone-green' : hasGrade ? 'tone-amber' : 'muted',
@@ -92,15 +94,18 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
 
   async function gradeTask(taskId, grade, index) {
     const current = taskState[taskId] || {};
-    const hasEvidence = String(current.note || '').trim().length > 0 || Number(current.photoCount || 0) > 0;
 
-    if (grade <= 2 && !hasEvidence) {
+    if (grade <= 2) {
       updateTask(taskId, {
-        grade: current.grade ?? null,
+        grade,
+        issueGrade: grade,
+        issueStage: 'needs_issue_photo',
+        finalGrade: null,
+        resolvedIssue: false,
         saving: false,
         saved: false,
-        statusMessage: 'Grade 1–2 needs a photo or note before moving on',
-        statusTone: 'tone-red',
+        statusMessage: 'Add before photo(s) of the issue before correction',
+        statusTone: 'tone-amber',
       });
       window.setTimeout(() => {
         focusJob(index);
@@ -140,14 +145,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         saved: true,
         statusMessage: result.message || 'Task saved',
         statusTone: 'tone-green',
-        issueGrade: grade <= 2 ? grade : current.issueGrade ?? null,
+        issueGrade: current.issueGrade ?? null,
+        issueStage: null,
+        finalGrade: null,
         resolvedIssue: false,
       });
-      if (grade <= 2) {
-        window.setTimeout(() => {
-          focusJob(index);
-        }, 20);
-      } else if (index >= tasks.length - 1) {
+      if (index >= tasks.length - 1) {
         window.setTimeout(() => {
           endCardRef.current?.scrollIntoView({
             behavior: 'smooth',
@@ -177,13 +180,97 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     }
   }
 
-  async function resolveIssue(taskId, finalGrade, index) {
+  async function saveInitialIssue(taskId, index) {
     const current = taskState[taskId] || {};
     const issueGrade = Number(current.issueGrade || current.grade);
 
     if (!Number.isInteger(issueGrade) || issueGrade < 1 || issueGrade > 2) {
+      return;
+    }
+
+    updateTask(taskId, {
+      saving: true,
+      statusMessage: 'Recording issue…',
+      statusTone: 'tone-amber',
+    });
+
+    try {
+      const response = await fetch('/api/cleaner-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taskInstanceId: taskId,
+          grade: issueGrade,
+          note: current.note || '',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to record issue');
+      }
+
+      updateTask(taskId, {
+        grade: issueGrade,
+        saving: false,
+        saved: true,
+        issueGrade,
+        issueStage: 'needs_correction',
+        resolvedIssue: false,
+        statusMessage: 'Issue recorded — add correction note and corrected score',
+        statusTone: 'tone-amber',
+      });
+      window.setTimeout(() => {
+        focusJob(index);
+      }, 20);
+      queueRefresh();
+    } catch {
+      updateTask(taskId, {
+        saving: false,
+        saved: false,
+        issueStage: 'needs_issue_photo',
+        statusMessage: 'Issue save failed — add/check photo and try again',
+        statusTone: 'tone-red',
+      });
+    }
+  }
+
+  function selectCorrectedGrade(taskId, finalGrade) {
+    updateTask(taskId, {
+      finalGrade,
+      issueStage: 'needs_after_photo',
+      statusMessage: 'Add after photo(s) showing the correction, then save',
+      statusTone: 'tone-amber',
+    });
+  }
+
+  async function resolveIssue(taskId, index) {
+    const current = taskState[taskId] || {};
+    const issueGrade = Number(current.issueGrade || current.grade);
+    const finalGrade = Number(current.finalGrade);
+
+    if (!Number.isInteger(issueGrade) || issueGrade < 1 || issueGrade > 2) {
       updateTask(taskId, {
         statusMessage: 'Save the initial grade 1–2 issue first',
+        statusTone: 'tone-red',
+      });
+      return;
+    }
+
+    if (!Number.isInteger(finalGrade) || finalGrade < 3 || finalGrade > 5) {
+      updateTask(taskId, {
+        statusMessage: 'Select the corrected score first',
+        statusTone: 'tone-red',
+      });
+      return;
+    }
+
+    const hasAfterPhoto = (current.photos ?? []).some((photo) => photo.photoType === 'completion');
+    if (!hasAfterPhoto) {
+      updateTask(taskId, {
+        issueStage: 'needs_after_photo',
+        statusMessage: 'Add at least one after photo before saving the correction',
         statusTone: 'tone-red',
       });
       return;
@@ -220,6 +307,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         saving: false,
         saved: true,
         issueGrade,
+        finalGrade,
+        issueStage: 'resolved',
         resolvedIssue: true,
         statusMessage: result.message || `Resolved from ${issueGrade}/5 to ${finalGrade}/5`,
         statusTone: 'tone-green',
@@ -251,7 +340,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     }
   }
 
-  async function uploadPhoto(taskId, file) {
+  async function uploadPhoto(taskId, file, photoType = 'completion', index = currentIndex) {
     if (!file) return;
 
     const current = taskState[taskId] || {};
@@ -264,7 +353,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     try {
       const formData = new FormData();
       formData.append('taskInstanceId', taskId);
-      formData.append('photoType', 'completion');
+      formData.append('photoType', photoType);
       formData.append('file', file);
 
       const response = await fetch('/api/task-photos', {
@@ -280,19 +369,25 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       const nextPhoto = result?.photoId
         ? {
             id: result.photoId,
-            photoType: 'completion',
+            photoType,
             photoUrl: `/api/task-photos/${result.photoId}`,
           }
         : null;
+      const nextPhotos = nextPhoto ? [...(current.photos ?? []), nextPhoto] : (current.photos ?? []);
 
       updateTask(taskId, {
         photoCount: (current.photoCount ?? 0) + 1,
-        photos: nextPhoto ? [...(current.photos ?? []), nextPhoto] : (current.photos ?? []),
+        photos: nextPhotos,
         saving: false,
         saved: true,
-        statusMessage: result.message || 'Photo uploaded',
+        statusMessage: photoType === 'exception' ? 'Before photo uploaded' : 'After photo uploaded',
         statusTone: 'tone-green',
       });
+      if (photoType === 'exception' && current.issueStage === 'needs_issue_photo') {
+        window.setTimeout(() => {
+          void saveInitialIssue(taskId, index);
+        }, 50);
+      }
       queueRefresh();
     } catch {
       updateTask(taskId, {
@@ -392,10 +487,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
-          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0, photos: [], resolutionNote: '', issueGrade: null, resolvedIssue: false, statusMessage: '', statusTone: 'muted' };
+          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0, photos: [], resolutionNote: '', issueGrade: null, issueStage: null, finalGrade: null, resolvedIssue: false, statusMessage: '', statusTone: 'muted' };
           const selectedGrade = localState.grade;
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
-          const unresolvedLowGrade = Number(selectedGrade) <= 2 && !localState.resolvedIssue;
+          const beforePhotos = photos.filter((photo) => photo.photoType === 'exception');
+          const afterPhotos = photos.filter((photo) => photo.photoType === 'completion');
+          const unresolvedLowGrade = Number(selectedGrade) >= 1 && Number(selectedGrade) <= 2 && !localState.resolvedIssue;
 
           return (
             <article
@@ -429,38 +526,94 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
               {unresolvedLowGrade ? (
                 <div className="resolved-issue-panel" onClick={(event) => event.stopPropagation()}>
                   <div>
-                    <strong>Issue recorded — was it corrected now?</strong>
-                    <span className="muted">Keep the initial {selectedGrade}/5 issue on record, then add the corrected final result if fixed.</span>
+                    <strong>{localState.issueStage === 'needs_issue_photo' ? 'Issue selected — add before photo(s)' : 'Issue recorded — add correction'}</strong>
+                    <span className="muted">Keep the initial {selectedGrade}/5 issue on record, then capture the corrected result with after photo evidence.</span>
                   </div>
-                  <label className="builder-field">
-                    <span className="muted">Correction note</span>
-                    <textarea
-                      value={localState.resolutionNote || ''}
-                      onChange={(event) => updateTask(task.id, { resolutionNote: event.target.value, statusMessage: '' })}
-                      placeholder="What was corrected? Optional but useful for the supervisor report."
-                      rows={2}
-                    />
-                  </label>
-                  <div className="grade-buttons resolved-issue-buttons" aria-label={`Resolve ${task.title}`}>
-                    {[3, 4, 5].map((finalGrade) => (
-                      <button
-                        className={`grade-button grade-${finalGrade}`}
-                        type="button"
-                        key={finalGrade}
-                        onPointerDown={(event) => event.stopPropagation()}
-                        onMouseDown={(event) => event.stopPropagation()}
-                        onTouchStart={(event) => event.stopPropagation()}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          void resolveIssue(task.id, finalGrade, index);
-                        }}
-                        disabled={localState.saving}
-                      >
-                        <span>Corrected to {finalGrade}</span>
-                      </button>
-                    ))}
+                  <div className="compact-flags">
+                    <span className="flag">Before photos: {beforePhotos.length}</span>
+                    <span className="flag">After photos: {afterPhotos.length}</span>
                   </div>
+                  {localState.issueStage === 'needs_issue_photo' ? (
+                    <div className="task-actions compact-actions">
+                      <label className="button photo-required-button">
+                        Add before issue photo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            void uploadPhoto(task.id, file, 'exception', index);
+                            event.target.value = '';
+                          }}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <>
+                      <label className="builder-field">
+                        <span className="muted">Correction note</span>
+                        <textarea
+                          value={localState.resolutionNote || ''}
+                          onChange={(event) => updateTask(task.id, { resolutionNote: event.target.value, statusMessage: '' })}
+                          placeholder="What was corrected? Optional but useful for the supervisor report."
+                          rows={2}
+                        />
+                      </label>
+                      <div className="grade-buttons resolved-issue-buttons" aria-label={`Corrected score for ${task.title}`}>
+                        {[3, 4, 5].map((finalGrade) => (
+                          <button
+                            className={`grade-button grade-${finalGrade} ${localState.finalGrade === finalGrade ? 'selected-grade' : ''}`}
+                            type="button"
+                            key={finalGrade}
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onTouchStart={(event) => event.stopPropagation()}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              selectCorrectedGrade(task.id, finalGrade);
+                            }}
+                            disabled={localState.saving}
+                          >
+                            <span>Corrected to {finalGrade}</span>
+                          </button>
+                        ))}
+                      </div>
+                      {localState.finalGrade ? (
+                        <div className="task-actions compact-actions">
+                          <label className="button photo-required-button">
+                            Add after correction photo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                void uploadPhoto(task.id, file, 'completion', index);
+                                event.target.value = '';
+                              }}
+                            />
+                          </label>
+                          <button
+                            className="button primary"
+                            type="button"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onTouchStart={(event) => event.stopPropagation()}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              void resolveIssue(task.id, index);
+                            }}
+                            disabled={localState.saving || afterPhotos.length < 1}
+                          >
+                            Save corrected result
+                          </button>
+                        </div>
+                      ) : null}
+                    </>
+                  )}
                 </div>
               ) : localState.resolvedIssue ? (
                 <div className="resolved-issue-panel resolved-issue-panel-done">

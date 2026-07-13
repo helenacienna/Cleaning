@@ -340,7 +340,7 @@ function TaskPhotoGallery({ task }) {
       {photos.map((photo, index) => (
         <figure className="facility-board-photo-card" key={photo.id ?? `${task.id}-photo-${index}`}>
           <img src={photo.photoUrl || `/api/task-photos/${photo.id}`} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" />
-          <figcaption>{photo.photoType === 'issue' ? 'Issue photo' : photo.photoType === 'completion' ? 'Completion photo' : `Photo ${index + 1}`}</figcaption>
+          <figcaption>{photo.photoType === 'exception' ? 'Before issue photo' : photo.photoType === 'completion' ? 'After correction photo' : `Photo ${index + 1}`}</figcaption>
         </figure>
       ))}
     </div>

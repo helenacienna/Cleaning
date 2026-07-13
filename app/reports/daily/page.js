@@ -55,7 +55,7 @@ function PhotoEvidence({ task }) {
       {photos.map((photo, index) => (
         <figure className="daily-report-photo-card" key={photo.id}>
           <img src={`/api/task-photos/${photo.id}`} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" />
-          <figcaption>{photo.photoType === 'issue' ? 'Issue photo' : photo.photoType === 'completion' ? 'Completion photo' : `Photo ${index + 1}`}</figcaption>
+          <figcaption>{photo.photoType === 'exception' ? 'Before issue photo' : photo.photoType === 'completion' ? 'After correction photo' : `Photo ${index + 1}`}</figcaption>
         </figure>
       ))}
     </div>
