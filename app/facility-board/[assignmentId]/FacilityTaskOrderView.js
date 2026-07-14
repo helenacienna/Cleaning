@@ -31,6 +31,31 @@ function groupByZone(tasks = []) {
   return Array.from(zones.entries()).map(([zone, zoneTasks]) => ({ zone, tasks: zoneTasks }));
 }
 
+function mapRouteItemToTask(item, index) {
+  return {
+    id: item.taskTemplateId,
+    taskTemplateUuid: item.taskTemplateId,
+    templateId: item.taskTemplateCode,
+    title: item.title,
+    zone: item.zone,
+    taskGroup: item.taskGroup,
+    staff: 'Route template',
+    frequency: 'Template',
+    displayOrder: item.sequence ?? (index + 1) * 10,
+    jobOrderNumber: item.sequence ?? (index + 1) * 10,
+  };
+}
+
+function routeItemsToTasks(route) {
+  return [...(route?.items ?? [])]
+    .sort((left, right) => (left.sequence ?? 0) - (right.sequence ?? 0))
+    .map(mapRouteItemToTask);
+}
+
+function getOrderedTemplateIds(tasks = []) {
+  return tasks.map((task) => task.taskTemplateUuid).filter(Boolean);
+}
+
 export default function FacilityTaskOrderView({ tasks = [], facility }) {
   const [orderedTasks, setOrderedTasks] = useState(() => sortTasks(tasks));
   const [routes, setRoutes] = useState([]);
@@ -43,25 +68,15 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
   const zoneSections = useMemo(() => groupByZone(orderedTasks), [orderedTasks]);
 
   function applyRouteToTasks(route, baseTasks = tasks) {
-    if (!route?.items?.length) {
-      setOrderedTasks(sortTasks(baseTasks));
+    const routeTasks = routeItemsToTasks(route);
+    if (routeTasks.length) {
+      setOrderedTasks(routeTasks);
       return;
     }
 
-    const orderByTemplateCode = new Map(route.items.map((item, index) => [item.taskTemplateCode, index]));
-    const nextTasks = [...baseTasks].sort((left, right) => {
-      const leftIndex = orderByTemplateCode.has(left.templateId) ? orderByTemplateCode.get(left.templateId) : Number.MAX_SAFE_INTEGER;
-      const rightIndex = orderByTemplateCode.has(right.templateId) ? orderByTemplateCode.get(right.templateId) : Number.MAX_SAFE_INTEGER;
-      if (leftIndex !== rightIndex) return leftIndex - rightIndex;
-      return getTaskOrder(left) - getTaskOrder(right);
-    }).map((task, index) => ({
-      ...task,
-      displayOrder: (index + 1) * 10,
-      jobOrderNumber: (index + 1) * 10,
-    }));
-
-    setOrderedTasks(nextTasks);
+    setOrderedTasks(sortTasks(baseTasks));
   }
+
 
   useEffect(() => {
     let cancelled = false;
@@ -99,7 +114,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
       const response = await fetch('/api/task-template-order', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderedInstanceIds: nextTasks.map((task) => task.id) }),
+        body: JSON.stringify({ orderedIds: getOrderedTemplateIds(nextTasks) }),
       });
 
       const payload = await response.json().catch(() => null);
@@ -130,7 +145,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           routeId: selectedRouteId,
-          orderedInstanceIds: nextTasks.map((task) => task.id),
+          orderedTemplateIds: getOrderedTemplateIds(nextTasks),
         }),
       });
 
@@ -164,7 +179,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
         body: JSON.stringify({
           facility,
           name: name.trim(),
-          orderedInstanceIds: orderedTasks.map((task) => task.id),
+          orderedTemplateIds: getOrderedTemplateIds(orderedTasks),
         }),
       });
       const payload = await response.json().catch(() => null);
@@ -217,7 +232,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
       const response = await fetch('/api/task-template-order', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderedInstanceIds: orderedTasks.map((task) => task.id) }),
+        body: JSON.stringify({ orderedIds: getOrderedTemplateIds(orderedTasks) }),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
@@ -264,7 +279,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
       <div className="card facility-task-order-intro">
         <div>
           <h2>Task order</h2>
-          <p className="muted">Drag tasks into the route order for {facility}. Tasks are visually grouped by zone so the list is easier to scan.</p>
+          <p className="muted">Drag every facility task into the saved route order for {facility}. Daily checklists use this route as the template, even when only some tasks are scheduled.</p>
         </div>
         <div className="facility-task-order-controls">
           <label className="field-label compact-select-label">
@@ -283,7 +298,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
           <button className="button secondary slim" type="button" onClick={createRoute} disabled={isSaving}>New route</button>
           <button className="button secondary slim" type="button" onClick={makeDefaultRoute} disabled={isSaving || !selectedRouteId || selectedRoute?.isDefault}>Make default</button>
           <button className="button primary slim" type="button" onClick={applyRouteToLiveChecklist} disabled={isSaving || !orderedTasks.length}>Apply to live checklist</button>
-          <div className="badge">{orderedTasks.length} tasks</div>
+          <div className="badge">{orderedTasks.length} route tasks</div>
         </div>
       </div>
 
