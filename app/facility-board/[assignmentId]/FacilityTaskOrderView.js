@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 function getTaskOrder(task) {
@@ -322,6 +323,16 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
                     <strong>{task.title}</strong>
                     <span className="muted">{task.taskGroup} · {task.staff || 'Unallocated'} · {task.frequency || 'Daily'}</span>
                   </div>
+                  {task.templateId ? (
+                    <Link
+                      className="button secondary slim facility-task-order-edit-button"
+                      href={`/admin/task-cards?templateId=${encodeURIComponent(task.templateId)}`}
+                      draggable={false}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      Edit
+                    </Link>
+                  ) : null}
                 </div>
               ))}
             </div>

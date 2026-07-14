@@ -3599,6 +3599,11 @@ button.button {
   gap: 4px;
 }
 
+.facility-task-order-edit-button {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
 .facility-task-order-notice {
   position: sticky;
   bottom: 12px;
