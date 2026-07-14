@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 function getTaskOrder(task) {
   const raw = task?.jobOrderNumber ?? task?.displayOrder ?? task?.instanceCode ?? '';
@@ -32,11 +32,63 @@ function groupByZone(tasks = []) {
 
 export default function FacilityTaskOrderView({ tasks = [], facility }) {
   const [orderedTasks, setOrderedTasks] = useState(() => sortTasks(tasks));
+  const [routes, setRoutes] = useState([]);
+  const [selectedRouteId, setSelectedRouteId] = useState('');
   const [draggingId, setDraggingId] = useState(null);
   const [notice, setNotice] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? null;
 
   const zoneSections = useMemo(() => groupByZone(orderedTasks), [orderedTasks]);
+
+  function applyRouteToTasks(route, baseTasks = tasks) {
+    if (!route?.items?.length) {
+      setOrderedTasks(sortTasks(baseTasks));
+      return;
+    }
+
+    const orderByTemplateCode = new Map(route.items.map((item, index) => [item.taskTemplateCode, index]));
+    const nextTasks = [...baseTasks].sort((left, right) => {
+      const leftIndex = orderByTemplateCode.has(left.templateId) ? orderByTemplateCode.get(left.templateId) : Number.MAX_SAFE_INTEGER;
+      const rightIndex = orderByTemplateCode.has(right.templateId) ? orderByTemplateCode.get(right.templateId) : Number.MAX_SAFE_INTEGER;
+      if (leftIndex !== rightIndex) return leftIndex - rightIndex;
+      return getTaskOrder(left) - getTaskOrder(right);
+    }).map((task, index) => ({
+      ...task,
+      displayOrder: (index + 1) * 10,
+      jobOrderNumber: (index + 1) * 10,
+    }));
+
+    setOrderedTasks(nextTasks);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRoutes() {
+      try {
+        const response = await fetch(`/api/facility-routes?facility=${encodeURIComponent(facility)}`, { cache: 'no-store' });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok || !Array.isArray(payload?.routes)) {
+          throw new Error(payload?.error || 'Unable to load saved routes');
+        }
+
+        if (cancelled) return;
+
+        setRoutes(payload.routes);
+        const defaultRoute = payload.routes.find((route) => route.isDefault) ?? payload.routes[0] ?? null;
+        setSelectedRouteId(defaultRoute?.id ?? '');
+        applyRouteToTasks(defaultRoute, tasks);
+      } catch (error) {
+        if (!cancelled) {
+          setNotice(error.message || 'Could not load saved routes.');
+        }
+      }
+    }
+
+    loadRoutes();
+    return () => { cancelled = true; };
+  }, [facility, tasks]);
 
   async function saveOrder(nextTasks) {
     setIsSaving(true);
@@ -57,6 +109,122 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
       setNotice('Task order saved for this facility route.');
     } catch (error) {
       setNotice(error.message || 'Could not save task order.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function saveNamedRoute(nextTasks) {
+    if (!selectedRouteId) {
+      await saveOrder(nextTasks);
+      return;
+    }
+
+    setIsSaving(true);
+    setNotice('Saving named route…');
+
+    try {
+      const response = await fetch('/api/facility-routes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          routeId: selectedRouteId,
+          orderedInstanceIds: nextTasks.map((task) => task.id),
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !Array.isArray(payload?.routes)) {
+        throw new Error(payload?.error || 'Unable to save named route');
+      }
+
+      setRoutes(payload.routes);
+      setNotice(`Saved route: ${selectedRoute?.name ?? 'selected route'}.`);
+    } catch (error) {
+      setNotice(error.message || 'Could not save named route.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function createRoute() {
+    if (isSaving) return;
+
+    const name = window.prompt('Name this route');
+    if (!name?.trim()) return;
+
+    setIsSaving(true);
+    setNotice('Creating route…');
+
+    try {
+      const response = await fetch('/api/facility-routes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          facility,
+          name: name.trim(),
+          orderedInstanceIds: orderedTasks.map((task) => task.id),
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !Array.isArray(payload?.routes)) {
+        throw new Error(payload?.error || 'Unable to create route');
+      }
+
+      setRoutes(payload.routes);
+      setSelectedRouteId(payload.routeId);
+      setNotice(`Created route: ${name.trim()}.`);
+    } catch (error) {
+      setNotice(error.message || 'Could not create route.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function makeDefaultRoute() {
+    if (!selectedRouteId || isSaving) return;
+
+    setIsSaving(true);
+    setNotice('Setting default route…');
+
+    try {
+      const response = await fetch('/api/facility-routes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ routeId: selectedRouteId, isDefault: true }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !Array.isArray(payload?.routes)) {
+        throw new Error(payload?.error || 'Unable to set default route');
+      }
+      setRoutes(payload.routes);
+      setNotice('Default route updated.');
+    } catch (error) {
+      setNotice(error.message || 'Could not set default route.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function applyRouteToLiveChecklist() {
+    if (isSaving) return;
+
+    setIsSaving(true);
+    setNotice('Applying route to live checklist…');
+
+    try {
+      const response = await fetch('/api/task-template-order', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderedInstanceIds: orderedTasks.map((task) => task.id) }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Unable to apply route');
+      }
+      setNotice(`Applied ${selectedRoute?.name ?? 'selected route'} to the live checklist order.`);
+    } catch (error) {
+      setNotice(error.message || 'Could not apply route.');
     } finally {
       setIsSaving(false);
     }
@@ -87,7 +255,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
 
     setOrderedTasks(renumberedTasks);
     setDraggingId(null);
-    void saveOrder(renumberedTasks);
+    void saveNamedRoute(renumberedTasks);
   }
 
   return (
@@ -97,7 +265,25 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
           <h2>Task order</h2>
           <p className="muted">Drag tasks into the route order for {facility}. Tasks are visually grouped by zone so the list is easier to scan.</p>
         </div>
-        <div className="badge">{orderedTasks.length} tasks</div>
+        <div className="facility-task-order-controls">
+          <label className="field-label compact-select-label">
+            <span>Route</span>
+            <select
+              value={selectedRouteId}
+              onChange={(event) => {
+                const route = routes.find((item) => item.id === event.target.value) ?? null;
+                setSelectedRouteId(event.target.value);
+                applyRouteToTasks(route, tasks);
+              }}
+            >
+              {routes.map((route) => <option key={route.id} value={route.id}>{route.name}{route.isDefault ? ' · default' : ''}</option>)}
+            </select>
+          </label>
+          <button className="button secondary slim" type="button" onClick={createRoute} disabled={isSaving}>New route</button>
+          <button className="button secondary slim" type="button" onClick={makeDefaultRoute} disabled={isSaving || !selectedRouteId || selectedRoute?.isDefault}>Make default</button>
+          <button className="button primary slim" type="button" onClick={applyRouteToLiveChecklist} disabled={isSaving || !orderedTasks.length}>Apply to live checklist</button>
+          <div className="badge">{orderedTasks.length} tasks</div>
+        </div>
       </div>
 
       <div className="facility-task-order-zones">

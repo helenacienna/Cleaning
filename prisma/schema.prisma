@@ -191,9 +191,43 @@ model Facility {
   taskTemplates        TaskTemplate[]
   taskInstances        TaskInstance[]
   plannedTaskInstances TaskInstance[] @relation("PlannedFacility")
+  cleaningRoutes       CleaningRoute[]
   inboxThreads         InboxThread[]
 
   @@map("facilities")
+}
+
+model CleaningRoute {
+  id         String   @id @default(uuid()) @db.Uuid
+  facilityId String   @map("facility_id") @db.Uuid
+  name       String
+  isDefault  Boolean  @default(false) @map("is_default")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  facility Facility            @relation(fields: [facilityId], references: [id])
+  items    CleaningRouteItem[]
+
+  @@unique([facilityId, name])
+  @@index([facilityId, isDefault])
+  @@map("cleaning_routes")
+}
+
+model CleaningRouteItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  routeId        String   @map("route_id") @db.Uuid
+  taskTemplateId String   @map("task_template_id") @db.Uuid
+  sequence       Int
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  route        CleaningRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  taskTemplate TaskTemplate  @relation(fields: [taskTemplateId], references: [id])
+
+  @@unique([routeId, taskTemplateId])
+  @@index([taskTemplateId])
+  @@map("cleaning_route_items")
 }
 
 model Zone {
@@ -300,8 +334,9 @@ model TaskTemplate {
   facility      Facility            @relation(fields: [facilityId], references: [id])
   zone          Zone                @relation(fields: [zoneId], references: [id])
   taskGroup     TaskGroup           @relation(fields: [taskGroupId], references: [id])
-  status        TaskTemplateStatus?
-  taskInstances TaskInstance[]
+  status             TaskTemplateStatus?
+  taskInstances      TaskInstance[]
+  cleaningRouteItems CleaningRouteItem[]
 
   @@map("task_templates")
 }

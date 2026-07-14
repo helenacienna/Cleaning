@@ -3535,7 +3535,8 @@ button.button {
 
 .facility-task-order-intro,
 .facility-task-order-zone-header,
-.facility-task-order-card {
+.facility-task-order-card,
+.facility-task-order-controls {
   display: flex;
   gap: 12px;
   align-items: center;
@@ -3549,6 +3550,11 @@ button.button {
 .facility-task-order-intro h2,
 .facility-task-order-zone-header h3 {
   margin: 0 0 4px;
+}
+
+.facility-task-order-controls {
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .facility-task-order-zone {
