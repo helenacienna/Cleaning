@@ -7,9 +7,13 @@ function parseBoardDay(day) {
     return null;
   }
 
+  const dateOnly = new Date(`${day}T00:00:00.000Z`);
+  const localStart = new Date(`${day}T00:00:00+10:00`);
+
   return {
-    start: new Date(`${day}T00:00:00+10:00`),
-    end: new Date(`${day}T00:00:00+10:00`).getTime() + 24 * 60 * 60 * 1000,
+    dateOnly,
+    localStart,
+    localEnd: new Date(localStart.getTime() + 24 * 60 * 60 * 1000),
     dueAt: new Date(`${day}T09:00:00+10:00`),
   };
 }
@@ -50,8 +54,6 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Missing task, facility, or day' }, { status: 400 });
   }
 
-  const dayEnd = new Date(parsedDay.end);
-
   const taskTemplate = await prisma.taskTemplate.findFirst({
     where: {
       active: true,
@@ -81,9 +83,9 @@ export async function POST(request) {
       taskTemplateId: taskTemplate.id,
       status: { notIn: ['cancelled', 'skipped'] },
       OR: [
-        { plannedRunDate: parsedDay.start },
-        { dueAt: { gte: parsedDay.start, lt: dayEnd } },
-        { shiftRun: { is: { runDate: parsedDay.start } } },
+        { plannedRunDate: parsedDay.dateOnly },
+        { dueAt: { gte: parsedDay.localStart, lt: parsedDay.localEnd } },
+        { shiftRun: { is: { runDate: parsedDay.dateOnly } } },
       ],
     },
     select: {
@@ -101,8 +103,8 @@ export async function POST(request) {
     where: {
       plannedFacilityId: taskTemplate.facilityId,
       OR: [
-        { plannedRunDate: parsedDay.start },
-        { shiftRun: { is: { runDate: parsedDay.start } } },
+        { plannedRunDate: parsedDay.dateOnly },
+        { shiftRun: { is: { runDate: parsedDay.dateOnly } } },
       ],
     },
     select: {
@@ -116,7 +118,7 @@ export async function POST(request) {
   const shiftRun = assignedStaffId
     ? await prisma.shiftRun.findFirst({
         where: {
-          runDate: parsedDay.start,
+          runDate: parsedDay.dateOnly,
           assignedStaffId,
         },
         select: { id: true, shiftStartAt: true },
@@ -144,7 +146,7 @@ export async function POST(request) {
       planningDueAt: calculatePlanningDueAt(parsedDay.dueAt),
       scheduledForAt,
       assignedStaffId,
-      plannedRunDate: parsedDay.start,
+      plannedRunDate: parsedDay.dateOnly,
       sequence: maxSequence + 1,
       status: 'scheduled',
       priority: taskTemplate.priority,

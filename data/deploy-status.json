@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-12T08:48:46.465Z",
-  "version": "5893832+local",
-  "summary": "Harden organiser board live data fallback"
+  "deployedAt": "2026-07-15T21:42:00.911Z",
+  "version": "c589edc+local",
+  "summary": "Fix extra task dates and resolved issue mapping"
 }
