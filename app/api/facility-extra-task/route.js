@@ -1,22 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../lib/prisma';
 import { calculatePlanningDueAt, refreshTemplateStatus } from '../../../lib/task-scheduling';
-
-function parseBoardDay(day) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(day ?? ''))) {
-    return null;
-  }
-
-  const dateOnly = new Date(`${day}T00:00:00.000Z`);
-  const localStart = new Date(`${day}T00:00:00+10:00`);
-
-  return {
-    dateOnly,
-    localStart,
-    localEnd: new Date(localStart.getTime() + 24 * 60 * 60 * 1000),
-    dueAt: new Date(`${day}T09:00:00+10:00`),
-  };
-}
+import { parseExtraTaskBoardDay } from '../../../lib/extra-task-board-day';
 
 function buildManualInstanceCode(templateCode, day) {
   const stamp = String(day).replace(/-/g, '');
@@ -48,7 +33,7 @@ export async function POST(request) {
   const zone = String(body?.zone ?? '').trim();
   const taskGroup = String(body?.taskGroup ?? '').trim();
   const boardDay = String(body?.day ?? '').trim();
-  const parsedDay = parseBoardDay(boardDay);
+  const parsedDay = parseExtraTaskBoardDay(boardDay);
 
   if (!facilityName || !parsedDay || (!templateCode && !title)) {
     return NextResponse.json({ error: 'Missing task, facility, or day' }, { status: 400 });
