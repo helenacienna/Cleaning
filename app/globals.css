@@ -3536,7 +3536,8 @@ button.button {
 .facility-task-order-intro,
 .facility-task-order-zone-header,
 .facility-task-order-card,
-.facility-task-order-controls {
+.facility-task-order-controls,
+.facility-task-order-search-card {
   display: flex;
   gap: 12px;
   align-items: center;
@@ -3557,9 +3558,51 @@ button.button {
   flex-wrap: wrap;
 }
 
+.facility-task-order-search-card {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.facility-task-order-search-label {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  min-width: min(100%, 320px);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.facility-task-order-search-label input {
+  width: 100%;
+  border: 1px solid rgba(15,23,42,0.12);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+  background: #ffffff;
+}
+
+.facility-task-order-search-label input:focus {
+  outline: none;
+  border-color: rgba(37,99,235,0.45);
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.10);
+}
+
 .facility-task-order-zone {
   display: grid;
   gap: 12px;
+}
+
+.facility-task-order-empty {
+  display: grid;
+  gap: 4px;
 }
 
 .facility-task-order-card {
@@ -4181,6 +4224,15 @@ button.button {
 .task-row-disclosure-daily-tight .task-disclosure-chevron{font-size:11px}
 .facility-board-task-bullet{color:#0f172a94;flex:none;font-size:20px;line-height:1;transform:translateY(-1px)}
 .facility-board-zone-card-daily .task-group-body .task-row-disclosure-daily-tight{background:0 0;min-height:0;padding:6px 0}
+.facility-board-task-column-periodic .facility-board-zone-card{gap:0;padding:4px}
+.facility-board-task-column-periodic .zone-summary-row{padding:3px 5px 1px}
+.facility-board-task-column-periodic .zone-summary-left{gap:0}
+.facility-board-task-column-periodic .task-group-body{gap:2px;padding:0 2px 2px}
+.facility-board-task-column-periodic .facility-board-task-list{gap:2px}
+.facility-board-task-column-periodic .task-row-disclosure-daily-tight{min-height:18px;padding:2px 4px}
+.facility-board-task-column-periodic .task-row-disclosure-daily-tight .task-inline-top-row{min-height:16px}
+.facility-board-task-column-periodic .task-row-disclosure-daily-tight .task-inline-main strong{font-size:13px;line-height:1.02}
+.facility-board-task-column-periodic .task-disclosure-compact{border-radius:8px}
 .facility-board-extra-task-row{grid-template-columns:minmax(0,1fr);align-items:flex-start}
 .facility-board-extra-task-meta{color:var(--muted);gap:2px;margin-top:4px;font-size:11px;line-height:1.2;display:grid}
 @media (max-width: 980px){

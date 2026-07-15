@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import ViewOptionsMenu from './ViewOptionsMenu';
 import ExtraTaskScheduleCard from './ExtraTaskScheduleCard';
+import ExpandAllZonesButton from './ExpandAllZonesButton';
 import FacilityTaskOrderView from './FacilityTaskOrderView';
 import { taskCardTemplates as demoTaskCardTemplates } from '../../../data/demo-data';
 import { notFound } from 'next/navigation';
@@ -297,16 +298,29 @@ function groupAssignmentTasks(tasks = []) {
     groups.get(key).tasks.push({ ...task, displayOrder: index + 1 });
   });
 
-  return Array.from(groups.values()).map((group) => {
-    const completed = getOutcomeCompletedCount(group.tasks);
-    const total = group.tasks.length;
-    return {
-      ...group,
-      completed,
-      total,
-      progress: total ? Math.round((completed / total) * 100) : 0,
-    };
-  });
+  return Array.from(groups.values())
+    .map((group) => {
+      const completed = getOutcomeCompletedCount(group.tasks);
+      const total = group.tasks.length;
+      return {
+        ...group,
+        completed,
+        total,
+        progress: total ? Math.round((completed / total) * 100) : 0,
+      };
+    })
+    .sort((left, right) => {
+      const progressDiff = right.progress - left.progress;
+      if (progressDiff !== 0) return progressDiff;
+
+      const completedDiff = right.completed - left.completed;
+      if (completedDiff !== 0) return completedDiff;
+
+      const zoneDiff = String(left.zone || '').localeCompare(String(right.zone || ''));
+      if (zoneDiff !== 0) return zoneDiff;
+
+      return String(left.taskGroup || '').localeCompare(String(right.taskGroup || ''));
+    });
 }
 
 function renderOutcomeProgress(tasks = [], className = 'progress') {
@@ -656,7 +670,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                   {section.subtitle ? <p className="muted">{section.subtitle}</p> : null}
                 </div>
                 <div className="facility-board-task-column-header-actions">
-                  {section.key === 'daily' ? <button className="button secondary slim facility-board-expand-button" type="button">Expand all zones</button> : null}
+                  {section.key === 'daily' ? <ExpandAllZonesButton /> : null}
                   {section.key === 'extra' ? <div className="badge">{section.summary.count} tasks</div> : <div className="badge">{section.summary.completed}/{section.summary.total} complete</div>}
                 </div>
               </div>
@@ -701,7 +715,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                 <span className="task-group-progress-label zone-summary-progress-label-compact">{group.completed}/{group.total} complete</span>
                               </div>
                             ) : <strong className="zone-summary-title-with-photo">{group.zone}<ZonePhotoIndicator tasks={group.tasks} /></strong>}
-                            <div className="task-group-progress-stack">{renderOutcomeProgress(group.tasks, 'task-group-progress')}</div>
+                            {isDaily ? <div className="task-group-progress-stack">{renderOutcomeProgress(group.tasks, 'task-group-progress')}</div> : null}
                           </div>
                           {section.key === 'periodic' ? <div className="task-disclosure-summary-right zone-summary-right" /> : null}
                         </summary>

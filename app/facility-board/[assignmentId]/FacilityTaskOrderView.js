@@ -56,16 +56,40 @@ function getOrderedTemplateIds(tasks = []) {
   return tasks.map((task) => task.taskTemplateUuid).filter(Boolean);
 }
 
+function getTaskSearchText(task = {}) {
+  return [
+    task.title,
+    task.zone,
+    task.taskGroup,
+    task.staff,
+    task.frequency,
+    task.templateId,
+    task.taskTemplateUuid,
+    task.instanceCode,
+    getTaskOrder(task),
+  ].filter((value) => value !== null && value !== undefined).join(' ').toLowerCase();
+}
+
+function filterTasks(tasks = [], searchQuery = '') {
+  const query = searchQuery.trim().toLowerCase();
+  if (!query) return tasks;
+
+  return tasks.filter((task) => getTaskSearchText(task).includes(query));
+}
+
 export default function FacilityTaskOrderView({ tasks = [], facility }) {
   const [orderedTasks, setOrderedTasks] = useState(() => sortTasks(tasks));
   const [routes, setRoutes] = useState([]);
   const [selectedRouteId, setSelectedRouteId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [draggingId, setDraggingId] = useState(null);
   const [notice, setNotice] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? null;
+  const visibleTasks = useMemo(() => filterTasks(orderedTasks, searchQuery), [orderedTasks, searchQuery]);
+  const isSearching = searchQuery.trim().length > 0;
 
-  const zoneSections = useMemo(() => groupByZone(orderedTasks), [orderedTasks]);
+  const zoneSections = useMemo(() => groupByZone(visibleTasks), [visibleTasks]);
 
   function applyRouteToTasks(route, baseTasks = tasks) {
     const routeTasks = routeItemsToTasks(route);
@@ -298,12 +322,27 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
           <button className="button secondary slim" type="button" onClick={createRoute} disabled={isSaving}>New route</button>
           <button className="button secondary slim" type="button" onClick={makeDefaultRoute} disabled={isSaving || !selectedRouteId || selectedRoute?.isDefault}>Make default</button>
           <button className="button primary slim" type="button" onClick={applyRouteToLiveChecklist} disabled={isSaving || !orderedTasks.length}>Apply to live checklist</button>
-          <div className="badge">{orderedTasks.length} route tasks</div>
+          <div className="badge">{isSearching ? `${visibleTasks.length}/${orderedTasks.length} shown` : `${orderedTasks.length} route tasks`}</div>
         </div>
       </div>
 
+      <div className="card facility-task-order-search-card">
+        <label className="facility-task-order-search-label" htmlFor="facility-task-order-search">
+          <span>Search task order</span>
+          <input
+            id="facility-task-order-search"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search zone, task, group, staff, frequency or number…"
+            autoComplete="off"
+          />
+        </label>
+        {isSearching ? <button className="button secondary slim" type="button" onClick={() => setSearchQuery('')}>Clear</button> : null}
+      </div>
+
       <div className="facility-task-order-zones">
-        {zoneSections.map((section) => (
+        {zoneSections.length ? zoneSections.map((section) => (
           <article className="card facility-task-order-zone" key={section.zone}>
             <div className="facility-task-order-zone-header">
               <h3>{section.zone}</h3>
@@ -352,7 +391,12 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
               ))}
             </div>
           </article>
-        ))}
+        )) : (
+          <div className="card facility-task-order-empty">
+            <strong>No matching tasks</strong>
+            <span className="muted">Try a different zone, task name, staff member, frequency, or task number.</span>
+          </div>
+        )}
       </div>
 
       {notice ? <div className="save-notice facility-task-order-notice">{notice}</div> : null}
