@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-16T13:20:00.000Z",
-  "version": "fabc322",
-  "summary": "Remove task photo storage trace warning"
+  "deployedAt": "2026-07-16T13:45:00.000Z",
+  "version": "f3447e1",
+  "summary": "Move cleaner issue panel below grade buttons"
 }
