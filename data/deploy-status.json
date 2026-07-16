@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-15T22:12:00.000Z",
-  "version": "90acd2c",
-  "summary": "Fix issue state mapper runtime reference"
+  "deployedAt": "2026-07-16T00:25:00.000Z",
+  "version": "9400c5b",
+  "summary": "Add dashboard health guardrail"
 }
