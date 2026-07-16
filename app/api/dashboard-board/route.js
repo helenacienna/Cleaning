@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOrganiserBoardData } from '../../../lib/app-data';
+import { buildDashboardHealth } from '../../../lib/dashboard-health';
 import { getPrisma } from '../../../lib/prisma';
 import { alignAnchoredWeeklyDueAt, calculatePlanningDueAt, getRecurrenceBasis } from '../../../lib/task-scheduling';
 import { deriveOrganiserSchedule, formatBoardDayKey, getTaskInstanceBoardDate } from '../../../lib/task-effective-day.mjs';
@@ -34,7 +35,9 @@ export async function GET() {
     includeInboxSummary: false,
   });
 
-  return NextResponse.json({ board, source, timeZone });
+  const health = buildDashboardHealth({ board, source, timeZone });
+
+  return NextResponse.json({ board, source, timeZone, health });
 }
 
 export async function POST(request) {

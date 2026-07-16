@@ -5037,3 +5037,29 @@ button.button {
     margin: 0 16px 12px 102px;
   }
 }
+
+.dashboard-health-warning {
+  border-color: rgba(220, 38, 38, 0.28);
+  background: linear-gradient(135deg, rgba(254, 242, 242, 0.96), rgba(255, 251, 235, 0.92));
+}
+
+.dashboard-health-warning strong {
+  color: #991b1b;
+}
+
+.dashboard-health-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  color: #7f1d1d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dashboard-health-details span {
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.62);
+}

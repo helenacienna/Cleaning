@@ -1659,6 +1659,7 @@ export default function HomePage() {
   const [selectedBoardDay, setSelectedBoardDay] = useState(null);
   const [dashboardBoard, setDashboardBoard] = useState(null);
   const [dashboardSource, setDashboardSource] = useState(null);
+  const [dashboardHealth, setDashboardHealth] = useState(null);
   const [dashboardTimeZone, setDashboardTimeZone] = useState(DEFAULT_APP_TIME_ZONE);
   const [dashboardStaffOrderSettings, setDashboardStaffOrderSettings] = useState({ daily: {}, periodic: {} });
   const [taskLibraryCards, setTaskLibraryCards] = useState(demoTaskCardTemplates);
@@ -1681,6 +1682,7 @@ export default function HomePage() {
       const todayBoardDay = getTodayBoardDayKey(timeZone);
       setDashboardBoard(payload.board);
       setDashboardSource(payload.source ?? null);
+      setDashboardHealth(payload.health ?? null);
       setDashboardTimeZone(timeZone);
       setManagerSummary(payload.summary ?? null);
       setSelectedBoardDay((current) => {
@@ -2074,11 +2076,19 @@ export default function HomePage() {
     <main className="page dashboard-page">
       <section>
         {!liveRuntimeData && (
-          <div className="card" style={{ marginBottom: 16 }}>
-            <strong>Live operational data unavailable</strong>
+          <div className="card dashboard-health-warning" style={{ marginBottom: 16 }}>
+            <strong>⚠ Live operational data unavailable</strong>
             <div className="muted">
-              The board is no longer falling back to polished demo operations data here. Once the runtime data path is stable, this view will populate from live records.
+              This board is currently using <strong>{dashboardSource || 'unknown source'}</strong>, not live Prisma records. Do not treat the visible tasks as production truth until this warning clears.
             </div>
+            {dashboardHealth ? (
+              <div className="dashboard-health-details">
+                <span>Cards: {dashboardHealth.cardCount}</span>
+                <span>Staff: {dashboardHealth.staffCount}</span>
+                <span>Days: {dashboardHealth.dayCount}</span>
+                <span>{dashboardHealth.message}</span>
+              </div>
+            ) : null}
           </div>
         )}
 
