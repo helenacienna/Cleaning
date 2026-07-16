@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-16T00:25:00.000Z",
-  "version": "9400c5b",
-  "summary": "Add dashboard health guardrail"
+  "deployedAt": "2026-07-16T00:35:00.000Z",
+  "version": "69f03fc",
+  "summary": "Fix issue state for unscored tasks"
 }
