@@ -551,6 +551,38 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
 
               {photos.length > 0 && <CleanerPhotoLightbox photos={photos} title={task.title} />}
 
+              <div className="grade-panel compact-grade-panel">
+                <div className="grade-panel-header-row">
+                  <div>
+                    <strong>Grade completion</strong>
+                    <span className="muted">1-2 flags follow-up, 3 partial, 4-5 complete</span>
+                  </div>
+                  <span className={`completion-bubble grade-panel-completion-bubble ${completionChipClass}`}>
+                    {completionChipLabel}
+                  </span>
+                </div>
+                <div className="grade-buttons" aria-label={`Grade ${task.title}`}>
+                  {[1, 2, 3, 4, 5].map((grade) => (
+                    <button
+                      className={`grade-button grade-${grade} ${selectedGrade === grade ? 'selected-grade' : ''}`}
+                      type="button"
+                      key={grade}
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onTouchStart={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        void gradeTask(task.id, grade, index);
+                      }}
+                      disabled={localState.saving}
+                    >
+                      <span>{grade}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {unresolvedLowGrade ? (
                 <div className="resolved-issue-panel" onClick={(event) => event.stopPropagation()}>
                   <div>
@@ -703,38 +735,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                   <span className="muted">Initial {localState.issueGrade}/5 issue corrected to {selectedGrade}/5.</span>
                 </div>
               ) : null}
-
-              <div className="grade-panel compact-grade-panel">
-                <div className="grade-panel-header-row">
-                  <div>
-                    <strong>Grade completion</strong>
-                    <span className="muted">1-2 flags follow-up, 3 partial, 4-5 complete</span>
-                  </div>
-                  <span className={`completion-bubble grade-panel-completion-bubble ${completionChipClass}`}>
-                    {completionChipLabel}
-                  </span>
-                </div>
-                <div className="grade-buttons" aria-label={`Grade ${task.title}`}>
-                  {[1, 2, 3, 4, 5].map((grade) => (
-                    <button
-                      className={`grade-button grade-${grade} ${selectedGrade === grade ? 'selected-grade' : ''}`}
-                      type="button"
-                      key={grade}
-                      onPointerDown={(event) => event.stopPropagation()}
-                      onMouseDown={(event) => event.stopPropagation()}
-                      onTouchStart={(event) => event.stopPropagation()}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        void gradeTask(task.id, grade, index);
-                      }}
-                      disabled={localState.saving}
-                    >
-                      <span>{grade}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               <label className="builder-field" onClick={(event) => event.stopPropagation()}>
                 <span className="muted">Cleaner note</span>
