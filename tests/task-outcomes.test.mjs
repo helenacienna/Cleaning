@@ -37,6 +37,23 @@ test('unresolved low score remains an open issue', () => {
   });
 });
 
+test('unscored scheduled tasks are not treated as open issues', () => {
+  const state = getIssueState({
+    issueRaised: false,
+    initialGrade: null,
+    score: null,
+    resolvedIssue: false,
+    managerAction: 'none',
+    reworkRequired: false,
+  });
+
+  assert.deepEqual(state, {
+    hadIssue: false,
+    resolvedIssue: false,
+    hasOpenIssue: false,
+  });
+});
+
 test('comment markers identify resolved issue outcomes', () => {
   const comment = '[grade:4/5]\n[initial-grade:1/5]\n[issue-resolved:true]\n[resolution-note] Corrected during checklist.';
 
