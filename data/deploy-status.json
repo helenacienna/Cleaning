@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-16T00:35:00.000Z",
-  "version": "69f03fc",
-  "summary": "Fix issue state for unscored tasks"
+  "deployedAt": "2026-07-16T13:20:00.000Z",
+  "version": "fabc322",
+  "summary": "Remove task photo storage trace warning"
 }
