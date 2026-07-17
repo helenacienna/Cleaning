@@ -551,6 +551,18 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       </div>
 
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
+        <section className="active-checklist-instructions" aria-label="Active checklist instructions">
+          <div className="instruction-copy">
+            <span className="badge">How to use this list</span>
+            <strong>Work through each job, grade it, then move to the next open task.</strong>
+            <ul>
+              <li>Tap a task to focus it. Use <strong>Next open</strong> to jump to the next unfinished job.</li>
+              <li>Grade each job from <strong>1 to 5</strong>: 1-2 needs correction, 3 is partly done, 4-5 is complete.</li>
+              <li>If you choose 1 or 2, add a <strong>before photo</strong>, fix the issue, then choose the corrected score and add an <strong>after photo</strong>.</li>
+              <li>Add any required photo or note before saving. Use <strong>Refresh</strong> if progress looks out of date.</li>
+            </ul>
+          </div>
+        </section>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
           const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0, photos: [], resolutionNote: '', issueGrade: null, issueStage: null, finalGrade: null, lastPhotoType: null, askAnotherPhoto: false, resolvedIssue: false, statusMessage: '', statusTone: 'muted' };

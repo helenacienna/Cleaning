@@ -2443,6 +2443,40 @@ code {
   padding: 10vh 6px;
 }
 
+.active-checklist-instructions {
+  scroll-snap-align: start;
+  padding: 14px;
+  border: 1px solid rgba(89,195,255,0.26);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(240,249,255,0.96), rgba(236,253,245,0.92));
+  box-shadow: 0 12px 28px rgba(15,23,42,0.07);
+}
+
+.instruction-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.instruction-copy strong {
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.instruction-copy ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.instruction-copy li strong {
+  font-size: inherit;
+}
+
 .compact-task-card {
   position: relative;
   min-height: auto;
