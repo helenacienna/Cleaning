@@ -4557,12 +4557,23 @@ button.button {
 }
 
 .resolved-issue-buttons {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .resolved-issue-buttons .grade-button span {
-  font-size: 12px;
-  line-height: 1.1;
+  font-size: 15px;
+  line-height: 1.12;
+}
+
+.resolved-issue-buttons .grade-button {
+  min-height: 54px;
+  padding: 8px;
+}
+
+.correction-later-button {
+  border-color: rgba(148,163,184,0.34);
+  background: rgba(248,250,252,0.95);
+  color: var(--muted);
 }
 
 @media (max-width: 760px) {
@@ -4602,7 +4613,11 @@ button.button {
   }
 
   .resolved-issue-buttons {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .resolved-issue-buttons .grade-button span {
+    font-size: 14px;
   }
 }
 

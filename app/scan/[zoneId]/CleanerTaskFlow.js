@@ -579,11 +579,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               </div>
 
-              {(task.photoRequired || task.commentRequired || localState.photoCount > 0) && (
+              {(task.photoRequired || task.commentRequired) && (
                 <div className="compact-flags">
                   {task.photoRequired && <span className="flag required-flag">Forced photo</span>}
                   {task.commentRequired && <span className="flag">Comment required</span>}
-                  <span className="flag">{localState.photoCount} photos</span>
                 </div>
               )}
 
@@ -619,9 +618,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     </button>
                   ))}
                 </div>
-                {originalIssueLocked ? (
-                  <span className="muted">Original score locked after before photo. Record the corrected score in the issue section below.</span>
-                ) : null}
               </div>
 
               {unresolvedLowGrade ? (
@@ -745,9 +741,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                           rows={2}
                         />
                       </label>
-                      <div className="task-actions compact-actions">
+                      <div className="grade-buttons resolved-issue-buttons" aria-label={`Correction action for ${task.title}`}>
                         <button
-                          className="button secondary"
+                          className="grade-button correction-later-button"
                           type="button"
                           onPointerDown={(event) => event.stopPropagation()}
                           onMouseDown={(event) => event.stopPropagation()}
@@ -759,10 +755,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                           }}
                           disabled={localState.saving}
                         >
-                          Correct later
+                          <span>Correct later</span>
                         </button>
-                      </div>
-                      <div className="grade-buttons resolved-issue-buttons" aria-label={`Corrected score for ${task.title}`}>
                         {[3, 4, 5].map((finalGrade) => (
                           <button
                             className={`grade-button grade-${finalGrade} ${localState.finalGrade === finalGrade ? 'selected-grade' : ''}`}
