@@ -667,7 +667,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                         <strong>Before</strong>
                         <span className="muted">Issue evidence</span>
                         {beforePhotos.length > 0 ? (
-                          <CleanerPhotoLightbox photos={beforePhotos} title={`${task.title} before issue evidence`} />
+                          <CleanerPhotoLightbox photos={beforePhotos} viewerPhotos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
                         ) : (
                           <span className="muted">No before photo yet</span>
                         )}
@@ -676,7 +676,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                         <strong>After</strong>
                         <span className="muted">Correction evidence</span>
                         {afterPhotos.length > 0 ? (
-                          <CleanerPhotoLightbox photos={afterPhotos} title={`${task.title} after correction evidence`} />
+                          <CleanerPhotoLightbox photos={afterPhotos} viewerPhotos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
                         ) : (
                           <span className="muted">No after photo yet</span>
                         )}

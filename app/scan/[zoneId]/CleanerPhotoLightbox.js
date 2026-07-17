@@ -2,8 +2,23 @@
 
 import { useState } from 'react';
 
-export default function CleanerPhotoLightbox({ photos, title }) {
-  const [activePhoto, setActivePhoto] = useState(null);
+export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = photos }) {
+  const [activePhotoId, setActivePhotoId] = useState(null);
+  const activePhotos = viewerPhotos?.length ? viewerPhotos : photos;
+  const activeIndex = activePhotoId ? activePhotos.findIndex((photo) => photo.id === activePhotoId) : -1;
+  const activePhoto = activeIndex >= 0 ? activePhotos[activeIndex] : null;
+  const hasMultiplePhotos = activePhotos.length > 1;
+
+  function openPhoto(photo) {
+    const viewerPhoto = activePhotos.find((candidate) => candidate.id === photo.id) ?? photo;
+    setActivePhotoId(viewerPhoto.id);
+  }
+
+  function movePhoto(direction) {
+    if (!hasMultiplePhotos || activeIndex < 0) return;
+    const nextIndex = (activeIndex + direction + activePhotos.length) % activePhotos.length;
+    setActivePhotoId(activePhotos[nextIndex].id);
+  }
 
   return (
     <>
@@ -12,7 +27,7 @@ export default function CleanerPhotoLightbox({ photos, title }) {
           <button
             key={photo.id}
             type="button"
-            onClick={() => setActivePhoto(photo)}
+            onClick={() => openPhoto(photo)}
             style={{ background: 'transparent', border: 0, padding: 0, cursor: 'pointer' }}
           >
             <img
@@ -29,20 +44,30 @@ export default function CleanerPhotoLightbox({ photos, title }) {
           <div className="fullscreen-checklist" style={{ alignItems: 'center', justifyContent: 'center' }}>
             <header className="modal-header compact-modal-header" style={{ width: '100%' }}>
               <div>
-                <span className="badge">Photo preview</span>
+                <span className="badge">Photo preview {hasMultiplePhotos ? `${activeIndex + 1} of ${activePhotos.length}` : ''}</span>
                 <strong>{title}</strong>
               </div>
               <div className="workflow-banner-actions">
                 <a className="button secondary" href={activePhoto.photoUrl} target="_blank" rel="noreferrer">Open original</a>
-                <button className="button secondary" type="button" onClick={() => setActivePhoto(null)}>Close</button>
+                <button className="button secondary" type="button" onClick={() => setActivePhotoId(null)}>Close</button>
               </div>
             </header>
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, width: '100%' }}>
+            <div className="photo-viewer-stage">
+              {hasMultiplePhotos ? (
+                <button className="photo-viewer-arrow photo-viewer-arrow-left" type="button" aria-label="Previous photo" onClick={() => movePhoto(-1)}>
+                  ‹
+                </button>
+              ) : null}
               <img
                 src={activePhoto.photoUrl}
                 alt={`${title} preview`}
                 style={{ maxWidth: '92vw', maxHeight: '78vh', borderRadius: 18, objectFit: 'contain', background: '#fff' }}
               />
+              {hasMultiplePhotos ? (
+                <button className="photo-viewer-arrow photo-viewer-arrow-right" type="button" aria-label="Next photo" onClick={() => movePhoto(1)}>
+                  ›
+                </button>
+              ) : null}
             </div>
           </div>
         </div>

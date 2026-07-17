@@ -4489,12 +4489,12 @@ button.button {
 }
 
 .issue-photo-column-before {
-  border-color: rgba(255,123,145,0.28);
+  border: 2px solid rgba(225,64,93,0.72);
   background: rgba(255,241,242,0.72);
 }
 
 .issue-photo-column-after {
-  border-color: rgba(99,230,165,0.30);
+  border: 2px solid rgba(20,184,120,0.72);
   background: rgba(236,253,245,0.72);
 }
 
@@ -4505,6 +4505,43 @@ button.button {
 .issue-photo-column img {
   width: 58px !important;
   height: 58px !important;
+}
+
+.photo-viewer-stage {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.photo-viewer-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 48px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(15,23,42,0.14);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.9);
+  color: var(--ink);
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  transform: translateY(-50%);
+  box-shadow: 0 12px 32px rgba(15,23,42,0.16);
+}
+
+.photo-viewer-arrow-left {
+  left: 12px;
+}
+
+.photo-viewer-arrow-right {
+  right: 12px;
 }
 
 .resolved-issue-buttons {
@@ -4529,6 +4566,20 @@ button.button {
   .issue-photo-column img {
     width: 52px !important;
     height: 52px !important;
+  }
+
+  .photo-viewer-arrow {
+    width: 42px;
+    height: 54px;
+    font-size: 38px;
+  }
+
+  .photo-viewer-arrow-left {
+    left: 4px;
+  }
+
+  .photo-viewer-arrow-right {
+    right: 4px;
   }
 
   .resolved-issue-buttons {
