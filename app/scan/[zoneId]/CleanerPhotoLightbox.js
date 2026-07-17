@@ -61,7 +61,7 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
               <img
                 src={activePhoto.photoUrl}
                 alt={`${title} preview`}
-                style={{ maxWidth: '92vw', maxHeight: '78vh', borderRadius: 18, objectFit: 'contain', background: '#fff' }}
+                className="photo-viewer-image"
               />
               {hasMultiplePhotos ? (
                 <button className="photo-viewer-arrow photo-viewer-arrow-right" type="button" aria-label="Next photo" onClick={() => movePhoto(1)}>
