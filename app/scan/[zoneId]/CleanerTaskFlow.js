@@ -360,7 +360,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
           grade: finalGrade,
           note: current.note || '',
           resolvedFromGrade: issueGrade,
-          resolutionNote: current.resolutionNote || '',
+          resolutionNote: current.note || '',
         }),
       });
 
@@ -732,12 +732,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                   ) : !localState.askAnotherPhoto ? (
                     <>
                       <label className="builder-field">
-                        <span className="muted">Correction note</span>
+                        <span className="muted">Cleaner note</span>
                         <textarea
-                          value={localState.resolutionNote || ''}
-                          onChange={(event) => updateTask(task.id, { resolutionNote: event.target.value, statusMessage: '' })}
-                          placeholder="What was corrected? Optional but useful for the supervisor report."
-                          rows={2}
+                          value={localState.note}
+                          onChange={(event) => updateTask(task.id, { note: event.target.value, saved: false, statusMessage: '' })}
+                          placeholder={task.commentRequired ? 'Add the required note here' : 'Optional note'}
+                          rows={3}
                         />
                       </label>
                       <div className="grade-buttons resolved-issue-buttons" aria-label={`Correction action for ${task.title}`}>
@@ -819,15 +819,17 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               ) : null}
 
-              <label className="builder-field" onClick={(event) => event.stopPropagation()}>
-                <span className="muted">Cleaner note</span>
-                <textarea
-                  value={localState.note}
-                  onChange={(event) => updateTask(task.id, { note: event.target.value, saved: false, statusMessage: '' })}
-                  placeholder={task.commentRequired ? 'Add the required note here' : 'Optional note'}
-                  rows={3}
-                />
-              </label>
+              {!unresolvedLowGrade ? (
+                <label className="builder-field" onClick={(event) => event.stopPropagation()}>
+                  <span className="muted">Cleaner note</span>
+                  <textarea
+                    value={localState.note}
+                    onChange={(event) => updateTask(task.id, { note: event.target.value, saved: false, statusMessage: '' })}
+                    placeholder={task.commentRequired ? 'Add the required note here' : 'Optional note'}
+                    rows={3}
+                  />
+                </label>
+              ) : null}
 
               <div className="task-actions compact-actions">
                 <label className={task.photoRequired ? 'button photo-required-button' : 'button secondary'}>
