@@ -617,7 +617,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               )}
 
-              {photos.length > 0 && !unresolvedLowGrade && <CleanerPhotoLightbox photos={photos} title={task.title} />}
+              {photos.length > 0 && !unresolvedLowGrade && <CleanerPhotoLightbox photos={photos} title={task.title} framed />}
 
               {unresolvedLowGrade ? (
                 <div

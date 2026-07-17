@@ -4507,6 +4507,17 @@ button.button {
   height: 58px !important;
 }
 
+.photo-preview-frame {
+  padding: 10px;
+  border: 2px solid rgba(20,184,120,0.72);
+  border-radius: 16px;
+  background: rgba(236,253,245,0.72);
+}
+
+.photo-preview-frame img {
+  border-color: rgba(20,184,120,0.55) !important;
+}
+
 .photo-viewer-stage {
   position: relative;
   display: flex;

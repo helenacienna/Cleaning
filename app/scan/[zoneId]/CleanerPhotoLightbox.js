@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = photos }) {
+export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = photos, framed = false }) {
   const [activePhotoId, setActivePhotoId] = useState(null);
   const activePhotos = viewerPhotos?.length ? viewerPhotos : photos;
   const activeIndex = activePhotoId ? activePhotos.findIndex((photo) => photo.id === activePhotoId) : -1;
@@ -22,7 +22,7 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
 
   return (
     <>
-      <div className="flag-row" style={{ marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
+      <div className={framed ? 'photo-preview-frame flag-row' : 'flag-row'} style={{ marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
         {photos.slice(0, 6).map((photo) => (
           <button
             key={photo.id}
