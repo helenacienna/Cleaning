@@ -536,6 +536,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
           const beforePhotos = photos.filter((photo) => photo.photoType === 'exception');
           const afterPhotos = photos.filter((photo) => photo.photoType === 'completion');
+          const issueWorkflowPhotos = [...beforePhotos, ...afterPhotos];
           const unresolvedLowGrade = Number(selectedGrade) >= 1 && Number(selectedGrade) <= 2 && !localState.resolvedIssue;
           const completionChipClass = isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'completion-done' : selectedGrade ? 'completion-open' : 'completion-open';
           const completionChipLabel = isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'Completed' : selectedGrade ? 'Follow-up' : 'Open';
@@ -563,7 +564,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               )}
 
-              {photos.length > 0 && <CleanerPhotoLightbox photos={photos} title={task.title} />}
+              {photos.length > 0 && !unresolvedLowGrade && <CleanerPhotoLightbox photos={photos} title={task.title} />}
 
               <div className="grade-panel compact-grade-panel">
                 <div className="grade-panel-header-row">
@@ -617,6 +618,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     <span className="flag">Before photos: {beforePhotos.length}</span>
                     <span className="flag">After photos: {afterPhotos.length}</span>
                   </div>
+                  {issueWorkflowPhotos.length > 0 ? (
+                    <CleanerPhotoLightbox photos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
+                  ) : null}
                   {localState.askAnotherPhoto ? (
                     <div className="add-another-photo-panel">
                       <strong>Would you like to add another photo?</strong>
