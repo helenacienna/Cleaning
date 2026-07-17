@@ -2435,12 +2435,12 @@ code {
 
 .compact-task-list {
   display: grid;
-  gap: 16px;
+  gap: 10px;
   max-height: 78vh;
   overflow-y: auto;
   scroll-snap-type: y proximity;
-  scroll-padding: 14vh 0;
-  padding: 14vh 6px;
+  scroll-padding: 10vh 0;
+  padding: 10vh 6px;
 }
 
 .compact-task-card {
@@ -2551,8 +2551,8 @@ code {
 
 .compact-grade-panel {
   margin-top: 0;
-  padding: 8px;
-  gap: 8px;
+  padding: 6px;
+  gap: 6px;
 }
 
 .selected-grade {
@@ -4875,46 +4875,38 @@ button.button {
 
 /* Active checklist tighter card layout */
 .compact-task-card {
-  gap: 8px;
-  padding: 10px;
+  gap: 6px;
+  padding: 8px;
   align-content: start;
 }
 
 .compact-task-top {
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 4px;
   padding: 0;
-  padding-top: 28px;
-}
-
-.compact-task-top .task-number {
-  position: absolute;
-  top: 10px;
-  left: 10px;
 }
 
 .compact-task-copy {
-  gap: 8px;
+  gap: 4px;
 }
 
 .compact-grade-panel,
 .resolved-issue-panel,
 .add-another-photo-panel,
 .builder-field {
-  gap: 8px;
+  gap: 6px;
 }
 
 .compact-flags,
 .compact-actions,
 .grade-buttons {
-  gap: 8px;
+  gap: 6px;
 }
 
 @media (max-width: 760px) {
   .compact-task-top {
     grid-template-columns: 1fr;
     padding: 0;
-    padding-top: 28px;
   }
 }
 

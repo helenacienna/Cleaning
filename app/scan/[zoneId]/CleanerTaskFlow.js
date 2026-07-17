@@ -572,7 +572,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
               onClick={() => focusJob(index)}
             >
               <div className="compact-task-top">
-                <div className="task-number">{index + 1}</div>
                 <div className="compact-task-copy">
                   {task.zone ? <div className="compact-task-zone">{task.zone}</div> : null}
                   <div className="compact-task-title">{task.title}</div>
