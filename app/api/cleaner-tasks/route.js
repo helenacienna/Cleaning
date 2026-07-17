@@ -125,6 +125,15 @@ export async function POST(request) {
   return NextResponse.json({
     ok: true,
     elapsedMs: Date.now() - startedAt,
-    message: isResolution ? 'Resolved issue saved' : grade >= 3 ? 'Task completed' : 'Task saved for follow-up',
+    message: isResolution
+      ? `Issue record saved: original score ${resolvedFromGrade}/5, corrected score ${grade}/5`
+      : grade >= 3 ? 'Task completed' : 'Task saved for follow-up',
+    issueRecord: isResolution
+      ? {
+          originalScore: resolvedFromGrade,
+          correctedScore: grade,
+          resolved: true,
+        }
+      : null,
   });
 }

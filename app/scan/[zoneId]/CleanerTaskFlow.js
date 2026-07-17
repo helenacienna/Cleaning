@@ -357,7 +357,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         finalGrade,
         issueStage: 'resolved',
         resolvedIssue: true,
-        statusMessage: result.message || `Resolved from ${issueGrade}/5 to ${finalGrade}/5`,
+        statusMessage: result.issueRecord
+          ? `Issue record saved — original ${result.issueRecord.originalScore}/5, corrected ${result.issueRecord.correctedScore}/5`
+          : result.message || `Resolved from ${issueGrade}/5 to ${finalGrade}/5`,
         statusTone: 'tone-green',
       });
 
@@ -759,8 +761,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               ) : localState.resolvedIssue ? (
                 <div className="resolved-issue-panel resolved-issue-panel-done">
-                  <strong>Resolved issue</strong>
-                  <span className="muted">Initial {localState.issueGrade}/5 issue corrected to {selectedGrade}/5.</span>
+                  <strong>Resolved issue recorded</strong>
+                  <span className="muted">Original score {localState.issueGrade}/5 · Corrected score {selectedGrade}/5.</span>
                 </div>
               ) : null}
 
