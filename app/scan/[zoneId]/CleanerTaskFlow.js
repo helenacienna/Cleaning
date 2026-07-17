@@ -693,6 +693,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                             updateTask(task.id, { askAnotherPhoto: false });
                             if (localState.lastPhotoType === 'exception' && localState.issueStage === 'needs_issue_photo') {
                               void saveInitialIssue(task.id, index);
+                            } else if (localState.lastPhotoType === 'completion' && localState.issueStage === 'needs_after_photo' && localState.finalGrade) {
+                              void resolveIssue(task.id, index);
                             }
                           }}
                         >
