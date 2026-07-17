@@ -58,6 +58,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const cardRefs = useRef([]);
   const issuePanelRefs = useRef({});
+  const afterCorrectionPhotoInputRefs = useRef({});
   const listRef = useRef(null);
   const refreshTimerRef = useRef(null);
   const endCardRef = useRef(null);
@@ -274,6 +275,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       statusMessage: 'Add after photo(s) showing the correction, then save',
       statusTone: 'tone-amber',
     });
+  }
+
+  function openAfterCorrectionPhotoPicker(taskId) {
+    afterCorrectionPhotoInputRefs.current[taskId]?.click();
   }
 
   function deferIssueCorrection(taskId, index) {
@@ -639,6 +644,23 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     <span className="flag">Before photos: {beforePhotos.length}</span>
                     <span className="flag">After photos: {afterPhotos.length}</span>
                   </div>
+                  <input
+                    ref={(node) => {
+                      if (node) {
+                        afterCorrectionPhotoInputRefs.current[task.id] = node;
+                      } else {
+                        delete afterCorrectionPhotoInputRefs.current[task.id];
+                      }
+                    }}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      void uploadPhoto(task.id, file, 'completion', index);
+                      event.target.value = '';
+                    }}
+                  />
                   {issueWorkflowPhotos.length > 0 ? (
                     <CleanerPhotoLightbox photos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
                   ) : null}
@@ -733,31 +755,33 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                             onMouseDown={(event) => event.stopPropagation()}
                             onTouchStart={(event) => event.stopPropagation()}
                             onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              selectCorrectedGrade(task.id, finalGrade);
-                            }}
-                            disabled={localState.saving}
-                          >
+                            event.preventDefault();
+                            event.stopPropagation();
+                            selectCorrectedGrade(task.id, finalGrade);
+                            openAfterCorrectionPhotoPicker(task.id);
+                          }}
+                          disabled={localState.saving}
+                        >
                             <span>Corrected to {finalGrade}</span>
                           </button>
                         ))}
                       </div>
                       {localState.finalGrade ? (
                         <div className="task-actions compact-actions">
-                          <label className="button photo-required-button">
+                          <button
+                            className="button photo-required-button"
+                            type="button"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onTouchStart={(event) => event.stopPropagation()}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              openAfterCorrectionPhotoPicker(task.id);
+                            }}
+                          >
                             Add after correction photo
-                            <input
-                              type="file"
-                              accept="image/*"
-                              style={{ display: 'none' }}
-                              onChange={(event) => {
-                                const file = event.target.files?.[0];
-                                void uploadPhoto(task.id, file, 'completion', index);
-                                event.target.value = '';
-                              }}
-                            />
-                          </label>
+                          </button>
                           <button
                             className="button primary"
                             type="button"
