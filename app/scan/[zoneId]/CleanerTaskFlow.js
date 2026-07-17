@@ -652,28 +652,54 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                       event.target.value = '';
                     }}
                   />
-                  {issueWorkflowPhotos.length > 0 ? (
-                    <div className="issue-photo-split" aria-label={`${task.title} issue evidence`}>
-                      <div className="issue-photo-column issue-photo-column-before">
-                        <strong>Before</strong>
-                        <span className="muted">Issue evidence</span>
-                        {beforePhotos.length > 0 ? (
-                          <CleanerPhotoLightbox photos={beforePhotos} viewerPhotos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
-                        ) : (
-                          <span className="muted">No before photo yet</span>
-                        )}
-                      </div>
-                      <div className="issue-photo-column issue-photo-column-after">
-                        <strong>After</strong>
-                        <span className="muted">Correction evidence</span>
-                        {afterPhotos.length > 0 ? (
-                          <CleanerPhotoLightbox photos={afterPhotos} viewerPhotos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
-                        ) : (
-                          <span className="muted">No after photo yet</span>
-                        )}
-                      </div>
+                  <div className="issue-photo-split" aria-label={`${task.title} issue evidence`}>
+                    <div className="issue-photo-column issue-photo-column-before">
+                      <strong>Before</strong>
+                      <span className="muted">Issue evidence</span>
+                      {beforePhotos.length > 0 ? (
+                        <CleanerPhotoLightbox photos={beforePhotos} viewerPhotos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
+                      ) : (
+                        <span className="muted">No before photo yet</span>
+                      )}
+                      <label className="button photo-required-button issue-photo-upload-button">
+                        Add before photo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            void uploadPhoto(task.id, file, 'exception', index);
+                            event.target.value = '';
+                          }}
+                        />
+                      </label>
                     </div>
-                  ) : null}
+                    <div className="issue-photo-column issue-photo-column-after">
+                      <strong>After</strong>
+                      <span className="muted">Correction evidence</span>
+                      {afterPhotos.length > 0 ? (
+                        <CleanerPhotoLightbox photos={afterPhotos} viewerPhotos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
+                      ) : (
+                        <span className="muted">No after photo yet</span>
+                      )}
+                      <button
+                        className="button photo-required-button issue-photo-upload-button"
+                        type="button"
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onTouchStart={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          openAfterCorrectionPhotoPicker(task.id);
+                        }}
+                        disabled={localState.saving || !localState.finalGrade}
+                      >
+                        Add after photo
+                      </button>
+                    </div>
+                  </div>
                   {localState.askAnotherPhoto ? (
                     <div className="add-another-photo-panel">
                       <strong>Would you like to add another photo?</strong>
@@ -713,23 +739,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                       </div>
                     </div>
                   ) : null}
-                  {localState.issueStage === 'needs_issue_photo' && !localState.askAnotherPhoto ? (
-                    <div className="task-actions compact-actions">
-                      <label className="button photo-required-button">
-                        Add before issue photo
-                        <input
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            void uploadPhoto(task.id, file, 'exception', index);
-                            event.target.value = '';
-                          }}
-                        />
-                      </label>
-                    </div>
-                  ) : !localState.askAnotherPhoto ? (
+                  {localState.issueStage === 'needs_issue_photo' && !localState.askAnotherPhoto ? null : !localState.askAnotherPhoto ? (
                     <>
                       <label className="builder-field">
                         <span className="muted">Cleaner note</span>
@@ -779,20 +789,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                       {localState.finalGrade ? (
                         <div className="task-actions compact-actions">
                           <button
-                            className="button photo-required-button"
-                            type="button"
-                            onPointerDown={(event) => event.stopPropagation()}
-                            onMouseDown={(event) => event.stopPropagation()}
-                            onTouchStart={(event) => event.stopPropagation()}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              openAfterCorrectionPhotoPicker(task.id);
-                            }}
-                          >
-                            Add after correction photo
-                          </button>
-                          <button
                             className="button primary"
                             type="button"
                             onPointerDown={(event) => event.stopPropagation()}
@@ -819,21 +815,23 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               ) : null}
 
-              <div className="task-actions compact-actions">
-                <label className={task.photoRequired ? 'button photo-required-button' : 'button secondary'}>
-                  {task.photoRequired ? 'Upload required photo' : 'Upload photo'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      void uploadPhoto(task.id, file);
-                      event.target.value = '';
-                    }}
-                  />
-                </label>
-              </div>
+              {!unresolvedLowGrade ? (
+                <div className="task-actions compact-actions">
+                  <label className={task.photoRequired ? 'button photo-required-button' : 'button secondary'}>
+                    {task.photoRequired ? 'Upload required photo' : 'Upload photo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        void uploadPhoto(task.id, file);
+                        event.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+              ) : null}
 
               {!unresolvedLowGrade ? (
                 <label className="builder-field" onClick={(event) => event.stopPropagation()}>
