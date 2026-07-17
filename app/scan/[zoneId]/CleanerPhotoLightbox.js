@@ -23,6 +23,7 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
   return (
     <>
       <div className={framed ? 'photo-preview-frame flag-row' : 'flag-row'} style={{ marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
+        {framed ? <strong className="photo-preview-frame-title">Uploaded Photos</strong> : null}
         {photos.slice(0, 6).map((photo) => (
           <button
             key={photo.id}

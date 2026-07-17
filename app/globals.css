@@ -4514,6 +4514,15 @@ button.button {
   background: rgba(236,253,245,0.72);
 }
 
+.photo-preview-frame-title {
+  flex: 1 0 100%;
+  display: block;
+  color: var(--success);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
 .photo-preview-frame img {
   border-color: rgba(20,184,120,0.55) !important;
 }
