@@ -540,10 +540,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
           }}
           disabled={nextIncompleteIndex < 0}
         >
-          {nextIncompleteIndex >= 0 ? 'Next open task' : 'All tasks completed'}
+          {nextIncompleteIndex >= 0 ? 'Next open' : 'All done'}
         </button>
         <button className="button secondary flow-nav-button" type="button" onClick={onRefreshProgress}>
-          Refresh progress
+          Refresh
         </button>
         <button className="button secondary flow-nav-button close-modal-button" type="button" onClick={onClose}>
           Close
