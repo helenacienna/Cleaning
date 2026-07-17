@@ -654,8 +654,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                   />
                   <div className="issue-photo-split" aria-label={`${task.title} issue evidence`}>
                     <div className="issue-photo-column issue-photo-column-before">
-                      <strong>Before</strong>
-                      <span className="muted">Issue evidence</span>
+                      <strong>Before photos</strong>
                       {beforePhotos.length > 0 ? (
                         <CleanerPhotoLightbox photos={beforePhotos} viewerPhotos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
                       ) : (
@@ -676,8 +675,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                       </label>
                     </div>
                     <div className="issue-photo-column issue-photo-column-after">
-                      <strong>After</strong>
-                      <span className="muted">Correction evidence</span>
+                      <strong>After photos</strong>
                       {afterPhotos.length > 0 ? (
                         <CleanerPhotoLightbox photos={afterPhotos} viewerPhotos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
                       ) : (

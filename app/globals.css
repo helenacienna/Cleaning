@@ -4503,8 +4503,8 @@ button.button {
 }
 
 .issue-photo-column img {
-  width: 58px !important;
-  height: 58px !important;
+  width: 116px !important;
+  height: 116px !important;
 }
 
 .issue-photo-upload-button {
@@ -4600,7 +4600,11 @@ button.button {
 .correction-later-button {
   border-color: rgba(148,163,184,0.34);
   background: rgba(248,250,252,0.95);
-  color: var(--muted);
+  color: #000;
+}
+
+.correction-later-button span {
+  color: #000;
 }
 
 @media (max-width: 760px) {
@@ -4614,8 +4618,8 @@ button.button {
   }
 
   .issue-photo-column img {
-    width: 52px !important;
-    height: 52px !important;
+    width: 104px !important;
+    height: 104px !important;
   }
 
   .photo-viewer-arrow {
