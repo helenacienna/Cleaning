@@ -110,6 +110,21 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
 
   async function gradeTask(taskId, grade, index) {
     const current = taskState[taskId] || {};
+    const originalIssueLocked = (current.photos ?? []).some((photo) => photo.photoType === 'exception')
+      && Number(current.issueGrade || current.grade) >= 1
+      && Number(current.issueGrade || current.grade) <= 2
+      && !current.resolvedIssue;
+
+    if (originalIssueLocked) {
+      updateTask(taskId, {
+        statusMessage: `Original issue score ${Number(current.issueGrade || current.grade)}/5 is locked because a before photo has been added. Use the corrected score buttons below.`,
+        statusTone: 'tone-amber',
+      });
+      window.setTimeout(() => {
+        scrollToIssuePanel(taskId, index, 'start');
+      }, 20);
+      return;
+    }
 
     if (grade <= 2) {
       updateTask(taskId, {
@@ -540,6 +555,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
           const afterPhotos = photos.filter((photo) => photo.photoType === 'completion');
           const issueWorkflowPhotos = [...beforePhotos, ...afterPhotos];
           const unresolvedLowGrade = Number(selectedGrade) >= 1 && Number(selectedGrade) <= 2 && !localState.resolvedIssue;
+          const originalIssueLocked = unresolvedLowGrade && beforePhotos.length > 0;
           const completionChipClass = isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'completion-done' : selectedGrade ? 'completion-open' : 'completion-open';
           const completionChipLabel = isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'Completed' : selectedGrade ? 'Follow-up' : 'Open';
 
@@ -592,12 +608,15 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                         event.stopPropagation();
                         void gradeTask(task.id, grade, index);
                       }}
-                      disabled={localState.saving}
+                      disabled={localState.saving || originalIssueLocked}
                     >
                       <span>{grade}</span>
                     </button>
                   ))}
                 </div>
+                {originalIssueLocked ? (
+                  <span className="muted">Original score locked after before photo. Record the corrected score in the issue section below.</span>
+                ) : null}
               </div>
 
               {unresolvedLowGrade ? (
