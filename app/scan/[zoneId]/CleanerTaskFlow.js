@@ -85,13 +85,13 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     });
   }
 
-  function focusIssuePanel(taskId, index) {
+  function scrollToIssuePanel(taskId, index, block = 'center') {
     setCurrentIndex(index);
     const issuePanel = issuePanelRefs.current[taskId];
     if (issuePanel) {
       issuePanel.scrollIntoView({
         behavior: 'smooth',
-        block: 'center',
+        block,
       });
       return;
     }
@@ -124,7 +124,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         statusTone: 'tone-amber',
       });
       window.setTimeout(() => {
-        focusIssuePanel(taskId, index);
+        scrollToIssuePanel(taskId, index, 'center');
       }, 20);
       return;
     }
@@ -238,7 +238,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         statusTone: 'tone-amber',
       });
       window.setTimeout(() => {
-        focusJob(index);
+        scrollToIssuePanel(taskId, index, 'start');
       }, 20);
       queueRefresh();
     } catch {
