@@ -4470,6 +4470,43 @@ button.button {
   background: rgba(236,253,245,0.92);
 }
 
+.issue-photo-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.issue-photo-column {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: 126px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.72);
+}
+
+.issue-photo-column-before {
+  border-color: rgba(255,123,145,0.28);
+  background: rgba(255,241,242,0.72);
+}
+
+.issue-photo-column-after {
+  border-color: rgba(99,230,165,0.30);
+  background: rgba(236,253,245,0.72);
+}
+
+.issue-photo-column .flag-row {
+  margin-bottom: 0 !important;
+}
+
+.issue-photo-column img {
+  width: 58px !important;
+  height: 58px !important;
+}
+
 .resolved-issue-buttons {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -4480,6 +4517,20 @@ button.button {
 }
 
 @media (max-width: 760px) {
+  .issue-photo-split {
+    gap: 8px;
+  }
+
+  .issue-photo-column {
+    min-height: 112px;
+    padding: 8px;
+  }
+
+  .issue-photo-column img {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
   .resolved-issue-buttons {
     grid-template-columns: 1fr;
   }
