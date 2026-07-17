@@ -57,6 +57,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const cardRefs = useRef([]);
+  const issuePanelRefs = useRef({});
   const listRef = useRef(null);
   const refreshTimerRef = useRef(null);
   const endCardRef = useRef(null);
@@ -82,6 +83,19 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       behavior: 'smooth',
       block: 'center',
     });
+  }
+
+  function focusIssuePanel(taskId, index) {
+    setCurrentIndex(index);
+    const issuePanel = issuePanelRefs.current[taskId];
+    if (issuePanel) {
+      issuePanel.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+      return;
+    }
+    focusJob(index);
   }
 
   function updateTask(taskId, updates) {
@@ -110,7 +124,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         statusTone: 'tone-amber',
       });
       window.setTimeout(() => {
-        focusJob(index);
+        focusIssuePanel(taskId, index);
       }, 20);
       return;
     }
@@ -584,7 +598,17 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
               </div>
 
               {unresolvedLowGrade ? (
-                <div className="resolved-issue-panel" onClick={(event) => event.stopPropagation()}>
+                <div
+                  className="resolved-issue-panel"
+                  ref={(node) => {
+                    if (node) {
+                      issuePanelRefs.current[task.id] = node;
+                    } else {
+                      delete issuePanelRefs.current[task.id];
+                    }
+                  }}
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <div>
                     <strong>{localState.issueStage === 'needs_issue_photo' ? 'Issue selected — add before photo(s)' : 'Issue recorded — add correction'}</strong>
                     <span className="muted">Keep the initial {selectedGrade}/5 issue on record, then capture the corrected result with after photo evidence.</span>
