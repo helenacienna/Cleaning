@@ -640,10 +640,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     <strong>{localState.issueStage === 'needs_issue_photo' ? 'Issue selected — add before photo(s)' : 'Issue recorded — add correction'}</strong>
                     <span className="muted">Keep the initial {selectedGrade}/5 issue on record, then capture the corrected result with after photo evidence.</span>
                   </div>
-                  <div className="compact-flags">
-                    <span className="flag">Before photos: {beforePhotos.length}</span>
-                    <span className="flag">After photos: {afterPhotos.length}</span>
-                  </div>
                   <input
                     ref={(node) => {
                       if (node) {
