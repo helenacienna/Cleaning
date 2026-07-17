@@ -4479,7 +4479,8 @@ button.button {
 
 .issue-photo-column {
   display: grid;
-  align-content: start;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: stretch;
   gap: 6px;
   min-height: 126px;
   padding: 10px;
