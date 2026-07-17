@@ -4542,6 +4542,12 @@ button.button {
   height: 116px !important;
 }
 
+.issue-photo-upload-actions {
+  display: grid;
+  gap: 6px;
+  align-self: end;
+}
+
 .issue-photo-upload-button {
   width: 100%;
   min-height: 38px;
