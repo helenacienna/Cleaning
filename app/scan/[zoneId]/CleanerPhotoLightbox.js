@@ -24,7 +24,13 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
     <>
       <div className={framed ? 'photo-preview-frame' : ''} style={{ marginBottom: 12 }}>
         {framed ? <strong className="photo-preview-frame-title">Uploaded Photos</strong> : null}
-        <div className="photo-preview-strip">
+        <div
+          className="photo-preview-strip"
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+          onTouchStart={(event) => event.stopPropagation()}
+        >
           {photos.slice(0, 12).map((photo) => (
             <button
               key={photo.id}

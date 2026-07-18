@@ -4542,16 +4542,20 @@ button.button {
 .photo-preview-strip {
   display: flex;
   flex-wrap: nowrap;
+  justify-content: flex-start;
   gap: 8px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  overflow-x: auto;
+  overflow-x: scroll;
   overflow-y: hidden;
+  overscroll-behavior-x: contain;
   padding: 2px 2px 8px;
   border-radius: 12px;
   scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  touch-action: pan-x;
   -webkit-overflow-scrolling: touch;
 }
 
