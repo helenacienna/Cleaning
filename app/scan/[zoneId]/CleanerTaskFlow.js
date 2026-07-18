@@ -6,7 +6,7 @@ const REFRESH_DEBOUNCE_MS = 450;
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
-  return Number(task?.score) >= 3 || task?.status === 'completed';
+  return Number(task?.score) >= 3 || task?.status === 'completed' || task?.status === 'skipped';
 }
 
 function formatStatusLabel(task) {
@@ -19,10 +19,25 @@ function formatStatusLabel(task) {
   if (task.status === 'completed') {
     return 'Completed already';
   }
+  if (task.status === 'skipped') {
+    return 'Skipped for admin review';
+  }
   if (task.status === 'in_progress') {
     return 'Marked in progress';
   }
   return 'Ready to complete';
+}
+
+function isCommentRequiredForGrade(task, grade) {
+  if (task?.commentRequirement === 'always') {
+    return true;
+  }
+
+  if (task?.commentRequirement === 'on_exception') {
+    return Number(grade) <= 2;
+  }
+
+  return task?.commentRequired && !task?.commentRequirement;
 }
 
 function createInitialTaskState(tasks) {
@@ -32,6 +47,9 @@ function createInitialTaskState(tasks) {
     return [task.id, {
       grade: task.score ?? null,
       note: task.note ?? '',
+      status: task.status,
+      skipReason: '',
+      showSkip: false,
       saving: false,
       saved: completed,
       photoCount: task.photoCount ?? 0,
@@ -84,7 +102,30 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
   }
 
   async function gradeTask(taskId, grade, index) {
+    const task = tasks[index];
     const current = taskState[taskId] || {};
+    const missing = [];
+
+    if (task?.photoRequired && (current.photoCount ?? task.photoCount ?? 0) < 1) {
+      missing.push('photo');
+    }
+
+    if (isCommentRequiredForGrade(task, grade) && !String(current.note || '').trim()) {
+      missing.push('comment');
+    }
+
+    if (missing.length) {
+      updateTask(taskId, {
+        saved: false,
+        showSkip: true,
+        statusMessage: `Required ${missing.join(' and ')} must be added before moving on. Use skip only with an admin explanation.`,
+        statusTone: 'tone-red',
+      });
+      window.setTimeout(() => {
+        focusJob(index);
+      }, 20);
+      return;
+    }
 
     if (index >= tasks.length - 1) {
       window.setTimeout(() => {
@@ -122,24 +163,27 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       });
 
       if (!response.ok) {
-        throw new Error('Unable to save cleaner task');
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || 'Unable to save cleaner task');
       }
 
       const result = await response.json();
       updateTask(taskId, {
         grade,
+        status: grade >= 4 ? 'completed' : 'in_progress',
         saving: false,
         saved: true,
         statusMessage: result.message || 'Task saved',
         statusTone: 'tone-green',
       });
       queueRefresh();
-    } catch {
+    } catch (error) {
       updateTask(taskId, {
         grade: current.grade ?? null,
         saving: false,
         saved: false,
-        statusMessage: 'Save failed — tap a grade to retry',
+        showSkip: true,
+        statusMessage: error?.message || 'Save failed — tap a grade to retry',
         statusTone: 'tone-red',
       });
       window.setTimeout(() => {
@@ -200,6 +244,78 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     }
   }
 
+
+  async function skipTask(taskId, index) {
+    const current = taskState[taskId] || {};
+    const skipReason = String(current.skipReason || '').trim();
+
+    if (skipReason.length < 5) {
+      updateTask(taskId, {
+        showSkip: true,
+        statusMessage: 'Add a short explanation before skipping so admin can assess it.',
+        statusTone: 'tone-red',
+      });
+      return;
+    }
+
+    updateTask(taskId, {
+      saving: true,
+      statusMessage: 'Sending skip to admin…',
+      statusTone: 'tone-amber',
+    });
+
+    try {
+      const response = await fetch('/api/cleaner-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'skip',
+          taskInstanceId: taskId,
+          skipReason,
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || 'Unable to skip task');
+      }
+
+      const result = await response.json();
+      updateTask(taskId, {
+        status: 'skipped',
+        saving: false,
+        saved: true,
+        showSkip: false,
+        statusMessage: result.message || 'Skip sent to admin for review',
+        statusTone: 'tone-amber',
+      });
+      queueRefresh();
+
+      const nextIndex = findNextIncompleteIndex(index);
+      if (nextIndex >= 0 && nextIndex !== index) {
+        window.setTimeout(() => {
+          focusJob(nextIndex);
+        }, 20);
+      } else {
+        window.setTimeout(() => {
+          endCardRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }, 20);
+      }
+    } catch (error) {
+      updateTask(taskId, {
+        saving: false,
+        showSkip: true,
+        statusMessage: error?.message || 'Skip failed — try again',
+        statusTone: 'tone-red',
+      });
+    }
+  }
+
   useEffect(() => () => {
     if (refreshTimerRef.current) {
       window.clearTimeout(refreshTimerRef.current);
@@ -240,7 +356,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       const index = (startIndex + offset) % tasks.length;
       const task = tasks[index];
       const localState = taskState[task.id] || {};
-      if (!isTaskCompleted({ ...task, score: localState.grade ?? task.score })) {
+      if (!isTaskCompleted({ ...task, status: localState.status ?? task.status, score: localState.grade ?? task.score })) {
         return index;
       }
     }
@@ -250,7 +366,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
 
   const completedCount = tasks.filter((task) => {
     const localState = taskState[task.id] || {};
-    return isTaskCompleted({ ...task, score: localState.grade ?? task.score });
+    return isTaskCompleted({ ...task, status: localState.status ?? task.status, score: localState.grade ?? task.score });
   }).length;
   const allTasksCompleted = tasks.length > 0 && completedCount === tasks.length;
   const nextIncompleteIndex = findNextIncompleteIndex();
@@ -276,9 +392,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
-          const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
+          const localState = taskState[task.id] || { grade: null, note: '', status: task.status, skipReason: '', showSkip: false, saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
           const selectedGrade = localState.grade;
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
+          const flowStatus = localState.status ?? task.status;
 
           return (
             <article
@@ -287,8 +404,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
               ref={(node) => { cardRefs.current[index] = node; }}
               onClick={() => focusJob(index)}
             >
-              <span className={`completion-bubble ${isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'completion-done' : selectedGrade ? 'completion-open' : 'completion-open'}`}>
-                {isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'Completed' : selectedGrade ? 'Follow-up' : 'Open'}
+              <span className={`completion-bubble ${isTaskCompleted({ ...task, status: flowStatus, score: selectedGrade ?? task.score }) ? 'completion-done' : selectedGrade ? 'completion-open' : 'completion-open'}`}>
+                {flowStatus === 'skipped' ? 'Skipped' : isTaskCompleted({ ...task, status: flowStatus, score: selectedGrade ?? task.score }) ? 'Completed' : selectedGrade ? 'Follow-up' : 'Open'}
               </span>
 
               <div className="compact-task-top">
@@ -363,7 +480,43 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                 <button className="button secondary" type="button" onClick={(event) => event.stopPropagation()}>
                   {task.commentRequired ? 'Required note' : 'Optional note'}
                 </button>
+                {(task.photoRequired || task.commentRequired || localState.showSkip) && flowStatus !== 'skipped' && (
+                  <button
+                    className="button secondary"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      updateTask(task.id, { showSkip: !localState.showSkip, statusMessage: '' });
+                    }}
+                    disabled={localState.saving}
+                  >
+                    Skip with explanation
+                  </button>
+                )}
               </div>
+
+              {localState.showSkip && flowStatus !== 'skipped' && (
+                <div className="builder-field" onClick={(event) => event.stopPropagation()}>
+                  <span className="muted">Skip explanation for admin review</span>
+                  <textarea
+                    value={localState.skipReason || ''}
+                    onChange={(event) => updateTask(task.id, { skipReason: event.target.value, statusMessage: '' })}
+                    placeholder="Why can this task not be completed now?"
+                    rows={3}
+                  />
+                  <button
+                    className="button secondary"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void skipTask(task.id, index);
+                    }}
+                    disabled={localState.saving}
+                  >
+                    Send skip to admin
+                  </button>
+                </div>
+              )}
 
               {localState.statusMessage && (
                 <div className={localState.statusTone} style={{ marginTop: 10, fontSize: 14 }}>
