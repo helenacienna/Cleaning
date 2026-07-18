@@ -633,11 +633,11 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               )}
 
-              {photos.length > 0 && !unresolvedLowGrade && <CleanerPhotoLightbox photos={photos} title={task.title} framed />}
+              {photos.length > 0 && !unresolvedLowGrade && !localState.resolvedIssue && <CleanerPhotoLightbox photos={photos} title={task.title} framed />}
 
-              {unresolvedLowGrade ? (
+              {unresolvedLowGrade || localState.resolvedIssue ? (
                 <div
-                  className="resolved-issue-panel"
+                  className={`resolved-issue-panel ${localState.resolvedIssue ? 'resolved-issue-panel-done' : ''}`}
                   ref={(node) => {
                     if (node) {
                       issuePanelRefs.current[task.id] = node;
@@ -648,8 +648,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div>
-                    <strong>{localState.issueStage === 'needs_issue_photo' ? 'Issue selected — add before photo(s)' : 'Issue recorded — add correction'}</strong>
-                    <span className="muted">Keep the initial {selectedGrade}/5 issue on record, then capture the corrected result with after photo evidence.</span>
+                    <strong>{localState.resolvedIssue ? 'Resolved issue recorded' : localState.issueStage === 'needs_issue_photo' ? 'Issue selected — add before photo(s)' : 'Issue recorded — add correction'}</strong>
+                    <span className="muted">
+                      {localState.resolvedIssue
+                        ? `Original score ${localState.issueGrade}/5 · Corrected score ${selectedGrade}/5. Before and after photos remain separated below.`
+                        : `Keep the initial ${selectedGrade}/5 issue on record, then capture the corrected result with after photo evidence.`}
+                    </span>
                   </div>
                   <input
                     ref={(node) => {
@@ -818,7 +822,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                       </div>
                     </div>
                   ) : null}
-                  {localState.issueStage === 'needs_issue_photo' && !localState.askAnotherPhoto ? null : !localState.askAnotherPhoto ? (
+                  {!localState.resolvedIssue && localState.issueStage === 'needs_issue_photo' && !localState.askAnotherPhoto ? null : !localState.resolvedIssue && !localState.askAnotherPhoto ? (
                     <>
                       <label className="builder-field">
                         <span className="muted">Cleaner note</span>
@@ -887,14 +891,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     </>
                   ) : null}
                 </div>
-              ) : localState.resolvedIssue ? (
-                <div className="resolved-issue-panel resolved-issue-panel-done">
-                  <strong>Resolved issue recorded</strong>
-                  <span className="muted">Original score {localState.issueGrade}/5 · Corrected score {selectedGrade}/5.</span>
-                </div>
               ) : null}
 
-              {!unresolvedLowGrade ? (
+              {!unresolvedLowGrade && !localState.resolvedIssue ? (
                 <div className="task-actions compact-actions">
                   <label className={task.photoRequired ? 'button photo-required-button' : 'button secondary'}>
                     {task.photoRequired ? 'Take required photo' : 'Take photo'}
@@ -926,7 +925,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               ) : null}
 
-              {!unresolvedLowGrade ? (
+              {!unresolvedLowGrade && !localState.resolvedIssue ? (
                 <label className="builder-field" onClick={(event) => event.stopPropagation()}>
                   <span className="muted">Cleaner note</span>
                   <textarea
