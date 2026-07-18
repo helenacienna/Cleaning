@@ -4519,6 +4519,7 @@ button.button {
   min-width: 0;
   min-height: 126px;
   padding: 10px;
+  overflow: hidden;
   border-radius: 16px;
   border: 1px solid rgba(15,23,42,0.10);
   background: rgba(255,255,255,0.72);
@@ -4545,9 +4546,11 @@ button.button {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 2px 2px 8px;
+  border-radius: 12px;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
 }
@@ -4557,7 +4560,11 @@ button.button {
   scroll-snap-align: start;
 }
 
-.photo-preview-frame,
+.photo-preview-frame {
+  min-width: 0;
+  overflow: hidden;
+}
+
 .issue-photo-column .photo-preview-strip {
   min-width: 0;
   overflow-x: auto;
