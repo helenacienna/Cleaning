@@ -4537,6 +4537,23 @@ button.button {
   margin-bottom: 0 !important;
 }
 
+.photo-preview-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 2px 8px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.photo-preview-strip button {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
 .issue-photo-column img {
   width: 116px !important;
   height: 116px !important;

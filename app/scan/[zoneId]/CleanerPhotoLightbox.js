@@ -22,22 +22,24 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
 
   return (
     <>
-      <div className={framed ? 'photo-preview-frame flag-row' : 'flag-row'} style={{ marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
+      <div className={framed ? 'photo-preview-frame' : ''} style={{ marginBottom: 12 }}>
         {framed ? <strong className="photo-preview-frame-title">Uploaded Photos</strong> : null}
-        {photos.slice(0, 6).map((photo) => (
-          <button
-            key={photo.id}
-            type="button"
-            onClick={() => openPhoto(photo)}
-            style={{ background: 'transparent', border: 0, padding: 0, cursor: 'pointer' }}
-          >
-            <img
-              src={photo.photoUrl}
-              alt={`${title} evidence`}
-              style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 12, border: '1px solid #d8dee8' }}
-            />
-          </button>
-        ))}
+        <div className="photo-preview-strip">
+          {photos.slice(0, 12).map((photo) => (
+            <button
+              key={photo.id}
+              type="button"
+              onClick={() => openPhoto(photo)}
+              style={{ background: 'transparent', border: 0, padding: 0, cursor: 'pointer' }}
+            >
+              <img
+                src={photo.photoUrl}
+                alt={`${title} evidence`}
+                style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 12, border: '1px solid #d8dee8' }}
+              />
+            </button>
+          ))}
+        </div>
       </div>
 
       {activePhoto && (
