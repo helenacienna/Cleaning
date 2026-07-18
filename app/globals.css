@@ -4516,6 +4516,7 @@ button.button {
   grid-template-rows: auto minmax(0, 1fr) auto;
   align-content: stretch;
   gap: 6px;
+  min-width: 0;
   min-height: 126px;
   padding: 10px;
   border-radius: 16px;
@@ -4541,7 +4542,9 @@ button.button {
   display: flex;
   flex-wrap: nowrap;
   gap: 8px;
+  width: 100%;
   max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 2px 2px 8px;
@@ -4552,6 +4555,12 @@ button.button {
 .photo-preview-strip button {
   flex: 0 0 auto;
   scroll-snap-align: start;
+}
+
+.photo-preview-frame,
+.issue-photo-column .photo-preview-strip {
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .issue-photo-column img {
