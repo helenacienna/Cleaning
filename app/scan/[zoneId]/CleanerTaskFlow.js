@@ -40,6 +40,25 @@ function isCommentRequiredForGrade(task, grade) {
   return task?.commentRequired && !task?.commentRequirement;
 }
 
+function getRequirementState({ task, localState }) {
+  const selectedGrade = localState.grade;
+  const photoIsRequired = Boolean(selectedGrade && task?.photoRequired);
+  const commentIsRequired = Boolean(selectedGrade && isCommentRequiredForGrade(task, selectedGrade));
+  const photoMet = !photoIsRequired || (localState.photoCount ?? task.photoCount ?? 0) > 0;
+  const commentMet = !commentIsRequired || Boolean(String(localState.note || '').trim());
+
+  return {
+    photoIsRequired,
+    commentIsRequired,
+    photoMet,
+    commentMet,
+    missing: [
+      photoIsRequired && !photoMet ? 'photo' : null,
+      commentIsRequired && !commentMet ? 'comment' : null,
+    ].filter(Boolean),
+  };
+}
+
 function createInitialTaskState(tasks) {
   return Object.fromEntries(tasks.map((task) => {
     const completed = isTaskCompleted(task);
@@ -91,6 +110,14 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     });
   }
 
+  function focusRequirement(taskId, requirementType) {
+    const target = document.querySelector(`[data-requirement-target="${taskId}-${requirementType}"]`);
+    target?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }
+
   function updateTask(taskId, updates) {
     setTaskState((existing) => ({
       ...existing,
@@ -104,26 +131,26 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
   async function gradeTask(taskId, grade, index) {
     const task = tasks[index];
     const current = taskState[taskId] || {};
-    const missing = [];
-
-    if (task?.photoRequired && (current.photoCount ?? task.photoCount ?? 0) < 1) {
-      missing.push('photo');
-    }
-
-    if (isCommentRequiredForGrade(task, grade) && !String(current.note || '').trim()) {
-      missing.push('comment');
-    }
+    const requirementState = getRequirementState({
+      task,
+      localState: {
+        ...current,
+        grade,
+      },
+    });
+    const missing = requirementState.missing;
 
     if (missing.length) {
       updateTask(taskId, {
+        grade,
         saved: false,
         showSkip: true,
         statusMessage: `Required ${missing.join(' and ')} must be added before moving on. Use skip only with an admin explanation.`,
         statusTone: 'tone-red',
       });
       window.setTimeout(() => {
-        focusJob(index);
-      }, 20);
+        focusRequirement(taskId, missing[0]);
+      }, 40);
       return;
     }
 
@@ -396,6 +423,17 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           const selectedGrade = localState.grade;
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
           const flowStatus = localState.status ?? task.status;
+          const requirementState = getRequirementState({ task, localState });
+          const photoRequirementClass = requirementState.photoIsRequired
+            ? requirementState.photoMet
+              ? 'requirement-met'
+              : 'requirement-missing'
+            : '';
+          const commentRequirementClass = requirementState.commentIsRequired
+            ? requirementState.commentMet
+              ? 'requirement-met'
+              : 'requirement-missing'
+            : '';
 
           return (
             <article
@@ -453,7 +491,11 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                 </div>
               </div>
 
-              <label className="builder-field" onClick={(event) => event.stopPropagation()}>
+              <label
+                className={`builder-field cleaner-requirement-box ${commentRequirementClass}`}
+                data-requirement-target={`${task.id}-comment`}
+                onClick={(event) => event.stopPropagation()}
+              >
                 <span className="muted">Cleaner note</span>
                 <textarea
                   value={localState.note}
@@ -464,7 +506,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
               </label>
 
               <div className="task-actions compact-actions">
-                <label className={task.photoRequired ? 'button photo-required-button' : 'button secondary'}>
+                <label
+                  className={`${task.photoRequired ? 'button photo-required-button' : 'button secondary'} cleaner-requirement-box ${photoRequirementClass}`}
+                  data-requirement-target={`${task.id}-photo`}
+                >
                   {task.photoRequired ? 'Upload required photo' : 'Upload photo'}
                   <input
                     type="file"
