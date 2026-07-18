@@ -575,7 +575,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
           const beforePhotos = photos.filter((photo) => photo.photoType === 'exception');
           const afterPhotos = photos.filter((photo) => photo.photoType === 'completion');
-          const issueWorkflowPhotos = [...beforePhotos, ...afterPhotos];
           const unresolvedLowGrade = Number(selectedGrade) >= 1 && Number(selectedGrade) <= 2 && !localState.resolvedIssue;
           const originalIssueLocked = unresolvedLowGrade && beforePhotos.length > 0;
           const completionChipClass = isTaskCompleted({ ...task, score: selectedGrade ?? task.score }) ? 'completion-done' : selectedGrade ? 'completion-open' : 'completion-open';
@@ -691,7 +690,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     <div className="issue-photo-column issue-photo-column-before">
                       <strong>Before photos</strong>
                       {beforePhotos.length > 0 ? (
-                        <CleanerPhotoLightbox photos={beforePhotos} viewerPhotos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
+                        <CleanerPhotoLightbox photos={beforePhotos} title={`${task.title} before photos`} />
                       ) : (
                         <span className="muted">No before photo yet</span>
                       )}
@@ -728,7 +727,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     <div className="issue-photo-column issue-photo-column-after">
                       <strong>After photos</strong>
                       {afterPhotos.length > 0 ? (
-                        <CleanerPhotoLightbox photos={afterPhotos} viewerPhotos={issueWorkflowPhotos} title={`${task.title} issue evidence`} />
+                        <CleanerPhotoLightbox photos={afterPhotos} title={`${task.title} after photos`} />
                       ) : (
                         <span className="muted">No after photo yet</span>
                       )}
