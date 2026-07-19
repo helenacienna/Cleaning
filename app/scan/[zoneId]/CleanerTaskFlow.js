@@ -423,6 +423,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           const selectedGrade = localState.grade;
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
           const flowStatus = localState.status ?? task.status;
+          const hasIncidentGrade = Number(selectedGrade ?? task.score) > 0 && Number(selectedGrade ?? task.score) <= 2;
           const requirementState = getRequirementState({ task, localState });
           const photoRequirementClass = requirementState.photoIsRequired
             ? requirementState.photoMet
@@ -462,7 +463,14 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                 </div>
               )}
 
-              {photos.length > 0 && <CleanerPhotoLightbox photos={photos} title={task.title} />}
+              {photos.length > 0 && (
+                <CleanerPhotoLightbox
+                  photos={photos}
+                  title={task.title}
+                  required={task.photoRequired}
+                  incident={hasIncidentGrade}
+                />
+              )}
 
               <div className="grade-panel compact-grade-panel">
                 <div>

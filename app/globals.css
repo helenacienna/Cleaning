@@ -1155,6 +1155,79 @@ a { color: inherit; text-decoration: none; }
   animation: none;
 }
 
+.cleaner-photo-evidence {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(15,23,42,0.10);
+  border-radius: 16px;
+  background: rgba(248,250,252,0.92);
+}
+
+.cleaner-photo-evidence.compulsory-photo-evidence {
+  border: 2px solid rgba(34,197,94,0.86);
+  background: linear-gradient(180deg, rgba(34,197,94,0.12), #ffffff);
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.12), 0 10px 24px rgba(34,197,94,0.08);
+}
+
+.cleaner-photo-evidence.compulsory-photo-evidence.incident-photo-evidence {
+  border-color: rgba(239,68,68,0.88);
+  background: linear-gradient(180deg, rgba(239,68,68,0.10), rgba(34,197,94,0.08), #ffffff);
+  box-shadow: 0 0 0 2px rgba(239,68,68,0.10), 0 10px 24px rgba(239,68,68,0.08);
+}
+
+.cleaner-photo-evidence-title {
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.cleaner-photo-evidence-row {
+  margin-bottom: 0;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cleaner-photo-preview-button {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.cleaner-photo-preview-image {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid #d8dee8;
+}
+
+.compulsory-photo-evidence .cleaner-photo-preview-image {
+  border-color: rgba(34,197,94,0.95);
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.14);
+}
+
+.compulsory-photo-evidence.incident-photo-evidence .cleaner-photo-preview-image {
+  border-color: rgba(239,68,68,0.92);
+  box-shadow: 0 0 0 2px rgba(239,68,68,0.14);
+}
+
+.cleaner-photo-full-preview {
+  max-width: 92vw;
+  max-height: 78vh;
+  border-radius: 18px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.compulsory-photo-full-preview {
+  border: 3px solid rgba(34,197,94,0.90);
+  box-shadow: 0 0 0 4px rgba(34,197,94,0.14);
+}
+
 @keyframes cleanerRequirementPulse {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(239,68,68,0.42), 0 10px 24px rgba(239,68,68,0.12);
