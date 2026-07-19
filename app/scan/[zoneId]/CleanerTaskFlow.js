@@ -65,8 +65,8 @@ function createInitialTaskState(tasks) {
     const hasGrade = Number(task?.score) > 0;
     return [task.id, {
       grade: task.score ?? null,
-      correctedGrade: null,
-      incidentGrade: Number(task?.score) > 0 && Number(task?.score) <= 2 ? task.score : null,
+      correctedGrade: task.correctedGrade ?? null,
+      incidentGrade: task.initialGrade ?? (Number(task?.score) > 0 && Number(task?.score) <= 2 ? task.score : null),
       note: task.note ?? '',
       status: task.status,
       skipReason: '',
@@ -442,13 +442,14 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
-          const localState = taskState[task.id] || { grade: null, correctedGrade: null, incidentGrade: null, note: '', status: task.status, skipReason: '', showSkip: false, saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
+          const localState = taskState[task.id] || { grade: null, correctedGrade: task.correctedGrade ?? null, incidentGrade: task.initialGrade ?? null, note: '', status: task.status, skipReason: '', showSkip: false, saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
           const selectedGrade = localState.grade;
+          const resolvedCorrectedGrade = localState.correctedGrade ?? task.correctedGrade ?? null;
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
           const beforePhotos = photos.filter((photo) => photo.photoType === 'exception');
           const afterPhotos = photos.filter((photo) => photo.photoType === 'completion');
           const flowStatus = localState.status ?? task.status;
-          const gradeForIncidentCheck = Number(localState.incidentGrade ?? selectedGrade ?? task.score);
+          const gradeForIncidentCheck = Number(localState.incidentGrade ?? task.initialGrade ?? selectedGrade ?? task.score);
           const hasIncidentGrade = gradeForIncidentCheck > 0 && gradeForIncidentCheck <= 2;
           const showCorrectionPanel = hasIncidentGrade && flowStatus !== 'skipped';
           const canShowStackPhotoUpload = photos.length === 0 && !showCorrectionPanel;
@@ -543,7 +544,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
               )}
 
               {showCorrectionPanel && (
-                <section className={`issue-correction-panel compulsory-correction-panel ${localState.correctedGrade ? 'correction-score-entered' : ''}`} data-requirement-target={`${task.id}-correction`}>
+                <section className={`issue-correction-panel compulsory-correction-panel ${resolvedCorrectedGrade ? 'correction-score-entered' : ''}`} data-requirement-target={`${task.id}-correction`}>
                   <div>
                     <strong>{task.photoRequired ? 'Compulsory incident correction' : 'Incident correction'}</strong>
                     <span className="muted">Before evidence is recorded separately. Choose corrected score, then add after evidence.</span>
@@ -590,7 +591,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                       {[3, 4, 5].map((grade) => (
                         <button
                           key={grade}
-                          className={`button ${localState.correctedGrade === grade ? 'primary' : 'secondary'}`}
+                          className={`button ${resolvedCorrectedGrade === grade ? 'primary' : 'secondary'}`}
                           type="button"
                           onClick={(event) => {
                             event.preventDefault();
@@ -632,9 +633,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                         </label>
                       </CleanerPhotoLightbox>
                     ) : (
-                      <div className="muted">{localState.correctedGrade ? 'Add an after photo to complete the correction.' : 'Choose corrected score first, then add after photo.'}</div>
+                      <div className="muted">{resolvedCorrectedGrade ? 'Add an after photo to complete the correction.' : 'Choose corrected score first, then add after photo.'}</div>
                     )}
-                    {afterPhotos.length < 1 && localState.correctedGrade && <label className="button secondary cleaner-requirement-box requirement-missing">
+                    {afterPhotos.length < 1 && resolvedCorrectedGrade && <label className="button secondary cleaner-requirement-box requirement-missing">
                       Add after correction photo
                       <input
                         type="file"
