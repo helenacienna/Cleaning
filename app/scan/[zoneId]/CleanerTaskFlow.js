@@ -85,6 +85,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const [noteTaskId, setNoteTaskId] = useState(null);
+  const [skipTaskId, setSkipTaskId] = useState(null);
   const cardRefs = useRef([]);
   const listRef = useRef(null);
   const refreshTimerRef = useRef(null);
@@ -547,33 +548,16 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                     <strong>{task.photoRequired ? 'Compulsory incident correction' : 'Incident correction'}</strong>
                     <span className="muted">Before evidence is recorded separately. Choose corrected score, then add after evidence.</span>
                   </div>
-                  <div className="before-after-grid">
-                    <div className="before-after-column before-evidence-column">
-                      <div className="cleaner-photo-evidence-title">Before / incident evidence</div>
-                      {beforePhotos.length ? (
-                        <CleanerPhotoLightbox photos={beforePhotos} title={task.title} required={task.photoRequired} incident>
-                          <label className="button secondary">
-                            Add before incident photo
-                            <input
-                              type="file"
-                              accept="image/*"
-                      capture="environment"
-                              style={{ display: 'none' }}
-                              onChange={(event) => {
-                                const file = event.target.files?.[0];
-                                void uploadPhoto(task.id, file, 'exception');
-                                event.target.value = '';
-                              }}
-                            />
-                          </label>
-                        </CleanerPhotoLightbox>
-                      ) : (
-                        <label className="button secondary cleaner-requirement-box requirement-missing">
+                  <div className="before-after-column before-evidence-column">
+                    <div className="cleaner-photo-evidence-title">Before / incident evidence</div>
+                    {beforePhotos.length ? (
+                      <CleanerPhotoLightbox photos={beforePhotos} title={task.title} required={task.photoRequired} incident>
+                        <label className="button secondary">
                           Add before incident photo
                           <input
                             type="file"
                             accept="image/*"
-                      capture="environment"
+                            capture="environment"
                             style={{ display: 'none' }}
                             onChange={(event) => {
                               const file = event.target.files?.[0];
@@ -582,46 +566,25 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                             }}
                           />
                         </label>
-                      )}
-                    </div>
-                    <div className="before-after-column after-evidence-column">
-                      <div className="cleaner-photo-evidence-title">After correction evidence</div>
-                      {afterPhotos.length ? (
-                        <CleanerPhotoLightbox photos={afterPhotos} title={task.title} required={task.photoRequired}>
-                          <label className="button secondary">
-                            Add another after photo
-                            <input
-                              type="file"
-                              accept="image/*"
-                      capture="environment"
-                              style={{ display: 'none' }}
-                              onChange={(event) => {
-                                const file = event.target.files?.[0];
-                                void uploadPhoto(task.id, file, 'completion', index);
-                                event.target.value = '';
-                              }}
-                            />
-                          </label>
-                        </CleanerPhotoLightbox>
-                      ) : (
-                        <div className="muted">{localState.correctedGrade ? 'Add an after photo to complete the correction.' : 'Choose corrected score first, then add after photo.'}</div>
-                      )}
-                      {afterPhotos.length < 1 && localState.correctedGrade && <label className="button secondary cleaner-requirement-box requirement-missing">
-                        Add after correction photo
+                      </CleanerPhotoLightbox>
+                    ) : (
+                      <label className="button secondary cleaner-requirement-box requirement-missing">
+                        Add before incident photo
                         <input
                           type="file"
                           accept="image/*"
-                      capture="environment"
+                          capture="environment"
                           style={{ display: 'none' }}
                           onChange={(event) => {
                             const file = event.target.files?.[0];
-                            void uploadPhoto(task.id, file, 'completion', index);
+                            void uploadPhoto(task.id, file, 'exception');
                             event.target.value = '';
                           }}
                         />
-                      </label>}
-                    </div>
+                      </label>
+                    )}
                   </div>
+
                   {beforePhotos.length > 0 ? (
                     <div className="resolved-issue-buttons">
                       {[3, 4, 5].map((grade) => (
@@ -648,6 +611,44 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                   ) : (
                     <div className="muted">Add before photo to unlock corrected score options.</div>
                   )}
+
+                  <div className="before-after-column after-evidence-column">
+                    <div className="cleaner-photo-evidence-title">After correction evidence</div>
+                    {afterPhotos.length ? (
+                      <CleanerPhotoLightbox photos={afterPhotos} title={task.title} required={task.photoRequired}>
+                        <label className="button secondary">
+                          Add another after photo
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            style={{ display: 'none' }}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              void uploadPhoto(task.id, file, 'completion', index);
+                              event.target.value = '';
+                            }}
+                          />
+                        </label>
+                      </CleanerPhotoLightbox>
+                    ) : (
+                      <div className="muted">{localState.correctedGrade ? 'Add an after photo to complete the correction.' : 'Choose corrected score first, then add after photo.'}</div>
+                    )}
+                    {afterPhotos.length < 1 && localState.correctedGrade && <label className="button secondary cleaner-requirement-box requirement-missing">
+                      Add after correction photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        style={{ display: 'none' }}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          void uploadPhoto(task.id, file, 'completion', index);
+                          event.target.value = '';
+                        }}
+                      />
+                    </label>}
+                  </div>
                 </section>
               )}
 
@@ -689,7 +690,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
-                      updateTask(task.id, { showSkip: !localState.showSkip, statusMessage: '' });
+                      updateTask(task.id, { showSkip: true, statusMessage: '' });
+                      setSkipTaskId(task.id);
                     }}
                     disabled={localState.saving}
                   >
@@ -697,29 +699,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                   </button>
                 )}
               </div>
-
-              {localState.showSkip && flowStatus !== 'skipped' && (
-                <div className="builder-field" onClick={(event) => event.stopPropagation()}>
-                  <span className="muted">Skip explanation for admin review</span>
-                  <textarea
-                    value={localState.skipReason || ''}
-                    onChange={(event) => updateTask(task.id, { skipReason: event.target.value, statusMessage: '' })}
-                    placeholder="Why can this task not be completed now?"
-                    rows={3}
-                  />
-                  <button
-                    className="button secondary"
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void skipTask(task.id, index);
-                    }}
-                    disabled={localState.saving}
-                  >
-                    Send skip to admin
-                  </button>
-                </div>
-              )}
 
               {localState.statusMessage && (
                 <div className={localState.statusTone} style={{ marginTop: 10, fontSize: 14 }}>
@@ -752,7 +731,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
         if (!noteTask) return null;
         return (
           <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Cleaner note">
-            <div className="note-modal-card">
+            <div className={`note-modal-card ${noteTask.commentRequired ? (noteState.note?.trim() ? 'note-requirement-met' : 'note-requirement-missing') : ''}`}>
               <div>
                 <span className="badge">Cleaner note</span>
                 <h3>{noteTask.title}</h3>
@@ -761,7 +740,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                 value={noteState.note || ''}
                 onChange={(event) => updateTask(noteTaskId, { note: event.target.value, saved: false, statusMessage: '' })}
                 placeholder={noteTask.commentRequired ? 'Add the required note here' : 'Optional note'}
-                rows={6}
+                rows={noteTask.commentRequired ? 12 : 6}
                 autoFocus
               />
               <div className="workflow-banner-actions">
@@ -772,6 +751,53 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           </div>
         );
       })()}
+
+      {skipTaskId && (() => {
+        const skipTaskItem = tasks.find((task) => task.id === skipTaskId);
+        const skipState = taskState[skipTaskId] || {};
+        if (!skipTaskItem) return null;
+        return (
+          <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Skip explanation">
+            <div className="note-modal-card skip-modal-card">
+              <div>
+                <span className="badge">Skip explanation</span>
+                <h3>{skipTaskItem.title}</h3>
+              </div>
+              <textarea
+                value={skipState.skipReason || ''}
+                onChange={(event) => updateTask(skipTaskId, { skipReason: event.target.value, statusMessage: '' })}
+                placeholder="Why can this task not be completed now?"
+                rows={6}
+                autoFocus
+              />
+              <div className="workflow-banner-actions">
+                <button className="button secondary" type="button" onClick={() => setSkipTaskId(null)}>Close</button>
+                <button
+                  className="button primary"
+                  type="button"
+                  onClick={() => {
+                    const reason = String((taskState[skipTaskId] || {}).skipReason || '').trim();
+                    if (reason.length < 5) {
+                      updateTask(skipTaskId, {
+                        showSkip: true,
+                        statusMessage: 'Add a short explanation before skipping so admin can assess it.',
+                        statusTone: 'tone-red',
+                      });
+                      return;
+                    }
+                    const skipIndex = tasks.findIndex((task) => task.id === skipTaskId);
+                    void skipTask(skipTaskId, skipIndex >= 0 ? skipIndex : 0);
+                    setSkipTaskId(null);
+                  }}
+                >
+                  Send skip to admin
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
 
     </div>
   );

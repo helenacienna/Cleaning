@@ -1321,6 +1321,28 @@ a { color: inherit; text-decoration: none; }
   font-size: 16px;
 }
 
+.note-modal-card.note-requirement-missing {
+  border-color: rgba(239,68,68,0.92);
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.14), 0 24px 70px rgba(239,68,68,0.20);
+}
+
+.note-modal-card.note-requirement-met {
+  border-color: rgba(34,197,94,0.92);
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.14), 0 24px 70px rgba(34,197,94,0.18);
+}
+
+.note-modal-card.note-requirement-missing textarea {
+  min-height: 320px;
+  border-color: rgba(239,68,68,0.86);
+  background: linear-gradient(180deg, rgba(239,68,68,0.08), #ffffff);
+}
+
+.note-modal-card.note-requirement-met textarea {
+  min-height: 320px;
+  border-color: rgba(34,197,94,0.86);
+  background: linear-gradient(180deg, rgba(34,197,94,0.08), #ffffff);
+}
+
 @media (max-width: 620px) {
   .before-after-grid,
   .resolved-issue-buttons {
