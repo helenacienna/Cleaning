@@ -18,7 +18,7 @@ function buildEvidenceTitle({ required, incident }) {
   return 'Photo evidence';
 }
 
-export default function CleanerPhotoLightbox({ photos, title, required = false, incident = false }) {
+export default function CleanerPhotoLightbox({ photos, title, required = false, incident = false, children = null }) {
   const [activePhoto, setActivePhoto] = useState(null);
 
   const evidenceTitle = buildEvidenceTitle({ required, incident });
@@ -48,6 +48,7 @@ export default function CleanerPhotoLightbox({ photos, title, required = false, 
             </button>
           ))}
         </div>
+        {children ? <div className="cleaner-photo-evidence-actions">{children}</div> : null}
       </section>
 
       {activePhoto && (

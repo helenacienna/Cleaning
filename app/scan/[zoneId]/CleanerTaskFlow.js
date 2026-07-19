@@ -66,6 +66,7 @@ function createInitialTaskState(tasks) {
     return [task.id, {
       grade: task.score ?? null,
       correctedGrade: null,
+      incidentGrade: Number(task?.score) > 0 && Number(task?.score) <= 2 ? task.score : null,
       note: task.note ?? '',
       status: task.status,
       skipReason: '',
@@ -83,6 +84,7 @@ function createInitialTaskState(tasks) {
 export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
+  const [noteTaskId, setNoteTaskId] = useState(null);
   const cardRefs = useRef([]);
   const listRef = useRef(null);
   const refreshTimerRef = useRef(null);
@@ -155,7 +157,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       return;
     }
 
-    const shouldStayForCorrection = task?.photoRequired && grade <= 2 && !options.corrected;
+    const shouldStayForCorrection = grade <= 2 && !options.corrected;
 
     if (!shouldStayForCorrection) {
       if (index >= tasks.length - 1) {
@@ -205,6 +207,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       updateTask(taskId, {
         grade,
         correctedGrade: options.corrected ? grade : current.correctedGrade,
+        incidentGrade: grade <= 2 ? grade : current.incidentGrade,
         status: grade >= 4 ? 'completed' : 'in_progress',
         saving: false,
         saved: true,
@@ -432,14 +435,16 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
-          const localState = taskState[task.id] || { grade: null, note: '', status: task.status, skipReason: '', showSkip: false, saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
+          const localState = taskState[task.id] || { grade: null, correctedGrade: null, incidentGrade: null, note: '', status: task.status, skipReason: '', showSkip: false, saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
           const selectedGrade = localState.grade;
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
           const beforePhotos = photos.filter((photo) => photo.photoType === 'exception');
           const afterPhotos = photos.filter((photo) => photo.photoType === 'completion');
           const flowStatus = localState.status ?? task.status;
-          const hasIncidentGrade = Number(selectedGrade ?? task.score) > 0 && Number(selectedGrade ?? task.score) <= 2;
-          const showCorrectionPanel = task.photoRequired && hasIncidentGrade && flowStatus !== 'skipped';
+          const gradeForIncidentCheck = Number(localState.incidentGrade ?? selectedGrade ?? task.score);
+          const hasIncidentGrade = gradeForIncidentCheck > 0 && gradeForIncidentCheck <= 2;
+          const showCorrectionPanel = hasIncidentGrade && flowStatus !== 'skipped';
+          const canShowStackPhotoUpload = photos.length === 0 && !showCorrectionPanel;
           const requirementState = getRequirementState({ task, localState });
           const photoRequirementClass = requirementState.photoIsRequired
             ? requirementState.photoMet
@@ -512,32 +517,86 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                   title={task.title}
                   required={task.photoRequired}
                   incident={hasIncidentGrade}
-                />
+                >
+                  <label className="button secondary">
+                    Add another photo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        void uploadPhoto(task.id, file);
+                        event.target.value = '';
+                      }}
+                    />
+                  </label>
+                </CleanerPhotoLightbox>
               )}
 
               {showCorrectionPanel && (
                 <section className="issue-correction-panel compulsory-correction-panel" data-requirement-target={`${task.id}-correction`}>
                   <div>
-                    <strong>Compulsory incident correction</strong>
-                    <span className="muted">Before evidence is accepted. Add after evidence, then choose corrected score.</span>
+                    <strong>{task.photoRequired ? 'Compulsory incident correction' : 'Incident correction'}</strong>
+                    <span className="muted">Before evidence is recorded separately. Add after evidence, then choose corrected score.</span>
                   </div>
                   <div className="before-after-grid">
                     <div className="before-after-column before-evidence-column">
                       <div className="cleaner-photo-evidence-title">Before / incident evidence</div>
                       {beforePhotos.length ? (
-                        <CleanerPhotoLightbox photos={beforePhotos} title={task.title} required incident />
+                        <CleanerPhotoLightbox photos={beforePhotos} title={task.title} required={task.photoRequired} incident>
+                          <label className="button secondary">
+                            Add before incident photo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                void uploadPhoto(task.id, file, 'exception');
+                                event.target.value = '';
+                              }}
+                            />
+                          </label>
+                        </CleanerPhotoLightbox>
                       ) : (
-                        <div className="muted">No before photo recorded yet.</div>
+                        <label className="button secondary cleaner-requirement-box requirement-missing">
+                          Add before incident photo
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              void uploadPhoto(task.id, file, 'exception');
+                              event.target.value = '';
+                            }}
+                          />
+                        </label>
                       )}
                     </div>
                     <div className="before-after-column after-evidence-column">
                       <div className="cleaner-photo-evidence-title">After correction evidence</div>
                       {afterPhotos.length ? (
-                        <CleanerPhotoLightbox photos={afterPhotos} title={task.title} required />
+                        <CleanerPhotoLightbox photos={afterPhotos} title={task.title} required={task.photoRequired}>
+                          <label className="button secondary">
+                            Add another after photo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                void uploadPhoto(task.id, file, 'completion');
+                                event.target.value = '';
+                              }}
+                            />
+                          </label>
+                        </CleanerPhotoLightbox>
                       ) : (
                         <div className="muted">Add an after photo once corrected.</div>
                       )}
-                      <label className="button secondary cleaner-requirement-box requirement-missing">
+                      {afterPhotos.length < 1 && <label className="button secondary cleaner-requirement-box requirement-missing">
                         Add after correction photo
                         <input
                           type="file"
@@ -549,7 +608,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                             event.target.value = '';
                           }}
                         />
-                      </label>
+                      </label>}
                     </div>
                   </div>
                   <div className="resolved-issue-buttons">
@@ -572,40 +631,37 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                 </section>
               )}
 
-              <label
-                className={`builder-field cleaner-requirement-box ${commentRequirementClass}`}
+              <button
+                className={`button secondary cleaner-note-button cleaner-requirement-box ${commentRequirementClass}`}
+                type="button"
                 data-requirement-target={`${task.id}-comment`}
-                onClick={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setNoteTaskId(task.id);
+                }}
               >
-                <span className="muted">Cleaner note</span>
-                <textarea
-                  value={localState.note}
-                  onChange={(event) => updateTask(task.id, { note: event.target.value, saved: false, statusMessage: '' })}
-                  placeholder={task.commentRequired ? 'Add the required note here' : 'Optional note'}
-                  rows={3}
-                />
-              </label>
+                {localState.note?.trim() ? 'Edit cleaner note' : task.commentRequired ? 'Add required cleaner note' : 'Cleaner note'}
+              </button>
 
               <div className="task-actions compact-actions">
-                <label
-                  className={`${task.photoRequired ? 'button photo-required-button' : 'button secondary'} cleaner-requirement-box ${photoRequirementClass}`}
-                  data-requirement-target={`${task.id}-photo`}
-                >
-                  {task.photoRequired ? 'Upload required photo' : 'Upload photo'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      void uploadPhoto(task.id, file);
-                      event.target.value = '';
-                    }}
-                  />
-                </label>
-                <button className="button secondary" type="button" onClick={(event) => event.stopPropagation()}>
-                  {task.commentRequired ? 'Required note' : 'Optional note'}
-                </button>
+                {canShowStackPhotoUpload && (
+                  <label
+                    className={`${task.photoRequired ? 'button photo-required-button' : 'button secondary'} cleaner-requirement-box ${photoRequirementClass}`}
+                    data-requirement-target={`${task.id}-photo`}
+                  >
+                    {task.photoRequired ? 'Upload required photo' : 'Upload photo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        void uploadPhoto(task.id, file);
+                        event.target.value = '';
+                      }}
+                    />
+                  </label>
+                )}
                 {(task.photoRequired || task.commentRequired || localState.showSkip) && flowStatus !== 'skipped' && (
                   <button
                     className="button secondary"
@@ -668,6 +724,34 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           </article>
         ) : null}
       </div>
+
+      {noteTaskId && (() => {
+        const noteTask = tasks.find((task) => task.id === noteTaskId);
+        const noteState = taskState[noteTaskId] || {};
+        if (!noteTask) return null;
+        return (
+          <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Cleaner note">
+            <div className="note-modal-card">
+              <div>
+                <span className="badge">Cleaner note</span>
+                <h3>{noteTask.title}</h3>
+              </div>
+              <textarea
+                value={noteState.note || ''}
+                onChange={(event) => updateTask(noteTaskId, { note: event.target.value, saved: false, statusMessage: '' })}
+                placeholder={noteTask.commentRequired ? 'Add the required note here' : 'Optional note'}
+                rows={6}
+                autoFocus
+              />
+              <div className="workflow-banner-actions">
+                <button className="button secondary" type="button" onClick={() => setNoteTaskId(null)}>Close</button>
+                <button className="button primary" type="button" onClick={() => setNoteTaskId(null)}>Save note</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
     </div>
   );
 }
