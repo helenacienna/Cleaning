@@ -145,7 +145,8 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
   const resolvedSearchParams = await searchParams;
   const selectedDay = typeof resolvedSearchParams?.day === 'string' ? resolvedSearchParams.day : '';
   const allowHistoricView = resolvedSearchParams?.view === 'history';
-  const { list, source, timeZone } = await getCleanerStaffList(staffSlug, selectedDay);
+  const resetHolidayTesting = resolvedSearchParams?.resetHoliday === '1';
+  const { list, source, timeZone } = await getCleanerStaffList(staffSlug, selectedDay, { resetHolidayTesting });
 
   if (!list) {
     return (
