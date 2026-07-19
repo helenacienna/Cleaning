@@ -65,6 +65,7 @@ function createInitialTaskState(tasks) {
     const hasGrade = Number(task?.score) > 0;
     return [task.id, {
       grade: task.score ?? null,
+      correctedGrade: null,
       note: task.note ?? '',
       status: task.status,
       skipReason: '',
@@ -128,7 +129,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     }));
   }
 
-  async function gradeTask(taskId, grade, index) {
+  async function gradeTask(taskId, grade, index, options = {}) {
     const task = tasks[index];
     const current = taskState[taskId] || {};
     const requirementState = getRequirementState({
@@ -154,18 +155,22 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       return;
     }
 
-    if (index >= tasks.length - 1) {
-      window.setTimeout(() => {
-        endCardRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      }, 20);
-    } else {
-      const nextIndex = Math.min(index + 1, tasks.length - 1);
-      window.setTimeout(() => {
-        focusJob(nextIndex);
-      }, 20);
+    const shouldStayForCorrection = task?.photoRequired && grade <= 2 && !options.corrected;
+
+    if (!shouldStayForCorrection) {
+      if (index >= tasks.length - 1) {
+        window.setTimeout(() => {
+          endCardRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }, 20);
+      } else {
+        const nextIndex = Math.min(index + 1, tasks.length - 1);
+        window.setTimeout(() => {
+          focusJob(nextIndex);
+        }, 20);
+      }
     }
 
     updateTask(taskId, {
@@ -185,7 +190,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
         body: JSON.stringify({
           taskInstanceId: taskId,
           grade,
-          note: current.note || '',
+          note: options.corrected
+            ? `[initial-grade:${current.grade || task.score || 'unknown'}/5]\n[issue-resolved:true]\n[corrected-score:${grade}/5]\n${current.note || ''}`.trim()
+            : current.note || '',
         }),
       });
 
@@ -197,13 +204,19 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       const result = await response.json();
       updateTask(taskId, {
         grade,
+        correctedGrade: options.corrected ? grade : current.correctedGrade,
         status: grade >= 4 ? 'completed' : 'in_progress',
         saving: false,
         saved: true,
-        statusMessage: result.message || 'Task saved',
-        statusTone: 'tone-green',
+        statusMessage: shouldStayForCorrection ? 'Incident recorded — add after photo and corrected score when fixed.' : result.message || 'Task saved',
+        statusTone: shouldStayForCorrection ? 'tone-amber' : 'tone-green',
       });
       queueRefresh();
+      if (shouldStayForCorrection) {
+        window.setTimeout(() => {
+          focusRequirement(taskId, 'correction');
+        }, 80);
+      }
     } catch (error) {
       updateTask(taskId, {
         grade: current.grade ?? null,
@@ -219,7 +232,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     }
   }
 
-  async function uploadPhoto(taskId, file) {
+  async function uploadPhoto(taskId, file, photoType = null) {
     if (!file) return;
 
     const current = taskState[taskId] || {};
@@ -232,7 +245,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     try {
       const formData = new FormData();
       formData.append('taskInstanceId', taskId);
-      formData.append('photoType', 'completion');
+      formData.append('photoType', photoType || (Number(current.grade) <= 2 ? 'exception' : 'completion'));
       formData.append('file', file);
 
       const response = await fetch('/api/task-photos', {
@@ -248,7 +261,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       const nextPhoto = result?.photoId
         ? {
             id: result.photoId,
-            photoType: 'completion',
+            photoType: photoType || (Number(current.grade) <= 2 ? 'exception' : 'completion'),
             photoUrl: `/api/task-photos/${result.photoId}`,
           }
         : null;
@@ -422,8 +435,11 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           const localState = taskState[task.id] || { grade: null, note: '', status: task.status, skipReason: '', showSkip: false, saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
           const selectedGrade = localState.grade;
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
+          const beforePhotos = photos.filter((photo) => photo.photoType === 'exception');
+          const afterPhotos = photos.filter((photo) => photo.photoType === 'completion');
           const flowStatus = localState.status ?? task.status;
           const hasIncidentGrade = Number(selectedGrade ?? task.score) > 0 && Number(selectedGrade ?? task.score) <= 2;
+          const showCorrectionPanel = task.photoRequired && hasIncidentGrade && flowStatus !== 'skipped';
           const requirementState = getRequirementState({ task, localState });
           const photoRequirementClass = requirementState.photoIsRequired
             ? requirementState.photoMet
@@ -490,13 +506,70 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                 </div>
               )}
 
-              {photos.length > 0 && (
+              {photos.length > 0 && !showCorrectionPanel && (
                 <CleanerPhotoLightbox
                   photos={photos}
                   title={task.title}
                   required={task.photoRequired}
                   incident={hasIncidentGrade}
                 />
+              )}
+
+              {showCorrectionPanel && (
+                <section className="issue-correction-panel compulsory-correction-panel" data-requirement-target={`${task.id}-correction`}>
+                  <div>
+                    <strong>Compulsory incident correction</strong>
+                    <span className="muted">Before evidence is accepted. Add after evidence, then choose corrected score.</span>
+                  </div>
+                  <div className="before-after-grid">
+                    <div className="before-after-column before-evidence-column">
+                      <div className="cleaner-photo-evidence-title">Before / incident evidence</div>
+                      {beforePhotos.length ? (
+                        <CleanerPhotoLightbox photos={beforePhotos} title={task.title} required incident />
+                      ) : (
+                        <div className="muted">No before photo recorded yet.</div>
+                      )}
+                    </div>
+                    <div className="before-after-column after-evidence-column">
+                      <div className="cleaner-photo-evidence-title">After correction evidence</div>
+                      {afterPhotos.length ? (
+                        <CleanerPhotoLightbox photos={afterPhotos} title={task.title} required />
+                      ) : (
+                        <div className="muted">Add an after photo once corrected.</div>
+                      )}
+                      <label className="button secondary cleaner-requirement-box requirement-missing">
+                        Add after correction photo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            void uploadPhoto(task.id, file, 'completion');
+                            event.target.value = '';
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                  <div className="resolved-issue-buttons">
+                    {[3, 4, 5].map((grade) => (
+                      <button
+                        key={grade}
+                        className={`button ${localState.correctedGrade === grade ? 'primary' : 'secondary'}`}
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          void gradeTask(task.id, grade, index, { corrected: true });
+                        }}
+                        disabled={localState.saving || afterPhotos.length < 1}
+                      >
+                        Corrected to {grade}
+                      </button>
+                    ))}
+                  </div>
+                </section>
               )}
 
               <label
