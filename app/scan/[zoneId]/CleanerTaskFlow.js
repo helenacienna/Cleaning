@@ -113,11 +113,11 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     });
   }
 
-  function focusRequirement(taskId, requirementType) {
+  function focusRequirement(taskId, requirementType, block = 'center') {
     const target = document.querySelector(`[data-requirement-target="${taskId}-${requirementType}"]`);
     target?.scrollIntoView({
       behavior: 'smooth',
-      block: 'center',
+      block,
     });
   }
 
@@ -217,7 +217,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       queueRefresh();
       if (shouldStayForCorrection) {
         window.setTimeout(() => {
-          focusRequirement(taskId, 'correction');
+          focusRequirement(taskId, 'correction', 'start');
         }, 80);
       }
     } catch (error) {

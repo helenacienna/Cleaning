@@ -1326,6 +1326,14 @@ a { color: inherit; text-decoration: none; }
   .resolved-issue-buttons {
     grid-template-columns: 1fr;
   }
+
+  .note-modal-card {
+    align-self: start;
+    margin: 8px auto auto;
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 18px;
+  }
 }
 
 @keyframes cleanerRequirementPulse {
