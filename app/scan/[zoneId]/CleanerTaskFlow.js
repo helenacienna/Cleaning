@@ -687,7 +687,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                 )}
                 {(task.photoRequired || task.commentRequired || localState.showSkip) && flowStatus !== 'skipped' && (
                   <button
-                    className="button secondary"
+                    className={`button secondary skip-explanation-button cleaner-requirement-box ${commentRequirementClass}`}
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
