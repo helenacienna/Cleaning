@@ -406,45 +406,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     }
   }, []);
 
-  function trackManualScroll() {
-    const list = listRef.current;
-    if (!list) return;
-
-    const currentTask = tasks[currentIndex];
-    const currentState = currentTask ? (taskState[currentTask.id] || {}) : {};
-    const currentResolved = currentTask && isCleanerTaskResolvedForProgress({
-      ...currentTask,
-      ...currentState,
-      score: currentState.grade ?? currentTask.score,
-      status: currentState.status ?? currentTask.status,
-    });
-
-    const listCentre = list.getBoundingClientRect().top + list.clientHeight / 2;
-    let closestIndex = currentIndex;
-    let closestDistance = Number.POSITIVE_INFINITY;
-
-    cardRefs.current.forEach((card, index) => {
-      if (!card) return;
-      const rect = card.getBoundingClientRect();
-      const cardCentre = rect.top + rect.height / 2;
-      const distance = Math.abs(cardCentre - listCentre);
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestIndex = index;
-      }
-    });
-
-    if (closestIndex !== currentIndex && !currentResolved) {
-      blockLeavingCurrentTask();
-      return;
-    }
-
-    if (closestIndex !== currentIndex) {
-      setCurrentIndex(closestIndex);
-    }
-  }
-
   function findNextIncompleteIndex(startIndex = currentIndex) {
     if (!tasks.length) {
       return -1;
@@ -487,7 +448,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
         <span className="badge">{nextIncompleteIndex >= 0 ? 'Open' : 'Finished'}</span>
       </div>
 
-      <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
+      <div className="compact-task-list" ref={listRef}>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
           const localState = taskState[task.id] || { grade: null, correctedGrade: task.correctedGrade ?? null, incidentGrade: task.initialGrade ?? null, note: '', status: task.status, skipReason: '', showSkip: false, saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
