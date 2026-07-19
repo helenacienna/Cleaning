@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const REFRESH_DEBOUNCE_MS = 450;
 import { splitCleanerEvidencePhotos, shouldRenderSeparatedBeforeAfterEvidence } from '../../../lib/cleaner-photo-sections';
+import { isCleanerTaskResolvedForProgress } from '../../../lib/cleaner-task-progress';
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
@@ -107,12 +108,45 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     }, REFRESH_DEBOUNCE_MS);
   }
 
-  function focusJob(index) {
+  function blockLeavingCurrentTask() {
+    const currentTask = tasks[currentIndex];
+    if (!currentTask) return false;
+
+    const currentState = taskState[currentTask.id] || {};
+    const resolved = isCleanerTaskResolvedForProgress({
+      ...currentTask,
+      ...currentState,
+      score: currentState.grade ?? currentTask.score,
+      status: currentState.status ?? currentTask.status,
+    });
+
+    if (resolved) return false;
+
+    updateTask(currentTask.id, {
+      showSkip: true,
+      statusMessage: 'Grade this task or skip with an explanation before moving to the next task.',
+      statusTone: 'tone-red',
+    });
+    window.setTimeout(() => {
+      cardRefs.current[currentIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 20);
+    return true;
+  }
+
+  function focusJob(index, options = {}) {
+    if (!options.force && index !== currentIndex && blockLeavingCurrentTask()) {
+      return false;
+    }
+
     setCurrentIndex(index);
     cardRefs.current[index]?.scrollIntoView({
       behavior: 'smooth',
       block: 'center',
     });
+    return true;
   }
 
   function focusRequirement(taskId, requirementType, block = 'center') {
@@ -161,22 +195,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
 
     const shouldStayForCorrection = grade <= 2 && !options.corrected;
 
-    if (!shouldStayForCorrection) {
-      if (index >= tasks.length - 1) {
-        window.setTimeout(() => {
-          endCardRef.current?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-        }, 20);
-      } else {
-        const nextIndex = Math.min(index + 1, tasks.length - 1);
-        window.setTimeout(() => {
-          focusJob(nextIndex);
-        }, 20);
-      }
-    }
-
     updateTask(taskId, {
       grade,
       saving: true,
@@ -217,6 +235,21 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
         statusTone: shouldStayForCorrection ? 'tone-amber' : 'tone-green',
       });
       queueRefresh();
+      if (!shouldStayForCorrection) {
+        if (index >= tasks.length - 1) {
+          window.setTimeout(() => {
+            endCardRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+          }, 20);
+        } else {
+          const nextIndex = Math.min(index + 1, tasks.length - 1);
+          window.setTimeout(() => {
+            focusJob(nextIndex, { force: true });
+          }, 20);
+        }
+      }
       if (shouldStayForCorrection) {
         window.setTimeout(() => {
           focusRequirement(taskId, 'correction', 'start');
@@ -232,7 +265,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
         statusTone: 'tone-red',
       });
       window.setTimeout(() => {
-        focusJob(index);
+          focusJob(index, { force: true });
       }, 20);
     }
   }
@@ -347,7 +380,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       const nextIndex = findNextIncompleteIndex(index);
       if (nextIndex >= 0 && nextIndex !== index) {
         window.setTimeout(() => {
-          focusJob(nextIndex);
+          focusJob(nextIndex, { force: true });
         }, 20);
       } else {
         window.setTimeout(() => {
@@ -377,6 +410,15 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     const list = listRef.current;
     if (!list) return;
 
+    const currentTask = tasks[currentIndex];
+    const currentState = currentTask ? (taskState[currentTask.id] || {}) : {};
+    const currentResolved = currentTask && isCleanerTaskResolvedForProgress({
+      ...currentTask,
+      ...currentState,
+      score: currentState.grade ?? currentTask.score,
+      status: currentState.status ?? currentTask.status,
+    });
+
     const listCentre = list.getBoundingClientRect().top + list.clientHeight / 2;
     let closestIndex = currentIndex;
     let closestDistance = Number.POSITIVE_INFINITY;
@@ -393,6 +435,11 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       }
     });
 
+    if (closestIndex !== currentIndex && !currentResolved) {
+      blockLeavingCurrentTask();
+      return;
+    }
+
     if (closestIndex !== currentIndex) {
       setCurrentIndex(closestIndex);
     }
@@ -407,7 +454,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       const index = (startIndex + offset) % tasks.length;
       const task = tasks[index];
       const localState = taskState[task.id] || {};
-      if (!isTaskCompleted({ ...task, status: localState.status ?? task.status, score: localState.grade ?? task.score })) {
+      if (!isCleanerTaskResolvedForProgress({ ...task, ...localState, status: localState.status ?? task.status, score: localState.grade ?? task.score })) {
         return index;
       }
     }
@@ -417,7 +464,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
 
   const completedCount = tasks.filter((task) => {
     const localState = taskState[task.id] || {};
-    return isTaskCompleted({ ...task, status: localState.status ?? task.status, score: localState.grade ?? task.score });
+    return isCleanerTaskResolvedForProgress({ ...task, ...localState, status: localState.status ?? task.status, score: localState.grade ?? task.score });
   }).length;
   const allTasksCompleted = tasks.length > 0 && completedCount === tasks.length;
   const nextIncompleteIndex = findNextIncompleteIndex();
@@ -693,7 +740,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                     />
                   </label>
                 )}
-                {(task.photoRequired || task.commentRequired || localState.showSkip) && flowStatus !== 'skipped' && (
+                {flowStatus !== 'skipped' && (
                   <button
                     className={`button secondary skip-explanation-button cleaner-requirement-box ${commentRequirementClass}`}
                     type="button"
