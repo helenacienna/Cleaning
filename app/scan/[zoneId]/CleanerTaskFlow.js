@@ -116,7 +116,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     const resolved = isCleanerTaskResolvedForProgress({
       ...currentTask,
       ...currentState,
-      score: currentState.grade ?? currentTask.score,
+      score: currentState.saved ? (currentState.grade ?? currentTask.score) : currentTask.score,
       status: currentState.status ?? currentTask.status,
     });
 
@@ -304,17 +304,41 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           }
         : null;
 
+      const nextPhotos = nextPhoto ? [...(current.photos ?? []), nextPhoto] : (current.photos ?? []);
+      const nextPhotoCount = (current.photoCount ?? 0) + 1;
+      const afterPhotoMissingRequirements = photoType === 'completion' && current.correctedGrade && Number.isInteger(index)
+        ? getRequirementState({
+            task: tasks[index],
+            localState: {
+              ...current,
+              grade: current.correctedGrade,
+              photoCount: nextPhotoCount,
+              photos: nextPhotos,
+            },
+          }).missing
+        : [];
+
       updateTask(taskId, {
-        photoCount: (current.photoCount ?? 0) + 1,
-        photos: nextPhoto ? [...(current.photos ?? []), nextPhoto] : (current.photos ?? []),
+        photoCount: nextPhotoCount,
+        photos: nextPhotos,
         saving: false,
-        saved: true,
-        statusMessage: result.message || 'Photo uploaded',
-        statusTone: 'tone-green',
+        saved: false,
+        showSkip: afterPhotoMissingRequirements.length ? true : current.showSkip,
+        statusMessage: afterPhotoMissingRequirements.length
+          ? `Required ${afterPhotoMissingRequirements.join(' and ')} must be added before moving on. Use skip only with an admin explanation.`
+          : result.message || 'Photo uploaded',
+        statusTone: afterPhotoMissingRequirements.length ? 'tone-red' : 'tone-green',
       });
       queueRefresh();
 
       if (photoType === 'completion' && current.correctedGrade && Number.isInteger(index)) {
+        if (afterPhotoMissingRequirements.includes('comment')) {
+          window.setTimeout(() => {
+            focusRequirement(taskId, 'comment', 'center');
+          }, 80);
+          return;
+        }
+
         window.setTimeout(() => {
           void gradeTask(taskId, current.correctedGrade, index, { corrected: true });
         }, 80);
@@ -415,7 +439,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       const index = (startIndex + offset) % tasks.length;
       const task = tasks[index];
       const localState = taskState[task.id] || {};
-      if (!isCleanerTaskResolvedForProgress({ ...task, ...localState, status: localState.status ?? task.status, score: localState.grade ?? task.score })) {
+      if (!isCleanerTaskResolvedForProgress({ ...task, ...localState, status: localState.status ?? task.status, score: localState.saved ? (localState.grade ?? task.score) : task.score })) {
         return index;
       }
     }
@@ -425,7 +449,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
 
   const completedCount = tasks.filter((task) => {
     const localState = taskState[task.id] || {};
-    return isCleanerTaskResolvedForProgress({ ...task, ...localState, status: localState.status ?? task.status, score: localState.grade ?? task.score });
+    return isCleanerTaskResolvedForProgress({ ...task, ...localState, status: localState.status ?? task.status, score: localState.saved ? (localState.grade ?? task.score) : task.score });
   }).length;
   const allTasksCompleted = tasks.length > 0 && completedCount === tasks.length;
   const nextIncompleteIndex = findNextIncompleteIndex();
