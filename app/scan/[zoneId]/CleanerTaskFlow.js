@@ -235,7 +235,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     }
   }
 
-  async function uploadPhoto(taskId, file, photoType = null) {
+  async function uploadPhoto(taskId, file, photoType = null, index = null) {
     if (!file) return;
 
     const current = taskState[taskId] || {};
@@ -278,6 +278,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
         statusTone: 'tone-green',
       });
       queueRefresh();
+
+      if (photoType === 'completion' && current.correctedGrade && Number.isInteger(index)) {
+        window.setTimeout(() => {
+          void gradeTask(taskId, current.correctedGrade, index, { corrected: true });
+        }, 80);
+      }
     } catch {
       updateTask(taskId, {
         saving: false,
@@ -535,10 +541,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
               )}
 
               {showCorrectionPanel && (
-                <section className="issue-correction-panel compulsory-correction-panel" data-requirement-target={`${task.id}-correction`}>
+                <section className={`issue-correction-panel compulsory-correction-panel ${localState.correctedGrade ? 'correction-score-entered' : ''}`} data-requirement-target={`${task.id}-correction`}>
                   <div>
                     <strong>{task.photoRequired ? 'Compulsory incident correction' : 'Incident correction'}</strong>
-                    <span className="muted">Before evidence is recorded separately. Add after evidence, then choose corrected score.</span>
+                    <span className="muted">Before evidence is recorded separately. Choose corrected score, then add after evidence.</span>
                   </div>
                   <div className="before-after-grid">
                     <div className="before-after-column before-evidence-column">
@@ -587,16 +593,16 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                               style={{ display: 'none' }}
                               onChange={(event) => {
                                 const file = event.target.files?.[0];
-                                void uploadPhoto(task.id, file, 'completion');
+                                void uploadPhoto(task.id, file, 'completion', index);
                                 event.target.value = '';
                               }}
                             />
                           </label>
                         </CleanerPhotoLightbox>
                       ) : (
-                        <div className="muted">Add an after photo once corrected.</div>
+                        <div className="muted">{localState.correctedGrade ? 'Add an after photo to complete the correction.' : 'Choose corrected score first, then add after photo.'}</div>
                       )}
-                      {afterPhotos.length < 1 && <label className="button secondary cleaner-requirement-box requirement-missing">
+                      {afterPhotos.length < 1 && localState.correctedGrade && <label className="button secondary cleaner-requirement-box requirement-missing">
                         Add after correction photo
                         <input
                           type="file"
@@ -604,7 +610,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                           style={{ display: 'none' }}
                           onChange={(event) => {
                             const file = event.target.files?.[0];
-                            void uploadPhoto(task.id, file, 'completion');
+                            void uploadPhoto(task.id, file, 'completion', index);
                             event.target.value = '';
                           }}
                         />
@@ -620,9 +626,14 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
-                          void gradeTask(task.id, grade, index, { corrected: true });
+                          updateTask(task.id, {
+                            correctedGrade: grade,
+                            statusMessage: `Corrected score ${grade}/5 selected — add after photo to complete.`,
+                            statusTone: 'tone-green',
+                          });
+                          window.setTimeout(() => focusRequirement(task.id, 'correction'), 40);
                         }}
-                        disabled={localState.saving || afterPhotos.length < 1}
+                        disabled={localState.saving || beforePhotos.length < 1}
                       >
                         Corrected to {grade}
                       </button>
