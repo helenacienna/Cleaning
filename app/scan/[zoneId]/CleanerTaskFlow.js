@@ -455,23 +455,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                 </div>
               </div>
 
-              {(task.photoRequired || task.commentRequired || localState.photoCount > 0) && (
-                <div className="compact-flags">
-                  {task.photoRequired && <span className="flag required-flag">Forced photo</span>}
-                  {task.commentRequired && <span className="flag">Comment required</span>}
-                  <span className="flag">{localState.photoCount} photos</span>
-                </div>
-              )}
-
-              {photos.length > 0 && (
-                <CleanerPhotoLightbox
-                  photos={photos}
-                  title={task.title}
-                  required={task.photoRequired}
-                  incident={hasIncidentGrade}
-                />
-              )}
-
               <div className="grade-panel compact-grade-panel">
                 <div>
                   <strong>Grade completion</strong>
@@ -498,6 +481,23 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                   ))}
                 </div>
               </div>
+
+              {(task.photoRequired || task.commentRequired || localState.photoCount > 0) && (
+                <div className="compact-flags">
+                  {task.photoRequired && <span className="flag required-flag">Forced photo</span>}
+                  {task.commentRequired && <span className="flag">Comment required</span>}
+                  <span className="flag">{localState.photoCount} photos</span>
+                </div>
+              )}
+
+              {photos.length > 0 && (
+                <CleanerPhotoLightbox
+                  photos={photos}
+                  title={task.title}
+                  required={task.photoRequired}
+                  incident={hasIncidentGrade}
+                />
+              )}
 
               <label
                 className={`builder-field cleaner-requirement-box ${commentRequirementClass}`}

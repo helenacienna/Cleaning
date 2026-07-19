@@ -47,6 +47,31 @@ test('exception comments only block low exception grades', () => {
   assert.deepEqual(getCleanerTaskEvidenceFailures({ taskInstance, grade: 4, note: '' }), []);
 });
 
+
+test('existing incident photo satisfies compulsory photo evidence', () => {
+  const taskInstance = {
+    evidenceRequirement: 'required_photo',
+    commentRequirement: 'none',
+    execution: {
+      photos: [{ id: 'incident-photo-1', photoType: 'exception' }],
+    },
+  };
+
+  assert.deepEqual(getCleanerTaskEvidenceFailures({ taskInstance, grade: 5, note: '' }), []);
+});
+
+test('passing grades still block compulsory photo tasks when no photo exists', () => {
+  const taskInstance = {
+    evidenceRequirement: 'required_photo',
+    commentRequirement: 'none',
+    execution: { photos: [] },
+  };
+
+  for (const grade of [3, 4, 5]) {
+    assert.deepEqual(getCleanerTaskEvidenceFailures({ taskInstance, grade, note: '' }), ['photo']);
+  }
+});
+
 test('skip reasons are trimmed and require useful explanation length', () => {
   assert.equal(normaliseSkipReason('  access blocked  '), 'access blocked');
   assert.equal(isValidSkipReason('no'), false);
