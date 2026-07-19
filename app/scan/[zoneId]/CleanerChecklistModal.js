@@ -4,8 +4,6 @@ import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import CleanerTaskFlow from './CleanerTaskFlow';
 
-const CHECKLIST_REFRESH_MS = 2000;
-
 export default function CleanerChecklistModal({ tasks, label }) {
   const [isOpen, setIsOpen] = useState(false);
   const [, startTransition] = useTransition();
@@ -32,22 +30,6 @@ export default function CleanerChecklistModal({ tasks, label }) {
     return () => document.body.classList.remove('modal-open');
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
-
-    const intervalId = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        refreshProgress();
-      }
-    }, CHECKLIST_REFRESH_MS);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [isOpen]);
-
   return (
     <>
       <section className="card checklist-launch-card">
@@ -59,11 +41,9 @@ export default function CleanerChecklistModal({ tasks, label }) {
       {isOpen && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${label} active checklist`}>
           <div className="fullscreen-checklist">
-            <header className="modal-header compact-modal-header">
-              <div>
-                <strong>{label} Active List</strong>
-              </div>
-              <div className="workflow-banner-actions">
+            <header className="modal-header compact-modal-header active-list-header">
+              <strong>{label} Active List</strong>
+              <div className="workflow-banner-actions active-list-actions">
                 <button className="button secondary" type="button" onClick={refreshProgress}>
                   Refresh
                 </button>
@@ -71,7 +51,7 @@ export default function CleanerChecklistModal({ tasks, label }) {
               </div>
             </header>
 
-            <CleanerTaskFlow tasks={tasks} onTaskSaved={refreshProgress} onComplete={handleComplete} />
+            <CleanerTaskFlow tasks={tasks} onComplete={handleComplete} />
           </div>
         </div>
       )}

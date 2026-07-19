@@ -434,9 +434,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           }}
           disabled={nextIncompleteIndex < 0}
         >
-          {nextIncompleteIndex >= 0 ? 'Next open' : 'All done'}
+          {nextIncompleteIndex >= 0 ? `Current job ${Math.min(currentIndex + 1, tasks.length)} of ${tasks.length}` : 'All done'}
         </button>
-        <span className="badge">{Math.min(currentIndex + 1, tasks.length)}/{tasks.length}</span>
+        <span className="badge">{nextIncompleteIndex >= 0 ? 'Open' : 'Finished'}</span>
       </div>
 
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
