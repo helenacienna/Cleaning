@@ -433,9 +433,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           }}
           disabled={nextIncompleteIndex < 0}
         >
-          {nextIncompleteIndex >= 0 ? 'Jump to next open task' : 'All tasks completed'}
+          {nextIncompleteIndex >= 0 ? 'Next open' : 'All done'}
         </button>
-        <span className="badge">Current job {Math.min(currentIndex + 1, tasks.length)} of {tasks.length}</span>
+        <span className="badge">{Math.min(currentIndex + 1, tasks.length)}/{tasks.length}</span>
       </div>
 
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
@@ -529,6 +529,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                     <input
                       type="file"
                       accept="image/*"
+                      capture="environment"
                       style={{ display: 'none' }}
                       onChange={(event) => {
                         const file = event.target.files?.[0];
@@ -556,6 +557,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                             <input
                               type="file"
                               accept="image/*"
+                      capture="environment"
                               style={{ display: 'none' }}
                               onChange={(event) => {
                                 const file = event.target.files?.[0];
@@ -571,6 +573,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                           <input
                             type="file"
                             accept="image/*"
+                      capture="environment"
                             style={{ display: 'none' }}
                             onChange={(event) => {
                               const file = event.target.files?.[0];
@@ -590,6 +593,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                             <input
                               type="file"
                               accept="image/*"
+                      capture="environment"
                               style={{ display: 'none' }}
                               onChange={(event) => {
                                 const file = event.target.files?.[0];
@@ -607,6 +611,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                         <input
                           type="file"
                           accept="image/*"
+                      capture="environment"
                           style={{ display: 'none' }}
                           onChange={(event) => {
                             const file = event.target.files?.[0];
@@ -617,28 +622,32 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                       </label>}
                     </div>
                   </div>
-                  <div className="resolved-issue-buttons">
-                    {[3, 4, 5].map((grade) => (
-                      <button
-                        key={grade}
-                        className={`button ${localState.correctedGrade === grade ? 'primary' : 'secondary'}`}
-                        type="button"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          updateTask(task.id, {
-                            correctedGrade: grade,
-                            statusMessage: `Corrected score ${grade}/5 selected — add after photo to complete.`,
-                            statusTone: 'tone-green',
-                          });
-                          window.setTimeout(() => focusRequirement(task.id, 'correction'), 40);
-                        }}
-                        disabled={localState.saving || beforePhotos.length < 1}
-                      >
-                        Corrected to {grade}
-                      </button>
-                    ))}
-                  </div>
+                  {beforePhotos.length > 0 ? (
+                    <div className="resolved-issue-buttons">
+                      {[3, 4, 5].map((grade) => (
+                        <button
+                          key={grade}
+                          className={`button ${localState.correctedGrade === grade ? 'primary' : 'secondary'}`}
+                          type="button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            updateTask(task.id, {
+                              correctedGrade: grade,
+                              statusMessage: `Corrected score ${grade}/5 selected — add after photo to complete.`,
+                              statusTone: 'tone-green',
+                            });
+                            window.setTimeout(() => focusRequirement(task.id, 'correction'), 40);
+                          }}
+                          disabled={localState.saving}
+                        >
+                          Corrected to {grade}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="muted">Add before photo to unlock corrected score options.</div>
+                  )}
                 </section>
               )}
 
@@ -664,6 +673,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                     <input
                       type="file"
                       accept="image/*"
+                      capture="environment"
                       style={{ display: 'none' }}
                       onChange={(event) => {
                         const file = event.target.files?.[0];

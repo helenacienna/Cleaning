@@ -65,7 +65,7 @@ export default function CleanerChecklistModal({ tasks, label }) {
               </div>
               <div className="workflow-banner-actions">
                 <button className="button secondary" type="button" onClick={refreshProgress}>
-                  Refresh progress
+                  Refresh
                 </button>
                 <button className="button secondary close-modal-button" type="button" onClick={() => setIsOpen(false)}>Close</button>
               </div>

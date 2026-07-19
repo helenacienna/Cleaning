@@ -2594,23 +2594,36 @@ code {
 
 .compact-flow {
   display: grid;
-  gap: 14px;
+  gap: 8px;
 }
 
 .flow-position {
   position: sticky;
-  top: 10px;
+  top: 4px;
   z-index: 2;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-radius: 18px;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 14px;
   background: rgba(255,255,255,0.96);
   border: 1px solid rgba(15,23,42,0.10);
   backdrop-filter: blur(10px);
-  box-shadow: 0 10px 28px rgba(15,23,42,0.08);
+  box-shadow: 0 6px 18px rgba(15,23,42,0.07);
+}
+
+.flow-position .button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 11px;
+  font-size: 13px;
+}
+
+.flow-position .badge {
+  justify-self: end;
+  padding: 6px 8px;
+  font-size: 11px;
 }
 
 .flow-position .muted {
@@ -2619,12 +2632,12 @@ code {
 
 .compact-task-list {
   display: grid;
-  gap: 16px;
+  gap: 10px;
   max-height: 72vh;
   overflow-y: auto;
   scroll-snap-type: y proximity;
-  scroll-padding: 18vh 0;
-  padding: 18vh 6px;
+  scroll-padding: 10vh 0;
+  padding: 10vh 4px;
 }
 
 .compact-task-card {
@@ -2633,8 +2646,8 @@ code {
   scroll-snap-align: center;
   display: grid;
   align-content: center;
-  gap: 8px;
-  padding: 12px;
+  gap: 6px;
+  padding: 8px;
   border-radius: 20px;
   border: 1px solid rgba(15,23,42,0.10);
   background: #ffffff;
@@ -2687,7 +2700,7 @@ code {
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding-right: 118px;
 }
 
@@ -2726,8 +2739,8 @@ code {
 
 .compact-grade-panel {
   margin-top: 0;
-  padding: 8px;
-  gap: 8px;
+  padding: 6px;
+  gap: 6px;
 }
 
 .selected-grade {
@@ -4132,11 +4145,11 @@ button.button {
   .schedule-task-main { min-width: 0; }
   .qr-card { grid-template-columns: 1fr; }
   .cleaner-task { grid-template-columns: 1fr; }
-  .compact-task-list { max-height: 76vh; padding: 16vh 4px; gap: 10px; }
+  .compact-task-list { max-height: 76vh; padding: 10vh 4px; gap: 8px; }
   .compact-task-card { min-height: auto; }
-  .compact-task-top { grid-template-columns: 38px 1fr; padding-right: 0; padding-top: 28px; }
+  .compact-task-top { grid-template-columns: 38px 1fr; padding-right: 0; padding-top: 0; }
   .compact-task-top .task-status { grid-column: 1 / -1; justify-self: flex-start; }
-  .flow-position { align-items: flex-start; flex-direction: column; gap: 6px; padding: 8px; }
+  .flow-position { grid-template-columns: minmax(0, 1fr) auto; gap: 6px; padding: 6px; }
   .checklist-launch-card { align-items: stretch; flex-direction: column; }
   .modal-header { align-items: center; flex-direction: row; }
   .launch-checklist-button { width: 100%; }
