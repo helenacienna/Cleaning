@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 const REFRESH_DEBOUNCE_MS = 450;
+import { splitCleanerEvidencePhotos, shouldRenderSeparatedBeforeAfterEvidence } from '../../../lib/cleaner-photo-sections';
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
@@ -446,12 +447,19 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           const selectedGrade = localState.grade;
           const resolvedCorrectedGrade = localState.correctedGrade ?? task.correctedGrade ?? null;
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
-          const beforePhotos = photos.filter((photo) => photo.photoType === 'exception');
-          const afterPhotos = photos.filter((photo) => photo.photoType === 'completion');
+          const { beforePhotos, afterPhotos } = splitCleanerEvidencePhotos(photos);
           const flowStatus = localState.status ?? task.status;
           const gradeForIncidentCheck = Number(localState.incidentGrade ?? task.initialGrade ?? selectedGrade ?? task.score);
           const hasIncidentGrade = gradeForIncidentCheck > 0 && gradeForIncidentCheck <= 2;
-          const showCorrectionPanel = hasIncidentGrade && flowStatus !== 'skipped';
+          const shouldSeparateEvidence = shouldRenderSeparatedBeforeAfterEvidence({
+            photos,
+            initialGrade: task.initialGrade,
+            incidentGrade: localState.incidentGrade,
+            correctedGrade: resolvedCorrectedGrade,
+            selectedGrade,
+            score: task.score,
+          });
+          const showCorrectionPanel = shouldSeparateEvidence && flowStatus !== 'skipped';
           const canShowStackPhotoUpload = photos.length === 0 && !showCorrectionPanel;
           const requirementState = getRequirementState({ task, localState });
           const photoRequirementClass = requirementState.photoIsRequired
