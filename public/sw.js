@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'cienna-cleaning-offline-v1';
+const CACHE_VERSION = 'cienna-cleaning-offline-v2';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const PRECACHE_URLS = [
   '/',
