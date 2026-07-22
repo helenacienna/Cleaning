@@ -78,6 +78,10 @@ function getOnlineLabel(isOnline) {
   return isOnline ? 'Online' : 'Offline';
 }
 
+function buildCorrectionLaterNote({ initialGrade, note }) {
+  return `[initial-grade:${initialGrade || 'unknown'}/5]\n[correction-later:true]\n${note || ''}`.trim();
+}
+
 function createInitialTaskState(tasks) {
   return Object.fromEntries(tasks.map((task) => {
     const completed = isTaskCompleted(task);
@@ -85,6 +89,7 @@ function createInitialTaskState(tasks) {
     return [task.id, {
       grade: task.score ?? null,
       correctedGrade: task.correctedGrade ?? null,
+      correctionLater: task.correctionLater ?? false,
       incidentGrade: task.initialGrade ?? (Number(task?.score) > 0 && Number(task?.score) <= 2 ? task.score : null),
       note: task.note ?? '',
       status: task.status,
@@ -232,6 +237,103 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       }, 500);
     }
     return queued;
+  }
+
+  function moveToNextTask(index) {
+    if (index >= tasks.length - 1) {
+      window.setTimeout(() => {
+        endCardRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 20);
+      return;
+    }
+
+    const nextIndex = Math.min(index + 1, tasks.length - 1);
+    window.setTimeout(() => {
+      focusJob(nextIndex, { force: true });
+    }, 20);
+  }
+
+  async function correctLater(taskId, index) {
+    const task = tasks[index];
+    const current = taskState[taskId] || {};
+    const initialGrade = current.incidentGrade ?? current.grade ?? task.initialGrade ?? task.score;
+    const note = buildCorrectionLaterNote({ initialGrade, note: current.note || '' });
+
+    updateTask(taskId, {
+      correctionLater: true,
+      correctedGrade: null,
+      saving: true,
+      saved: false,
+      statusMessage: 'Saving follow-up for later…',
+      statusTone: 'tone-amber',
+    });
+
+    try {
+      const response = await fetch('/api/cleaner-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taskInstanceId: taskId,
+          grade: Number(initialGrade) > 0 ? Number(initialGrade) : 1,
+          note,
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw createHttpError(result?.error || 'Unable to save follow-up for later', response.status);
+      }
+
+      updateTask(taskId, {
+        grade: Number(initialGrade) > 0 ? Number(initialGrade) : current.grade,
+        correctionLater: true,
+        correctedGrade: null,
+        status: 'in_progress',
+        saving: false,
+        saved: true,
+        statusMessage: 'Correction marked for later follow-up.',
+        statusTone: 'tone-amber',
+      });
+      queueRefresh();
+      moveToNextTask(index);
+    } catch (error) {
+      if (isOfflineLikeError(error)) {
+        await queueOfflineAction({
+          type: 'grade',
+          taskInstanceId: taskId,
+          grade: Number(initialGrade) > 0 ? Number(initialGrade) : 1,
+          note,
+        });
+        updateTask(taskId, {
+          grade: Number(initialGrade) > 0 ? Number(initialGrade) : current.grade,
+          correctionLater: true,
+          correctedGrade: null,
+          status: 'in_progress',
+          saving: false,
+          saved: false,
+          statusMessage: 'Correction later pending sync — saved on this device',
+          statusTone: 'tone-amber',
+        });
+        moveToNextTask(index);
+        return;
+      }
+
+      updateTask(taskId, {
+        correctionLater: false,
+        saving: false,
+        saved: false,
+        statusMessage: error?.message || 'Save failed — try Correct later again',
+        statusTone: 'tone-red',
+      });
+      window.setTimeout(() => {
+        focusRequirement(taskId, 'correction', 'start');
+      }, 40);
+    }
   }
 
   async function gradeTask(taskId, grade, index, options = {}) {
@@ -699,9 +801,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       <div className="compact-task-list" ref={listRef}>
         {tasks.map((task, index) => {
           const isCurrent = index === currentIndex;
-          const localState = taskState[task.id] || { grade: null, correctedGrade: task.correctedGrade ?? null, incidentGrade: task.initialGrade ?? null, note: '', status: task.status, skipReason: '', showSkip: false, saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
+          const localState = taskState[task.id] || { grade: null, correctedGrade: task.correctedGrade ?? null, correctionLater: task.correctionLater ?? false, incidentGrade: task.initialGrade ?? null, note: '', status: task.status, skipReason: '', showSkip: false, saving: false, saved: false, photoCount: 0, photos: [], statusMessage: '', statusTone: 'muted' };
           const selectedGrade = localState.grade;
           const resolvedCorrectedGrade = localState.correctedGrade ?? task.correctedGrade ?? null;
+          const correctionLaterSelected = Boolean(localState.correctionLater ?? task.correctionLater);
           const photos = localState.photos?.length ? localState.photos : (task.photos ?? []);
           const { beforePhotos, afterPhotos } = splitCleanerEvidencePhotos(photos);
           const flowStatus = localState.status ?? task.status;
@@ -808,10 +911,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
               )}
 
               {showCorrectionPanel && (
-                <section className={`issue-correction-panel compulsory-correction-panel ${resolvedCorrectedGrade ? 'correction-score-entered' : ''}`} data-requirement-target={`${task.id}-correction`}>
+                <section className={`issue-correction-panel compulsory-correction-panel ${resolvedCorrectedGrade ? 'correction-score-entered' : correctionLaterSelected ? 'correction-later-entered' : ''}`} data-requirement-target={`${task.id}-correction`}>
                   <div>
                     <strong>{task.photoRequired ? 'Compulsory incident correction' : 'Incident correction'}</strong>
-                    <span className="muted">Before evidence is recorded separately. Choose corrected score, then add after evidence.</span>
+                    <span className="muted">Before evidence is recorded separately. Choose corrected score and add after evidence, or mark it to correct later.</span>
                   </div>
                   <div className="before-after-column before-evidence-column">
                     <div className="cleaner-photo-evidence-title">Before / incident evidence</div>
@@ -862,6 +965,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                             event.stopPropagation();
                             updateTask(task.id, {
                               correctedGrade: grade,
+                              correctionLater: false,
                               statusMessage: `Corrected score ${grade}/5 selected — add after photo to complete.`,
                               statusTone: 'tone-green',
                             });
@@ -872,6 +976,18 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                           Corrected to {grade}
                         </button>
                       ))}
+                      <button
+                        className={`button ${correctionLaterSelected ? 'primary' : 'secondary'}`}
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          void correctLater(task.id, index);
+                        }}
+                        disabled={localState.saving}
+                      >
+                        Correct later
+                      </button>
                     </div>
                   ) : (
                     <div className="muted">Add before photo to unlock corrected score options.</div>
@@ -897,9 +1013,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
                         </label>
                       </CleanerPhotoLightbox>
                     ) : (
-                      <div className="muted">{resolvedCorrectedGrade ? 'Add an after photo to complete the correction.' : 'Choose corrected score first, then add after photo.'}</div>
+                      <div className="muted">{correctionLaterSelected ? 'Marked to correct later — no after photo needed now.' : resolvedCorrectedGrade ? 'Add an after photo to complete the correction.' : 'Choose corrected score first, then add after photo.'}</div>
                     )}
-                    {afterPhotos.length < 1 && resolvedCorrectedGrade && <label className="button secondary cleaner-requirement-box requirement-missing">
+                    {afterPhotos.length < 1 && resolvedCorrectedGrade && !correctionLaterSelected && <label className="button secondary cleaner-requirement-box requirement-missing">
                       Add after correction photo
                       <input
                         type="file"
