@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 
 const REFRESH_DEBOUNCE_MS = 450;
+const OFFLINE_SYNC_INTERVAL_MS = 15000;
 import { splitCleanerEvidencePhotos, shouldRenderSeparatedBeforeAfterEvidence } from '../../../lib/cleaner-photo-sections';
 import { isCleanerTaskResolvedForProgress } from '../../../lib/cleaner-task-progress';
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
+import { addOfflineAction, getOfflineQueueSummary, onQueueChange, syncOfflineActions } from './offlineQueue';
 
 function isTaskCompleted(task) {
   return Number(task?.score) >= 3 || task?.status === 'completed' || task?.status === 'skipped';
@@ -61,6 +63,21 @@ function getRequirementState({ task, localState }) {
   };
 }
 
+function isOfflineLikeError(error) {
+  return error?.queueable === true || (typeof navigator !== 'undefined' && navigator.onLine === false) || error instanceof TypeError;
+}
+
+function createHttpError(message, status) {
+  const error = new Error(message);
+  error.status = status;
+  error.queueable = status >= 500 || status === 408 || status === 429;
+  return error;
+}
+
+function getOnlineLabel(isOnline) {
+  return isOnline ? 'Online' : 'Offline';
+}
+
 function createInitialTaskState(tasks) {
   return Object.fromEntries(tasks.map((task) => {
     const completed = isTaskCompleted(task);
@@ -88,6 +105,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const [noteTaskId, setNoteTaskId] = useState(null);
   const [skipTaskId, setSkipTaskId] = useState(null);
+  const [queueSummary, setQueueSummary] = useState({ count: 0, actions: [], lastError: null });
+  const [syncMessage, setSyncMessage] = useState('');
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine !== false));
   const cardRefs = useRef([]);
   const listRef = useRef(null);
   const refreshTimerRef = useRef(null);
@@ -167,6 +187,53 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     }));
   }
 
+  async function refreshQueueSummary() {
+    const summary = await getOfflineQueueSummary().catch(() => ({ count: 0, actions: [], lastError: null }));
+    setQueueSummary(summary);
+    setIsOnline(typeof navigator === 'undefined' ? true : navigator.onLine !== false);
+    return summary;
+  }
+
+  async function runPendingSync() {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setSyncMessage('Offline — work will sync when signal returns');
+      await refreshQueueSummary();
+      return;
+    }
+
+    const before = await refreshQueueSummary();
+    if (!before.count) {
+      setSyncMessage('');
+      return;
+    }
+
+    setSyncMessage(`Syncing ${before.count} pending item${before.count === 1 ? '' : 's'}…`);
+    const result = await syncOfflineActions();
+    await refreshQueueSummary();
+
+    if (result.synced > 0) {
+      setSyncMessage(`Synced ${result.synced} pending item${result.synced === 1 ? '' : 's'}`);
+      queueRefresh();
+    } else if (result.failed > 0) {
+      setSyncMessage('Sync failed — will retry automatically');
+    } else if (result.remaining > 0) {
+      setSyncMessage('Pending sync — waiting for connection');
+    } else {
+      setSyncMessage('');
+    }
+  }
+
+  async function queueOfflineAction(action) {
+    const queued = await addOfflineAction(action);
+    await refreshQueueSummary();
+    if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
+      window.setTimeout(() => {
+        void runPendingSync();
+      }, 500);
+    }
+    return queued;
+  }
+
   async function gradeTask(taskId, grade, index, options = {}) {
     const task = tasks[index];
     const current = taskState[taskId] || {};
@@ -220,7 +287,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
 
       if (!response.ok) {
         const result = await response.json().catch(() => null);
-        throw new Error(result?.error || 'Unable to save cleaner task');
+        throw createHttpError(result?.error || 'Unable to save cleaner task', response.status);
       }
 
       const result = await response.json();
@@ -256,6 +323,44 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
         }, 80);
       }
     } catch (error) {
+      if (isOfflineLikeError(error)) {
+        await queueOfflineAction({
+          type: 'grade',
+          taskInstanceId: taskId,
+          grade,
+          note: options.corrected
+            ? `[initial-grade:${current.grade || task.score || 'unknown'}/5]\n[issue-resolved:true]\n[corrected-score:${grade}/5]\n${current.note || ''}`.trim()
+            : current.note || '',
+        });
+        updateTask(taskId, {
+          grade,
+          correctedGrade: options.corrected ? grade : current.correctedGrade,
+          incidentGrade: grade <= 2 ? grade : current.incidentGrade,
+          status: grade >= 4 ? 'completed' : 'in_progress',
+          saving: false,
+          saved: false,
+          statusMessage: shouldStayForCorrection
+            ? 'Incident saved on this device — add after photo and corrected score when fixed.'
+            : 'Pending sync — saved on this device and will upload when connection returns',
+          statusTone: 'tone-amber',
+        });
+        if (!shouldStayForCorrection) {
+          const nextIndex = index >= tasks.length - 1 ? -1 : Math.min(index + 1, tasks.length - 1);
+          window.setTimeout(() => {
+            if (nextIndex >= 0) {
+              focusJob(nextIndex, { force: true });
+            } else {
+              endCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 20);
+        } else {
+          window.setTimeout(() => {
+            focusRequirement(taskId, 'correction', 'start');
+          }, 80);
+        }
+        return;
+      }
+
       updateTask(taskId, {
         grade: current.grade ?? null,
         saving: false,
@@ -292,7 +397,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
       });
 
       if (!response.ok) {
-        throw new Error('Unable to upload photo');
+        throw createHttpError('Unable to upload photo', response.status);
       }
 
       const result = await response.json();
@@ -343,7 +448,63 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
           void gradeTask(taskId, current.correctedGrade, index, { corrected: true });
         }, 80);
       }
-    } catch {
+    } catch (error) {
+      if (isOfflineLikeError(error)) {
+        const resolvedPhotoType = photoType || (Number(current.grade) <= 2 ? 'exception' : 'completion');
+        const localPhoto = {
+          id: `pending-${Date.now()}`,
+          photoType: resolvedPhotoType,
+          photoUrl: URL.createObjectURL(file),
+        };
+        await queueOfflineAction({
+          type: 'photo',
+          taskInstanceId: taskId,
+          photoType: resolvedPhotoType,
+          file,
+          fileName: file.name || 'cleaning-photo.jpg',
+        });
+
+        const nextPhotos = [...(current.photos ?? []), localPhoto];
+        const nextPhotoCount = (current.photoCount ?? 0) + 1;
+        const afterPhotoMissingRequirements = photoType === 'completion' && current.correctedGrade && Number.isInteger(index)
+          ? getRequirementState({
+              task: tasks[index],
+              localState: {
+                ...current,
+                grade: current.correctedGrade,
+                photoCount: nextPhotoCount,
+                photos: nextPhotos,
+              },
+            }).missing
+          : [];
+
+        updateTask(taskId, {
+          photoCount: nextPhotoCount,
+          photos: nextPhotos,
+          saving: false,
+          saved: false,
+          showSkip: afterPhotoMissingRequirements.length ? true : current.showSkip,
+          statusMessage: afterPhotoMissingRequirements.length
+            ? `Required ${afterPhotoMissingRequirements.join(' and ')} must be added before moving on. Use skip only with an admin explanation.`
+            : 'Photo pending sync — saved on this device',
+          statusTone: afterPhotoMissingRequirements.length ? 'tone-red' : 'tone-amber',
+        });
+
+        if (photoType === 'completion' && current.correctedGrade && Number.isInteger(index)) {
+          if (afterPhotoMissingRequirements.includes('comment')) {
+            window.setTimeout(() => {
+              focusRequirement(taskId, 'comment', 'center');
+            }, 80);
+            return;
+          }
+
+          window.setTimeout(() => {
+            void gradeTask(taskId, current.correctedGrade, index, { corrected: true });
+          }, 80);
+        }
+        return;
+      }
+
       updateTask(taskId, {
         saving: false,
         statusMessage: 'Photo upload failed — try again',
@@ -387,7 +548,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
 
       if (!response.ok) {
         const result = await response.json().catch(() => null);
-        throw new Error(result?.error || 'Unable to skip task');
+        throw createHttpError(result?.error || 'Unable to skip task', response.status);
       }
 
       const result = await response.json();
@@ -415,6 +576,23 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
         }, 20);
       }
     } catch (error) {
+      if (isOfflineLikeError(error)) {
+        await queueOfflineAction({
+          type: 'skip',
+          taskInstanceId: taskId,
+          skipReason,
+        });
+        updateTask(taskId, {
+          status: 'skipped',
+          saving: false,
+          saved: false,
+          showSkip: false,
+          statusMessage: 'Skip pending sync — saved on this device',
+          statusTone: 'tone-amber',
+        });
+        return;
+      }
+
       updateTask(taskId, {
         saving: false,
         showSkip: true,
@@ -424,10 +602,40 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
     }
   }
 
-  useEffect(() => () => {
-    if (refreshTimerRef.current) {
-      window.clearTimeout(refreshTimerRef.current);
-    }
+  useEffect(() => {
+    void refreshQueueSummary();
+
+    const removeListeners = onQueueChange(() => {
+      void refreshQueueSummary();
+    });
+
+    const handleOnline = () => {
+      void refreshQueueSummary();
+      void runPendingSync();
+    };
+    const handleOffline = () => {
+      setSyncMessage('Offline — work will sync when signal returns');
+      void refreshQueueSummary();
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    const intervalId = window.setInterval(() => {
+      void runPendingSync();
+    }, OFFLINE_SYNC_INTERVAL_MS);
+
+    void runPendingSync();
+
+    return () => {
+      removeListeners();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.clearInterval(intervalId);
+      if (refreshTimerRef.current) {
+        window.clearTimeout(refreshTimerRef.current);
+      }
+    };
   }, []);
 
   function findNextIncompleteIndex(startIndex = currentIndex) {
@@ -456,6 +664,22 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
 
   return (
     <div className="compact-flow">
+      <div className={`offline-sync-banner ${queueSummary.count ? 'offline-sync-banner-pending' : ''}`}>
+        <span className="badge">{getOnlineLabel(isOnline)}</span>
+        {queueSummary.count ? (
+          <span>{queueSummary.count} item{queueSummary.count === 1 ? '' : 's'} pending sync</span>
+        ) : (
+          <span>All work synced</span>
+        )}
+        {syncMessage ? <span className="muted">{syncMessage}</span> : null}
+        {queueSummary.lastError ? <span className="tone-red">Last sync error: {queueSummary.lastError}</span> : null}
+        {queueSummary.count ? (
+          <button className="button secondary slim" type="button" onClick={() => void runPendingSync()}>
+            Retry sync
+          </button>
+        ) : null}
+      </div>
+
       <div className="flow-position">
         <button
           className="button secondary"
