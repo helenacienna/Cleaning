@@ -63,13 +63,6 @@ async function withStore(mode, callback) {
   });
 }
 
-function requestToPromise(request) {
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error || new Error('Offline queue request failed'));
-  });
-}
-
 export function emitQueueChange() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(QUEUE_EVENT));
@@ -157,8 +150,23 @@ export async function listOfflineActions() {
   });
 }
 
+function createSyncError(message, options = {}) {
+  const error = new Error(message);
+  error.discard = Boolean(options.discard);
+  error.status = options.status || null;
+  return error;
+}
+
+function isUsableQueuedFile(file) {
+  return file && typeof file.arrayBuffer === 'function';
+}
+
 async function sendAction(action) {
   if (action.type === 'photo') {
+    if (!action.taskInstanceId || !isUsableQueuedFile(action.file)) {
+      throw createSyncError('Discarded old queued photo without a usable file', { discard: true });
+    }
+
     const formData = new FormData();
     formData.append('taskInstanceId', action.taskInstanceId);
     formData.append('photoType', action.photoType || 'completion');
@@ -170,7 +178,11 @@ async function sendAction(action) {
     });
 
     if (!response.ok) {
-      throw new Error('Photo sync failed');
+      const result = await response.json().catch(() => null);
+      throw createSyncError(result?.error || 'Photo sync failed', {
+        status: response.status,
+        discard: response.status >= 400 && response.status < 500,
+      });
     }
 
     return response.json();
@@ -198,7 +210,10 @@ async function sendAction(action) {
 
   if (!response.ok) {
     const result = await response.json().catch(() => null);
-    throw new Error(result?.error || 'Task sync failed');
+    throw createSyncError(result?.error || 'Task sync failed', {
+      status: response.status,
+      discard: response.status >= 400 && response.status < 500,
+    });
   }
 
   return response.json();
@@ -230,6 +245,12 @@ export async function syncOfflineActions({ onProgress } = {}) {
         onProgress?.({ action, status: 'synced', synced, failed });
       } catch (error) {
         failed += 1;
+        if (error?.discard) {
+          await removeOfflineAction(action.id);
+          onProgress?.({ action, status: 'discarded', error, synced, failed });
+          continue;
+        }
+
         await updateOfflineAction(action.id, {
           lastError: error?.message || 'Sync failed',
         });
