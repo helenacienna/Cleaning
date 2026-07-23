@@ -721,7 +721,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                         </summary>
                         <div className="task-group-body">
                           {isDaily ? group.tasks.map((task) => {
-                            const showStatus = String(task.status || '').toLowerCase() !== 'scheduled';
                             return (
                               <details className="task-disclosure task-disclosure-compact" key={task.id}>
                                 <summary className="task-row task-row-disclosure task-row-disclosure-compact task-row-disclosure-daily-tight">
@@ -729,7 +728,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                     <div className="task-inline-main"><span className="facility-board-task-bullet" aria-hidden="true">•</span><strong>{task.title}</strong></div>
                                     <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
                                       <TaskPhotoIndicator task={task} />
-                                      {showStatus ? <span className={`${statusClass(task.status)} task-inline-status task-inline-status-info`}>{formatTaskLabel(task.status)}</span> : null}
                                       <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
                                     </div>
                                   </div>
@@ -739,8 +737,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                     <div><span className="muted">Task #</span><strong>{String(task.displayOrder).padStart(3, '0')}</strong></div>
                                     <div><span className="muted">Group</span><strong>{task.taskGroup}</strong></div>
                                     <div><span className="muted">Zone</span><strong>{task.zone}</strong></div>
-                                    <div><span className="muted">Status</span><strong>{formatTaskLabel(task.status)}</strong></div>
-                                    <div><span className="muted">Assigned</span><strong>{task.staff || 'Unallocated'}</strong></div>
                                     <div><span className="muted">Photos</span><strong>{task.photoCount ?? taskPhotos(task).length}</strong></div>
                                   </div>
                                   <TaskPhotoGallery task={task} />
@@ -750,7 +746,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                           }) : (
                             <div className={`facility-board-task-list ${section.key === 'periodic' ? 'facility-board-task-list-periodic' : ''} ${group.tasks.length === 1 ? 'facility-board-task-list-single' : ''}`}>
                               {group.tasks.map((task) => {
-                                const showStatus = String(task.status || '').toLowerCase() !== 'scheduled';
                                 return (
                                   <details className="task-disclosure task-disclosure-compact" key={task.id}>
                                     <summary className="task-row task-row-disclosure task-row-disclosure-compact task-row-disclosure-daily-tight">
@@ -758,7 +753,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                         <div className="task-inline-main"><span className="facility-board-task-bullet" aria-hidden="true">•</span><strong>#{String(task.displayOrder).padStart(3, '0')} · {task.title}</strong></div>
                                         <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
                                           <TaskPhotoIndicator task={task} />
-                                          {showStatus ? <span className={`${statusClass(task.status)} task-inline-status task-inline-status-info`}>{formatTaskLabel(task.status)}</span> : null}
                                           <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
                                         </div>
                                       </div>
@@ -768,8 +762,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                         <div><span className="muted">Task #</span><strong>{String(task.displayOrder).padStart(3, '0')}</strong></div>
                                         <div><span className="muted">Group</span><strong>{task.taskGroup}</strong></div>
                                         <div><span className="muted">Zone</span><strong>{task.zone}</strong></div>
-                                        <div><span className="muted">Status</span><strong>{formatTaskLabel(task.status)}</strong></div>
-                                        <div><span className="muted">Assigned</span><strong>{task.staff || 'Unallocated'}</strong></div>
                                         <div><span className="muted">Frequency</span><strong>{task.frequency || 'Periodic'}</strong></div>
                                         <div><span className="muted">Photos</span><strong>{task.photoCount ?? taskPhotos(task).length}</strong></div>
                                       </div>
