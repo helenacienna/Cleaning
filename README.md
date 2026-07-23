@@ -2,6 +2,10 @@
 
 Operational cleaning management platform for the Cienna suite.
 
+## Development constitution
+
+Before changing or deploying the app, read [`docs/CONSTITUTION.md`](docs/CONSTITUTION.md). It defines protected workflows, source-of-truth rules, regression checks, and deployment evidence requirements.
+
 ## Stack
 - Next.js 14
 - React 18
