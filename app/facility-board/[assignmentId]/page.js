@@ -402,7 +402,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                   <h3>{group.taskGroup}</h3>
                   <p className="muted">{group.zone}</p>
                 </div>
-                <div className="badge">{formatGroupSummaryLabel(group.tasks)}</div>
               </div>
 
               <div className="progress"><span style={{ width: `${group.progress}%` }} /></div>
@@ -413,12 +412,10 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                     <div>
                       <strong>#{String(task.displayOrder).padStart(3, '0')} · {task.title}</strong>
                       <div className="facility-board-task-meta-row">
-                        <span className="flag">{task.staff || 'Unallocated'}</span>
                         {task.photoRequired ? <span className="flag">Photo</span> : null}
                         {task.commentRequired ? <span className="flag">Comment</span> : null}
                       </div>
                     </div>
-                    <span className={`${statusClass(task.status)}`}>{formatTaskLabel(task.status)}</span>
                   </div>
                 ))}
               </div>

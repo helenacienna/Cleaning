@@ -105,7 +105,7 @@ function createInitialTaskState(tasks) {
   }));
 }
 
-export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
+export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onAllTasksCompleted, reportUrl = '', reportStatus = 'idle' }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const [noteTaskId, setNoteTaskId] = useState(null);
@@ -117,6 +117,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
   const listRef = useRef(null);
   const refreshTimerRef = useRef(null);
   const endCardRef = useRef(null);
+  const reportRequestedRef = useRef(false);
 
   function queueRefresh() {
     if (!onTaskSaved) {
@@ -764,6 +765,15 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
   const allTasksCompleted = tasks.length > 0 && completedCount === tasks.length;
   const nextIncompleteIndex = findNextIncompleteIndex();
 
+  useEffect(() => {
+    if (!allTasksCompleted || reportRequestedRef.current) {
+      return;
+    }
+
+    reportRequestedRef.current = true;
+    void onAllTasksCompleted?.();
+  }, [allTasksCompleted, onAllTasksCompleted]);
+
   return (
     <div className="compact-flow">
       <div className={`offline-sync-banner ${queueSummary.count ? 'offline-sync-banner-pending' : ''}`}>
@@ -1101,6 +1111,15 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete }) {
               <button className="button primary" type="button" onClick={() => onComplete?.()}>
                 Submit and go back
               </button>
+              {reportUrl ? (
+                <a className="button secondary" href={reportUrl}>
+                  View report
+                </a>
+              ) : reportStatus === 'creating' ? (
+                <button className="button secondary" type="button" disabled>
+                  Creating report…
+                </button>
+              ) : null}
             </div>
           </article>
         ) : null}

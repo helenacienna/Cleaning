@@ -231,7 +231,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
 
               <div style={{ marginBottom: 12 }}>
                 {isTodayBoard ? (
-                  <CleanerChecklistModal tasks={section.tasks} label={section.facility} />
+                  <CleanerChecklistModal tasks={section.tasks} label={section.facility} staffName={list.staff} />
                 ) : (
                   <section className="card checklist-launch-card">
                     {todayHref ? (
