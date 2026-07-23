@@ -9,33 +9,59 @@ export const metadata = {
   title: 'Daily Checklist Report · Cienna Cleaning',
 };
 
-function parseGrade(task) {
-  const latestAudit = task.audits?.[0] ?? null;
-  const gradeMatch = task.execution?.completionComment?.match(/grade\s*:?\s*(\d)\/5/i);
-  return latestAudit?.auditScore ?? (gradeMatch ? Number(gradeMatch[1]) : null);
+function completionComment(task) {
+  return String(task.execution?.completionComment ?? '');
 }
 
-function parseInitialGrade(task) {
-  const match = task.execution?.completionComment?.match(/initial-grade\s*:?\s*(\d)\/5/i);
+function parseCommentGrade(comment = '') {
+  const match = String(comment).match(/\[grade:(\d)\/5\]/i);
+  return match ? Number(match[1]) : null;
+}
+
+function parseCorrectedGrade(task) {
+  const match = completionComment(task).match(/\[corrected-score:(\d)\/5\]/i);
   return match ? Number(match[1]) : null;
 }
 
 function parseResolvedIssue(task) {
-  return /\[issue-resolved:true\]/i.test(task.execution?.completionComment ?? '');
+  return /\[issue-resolved:true\]/i.test(completionComment(task));
+}
+
+function parseGrade(task) {
+  const latestAudit = task.audits?.[0] ?? null;
+  const commentGrade = parseCommentGrade(completionComment(task));
+  const correctedGrade = parseCorrectedGrade(task);
+
+  if (parseResolvedIssue(task)) {
+    return correctedGrade ?? commentGrade ?? latestAudit?.auditScore ?? null;
+  }
+
+  return latestAudit?.auditScore ?? commentGrade ?? null;
+}
+
+function parseInitialGrade(task) {
+  const match = completionComment(task).match(/initial-grade\s*:?\s*(\d)\/5/i);
+  return match ? Number(match[1]) : null;
 }
 
 function parseResolutionNote(task) {
-  const match = task.execution?.completionComment?.match(/\[resolution-note\]\s*([^\n]+)/i);
+  const match = completionComment(task).match(/\[resolution-note\]\s*([^\n]+)/i);
   return match ? match[1].trim() : '';
 }
 
 function parseIssueNote(task) {
-  return String(task.execution?.completionComment ?? '')
+  return completionComment(task)
     .replace(/\[grade:\d\/5\]\s*/ig, '')
     .replace(/\[initial-grade:\d\/5\]\s*/ig, '')
     .replace(/\[issue-resolved:true\]\s*/ig, '')
+    .replace(/\[correction-later:true\]\s*/ig, '')
+    .replace(/\[corrected-score:\d\/5\]\s*/ig, '')
     .replace(/\[resolution-note\]\s*[^\n]+\s*/ig, '')
     .trim();
+}
+
+function hasCleanerNote(task) {
+  return Boolean(parseIssueNote(task));
 }
 
 function hasNumericGrade(grade) {
@@ -199,7 +225,7 @@ export default async function DailyReportPage({ searchParams }) {
     resolvedIssues: scored.filter(({ resolvedIssue }) => resolvedIssue).length,
     unresolvedIssues: scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2).length,
     photoCount: tasks.reduce((sum, task) => sum + (task.execution?.photos?.length ?? 0), 0),
-    noteCount: tasks.filter((task) => (task.execution?.completionComment ?? '').trim().length > 0).length,
+    noteCount: tasks.filter((task) => hasCleanerNote(task)).length,
   };
   const completionPercent = percent(totals.completed, totals.total);
   const reportPath = `/reports/daily?facility=${encodeURIComponent(facility)}&staff=${encodeURIComponent(staffName)}&day=${encodeURIComponent(day)}${ids.length ? `&ids=${encodeURIComponent(ids.join(','))}` : ''}`;
@@ -335,7 +361,7 @@ export default async function DailyReportPage({ searchParams }) {
                     <div className="daily-report-task-meta">
                       <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
                       <span className="flag">{task.execution?.photos?.length ?? 0} photos</span>
-                      {(task.execution?.completionComment ?? '').trim() ? <span className="flag">Note</span> : null}
+                      {hasCleanerNote(task) ? <span className="flag">Note</span> : null}
                     </div>
                     <PhotoEvidence task={task} />
                   </article>

@@ -1456,7 +1456,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
   return (
     <div className={`card facility-board-card facility-theme-${slugifyThemeKey(assignment.location)}`}>
       <div className="facility-card-header">
-        <Link className="button secondary facility-card-title-button" href={`/facility-board/${assignment.id}?day=${activeBoardDay}&view=staff`}>
+        <Link className="button secondary facility-card-title-button" href={`/facility-board/${assignment.id}?day=${activeBoardDay}&view=tasks`}>
           {assignment.location}
         </Link>
         {assignment.rosteredStaff?.length ? (

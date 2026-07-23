@@ -22,7 +22,8 @@
     "ops:maintenance": "node scripts/run-maintenance.mjs",
     "ops:notify": "node scripts/run-notifications.mjs",
     "ops:calendar:shiftruns:dry-run": "node scripts/sync-shiftruns-google-calendar.mjs --dry-run",
-    "ops:calendar:shiftruns:commit": "node scripts/sync-shiftruns-google-calendar.mjs --commit"
+    "ops:calendar:shiftruns:commit": "node scripts/sync-shiftruns-google-calendar.mjs --commit",
+    "smoke:dashboard-health": "node scripts/smoke-dashboard-health.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

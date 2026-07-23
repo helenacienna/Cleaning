@@ -13,8 +13,29 @@ function parseInitialGrade(comment = '') {
   return match ? Number(match[1]) : null;
 }
 
+function parseCommentGrade(comment = '') {
+  const match = String(comment || '').match(/\[grade:(\d)\/5\]/i);
+  return match ? Number(match[1]) : null;
+}
+
+function parseCorrectedGrade(comment = '') {
+  const match = String(comment || '').match(/\[corrected-score:(\d)\/5\]/i);
+  return match ? Number(match[1]) : null;
+}
+
 function isResolvedIssue(comment = '') {
   return /\[issue-resolved:true\]/i.test(String(comment || ''));
+}
+
+function parseCleanerNote(comment = '') {
+  return String(comment || '')
+    .replace(/\[grade:\d\/5\]\s*/ig, '')
+    .replace(/\[initial-grade:\d\/5\]\s*/ig, '')
+    .replace(/\[issue-resolved:true\]\s*/ig, '')
+    .replace(/\[correction-later:true\]\s*/ig, '')
+    .replace(/\[corrected-score:\d\/5\]\s*/ig, '')
+    .replace(/\[resolution-note\]\s*[^\n]+\s*/ig, '')
+    .trim();
 }
 
 export async function POST(request) {
@@ -66,13 +87,16 @@ export async function POST(request) {
 
   const scoredTasks = tasks.map((task) => {
     const latestAudit = task.audits?.[0] ?? null;
-    const gradeMatch = task.execution?.completionComment?.match(/grade\s*:?\s*(\d)\/5/i);
-    const grade = latestAudit?.auditScore ?? (gradeMatch ? Number(gradeMatch[1]) : null);
+    const comment = task.execution?.completionComment ?? '';
+    const resolvedIssue = isResolvedIssue(comment);
+    const grade = resolvedIssue
+      ? parseCorrectedGrade(comment) ?? parseCommentGrade(comment) ?? latestAudit?.auditScore ?? null
+      : latestAudit?.auditScore ?? parseCommentGrade(comment) ?? null;
     return {
       task,
       grade,
-      initialGrade: parseInitialGrade(task.execution?.completionComment ?? ''),
-      resolvedIssue: isResolvedIssue(task.execution?.completionComment ?? ''),
+      initialGrade: parseInitialGrade(comment),
+      resolvedIssue,
     };
   });
 
@@ -81,7 +105,7 @@ export async function POST(request) {
   const lowScores = scoredTasks.filter(({ grade, resolvedIssue }) => !resolvedIssue && Number(grade) <= 2);
   const resolvedIssues = scoredTasks.filter(({ resolvedIssue }) => resolvedIssue);
   const photoCount = tasks.reduce((sum, task) => sum + (task.execution?.photos?.length ?? 0), 0);
-  const noteCount = tasks.filter((task) => (task.execution?.completionComment ?? '').trim().length > 0).length;
+  const noteCount = tasks.filter((task) => parseCleanerNote(task.execution?.completionComment ?? '')).length;
   const boardDay = day || tasks.find((task) => task.plannedRunDate || task.dueAt)?.plannedRunDate?.toISOString?.().slice(0, 10) || tasks[0]?.dueAt?.toISOString?.().slice(0, 10) || 'today';
   const resolvedFacility = tasks[0]?.plannedFacility?.name ?? tasks[0]?.facility?.name ?? facility;
   const resolvedStaff = tasks[0]?.assignedStaff?.fullName ?? staffName;
