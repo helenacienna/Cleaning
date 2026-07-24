@@ -26,7 +26,8 @@ function parseResolvedIssue(task) {
 
 function parseResolutionNote(task) {
   const match = task.execution?.completionComment?.match(/\[resolution-note\]\s*([^\n]+)/i);
-  return match ? match[1].trim() : '';
+  const note = match ? match[1].trim() : '';
+  return /^Corrected during checklist\.?$/i.test(note) ? '' : note;
 }
 
 function parseIssueNote(task) {
@@ -36,6 +37,10 @@ function parseIssueNote(task) {
     .replace(/\[issue-resolved:true\]\s*/ig, '')
     .replace(/\[resolution-note\]\s*[^\n]+\s*/ig, '')
     .trim();
+}
+
+function hasMeaningfulNote(task) {
+  return Boolean(parseIssueNote(task) || parseResolutionNote(task));
 }
 
 function hasNumericGrade(grade) {
@@ -204,7 +209,7 @@ export default async function DailyReportPage({ searchParams }) {
     resolvedIssues: scored.filter(({ resolvedIssue }) => resolvedIssue).length,
     unresolvedIssues: scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2).length,
     photoCount: tasks.reduce((sum, task) => sum + (task.execution?.photos?.length ?? 0), 0),
-    noteCount: tasks.filter((task) => (task.execution?.completionComment ?? '').trim().length > 0).length,
+    noteCount: tasks.filter(hasMeaningfulNote).length,
   };
   const completionPercent = percent(totals.completed, totals.total);
   const reportPath = `/reports/daily?facility=${encodeURIComponent(facility)}&staff=${encodeURIComponent(staffName)}&day=${encodeURIComponent(day)}${ids.length ? `&ids=${encodeURIComponent(ids.join(','))}` : ''}`;
@@ -341,7 +346,7 @@ export default async function DailyReportPage({ searchParams }) {
                     <div className="daily-report-task-meta">
                       <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
                       <span className="flag">{task.execution?.photos?.length ?? 0} photos</span>
-                      {(task.execution?.completionComment ?? '').trim() ? <span className="flag">Note</span> : null}
+                      {hasMeaningfulNote(task) ? <span className="flag">Note</span> : null}
                     </div>
                     <PhotoEvidence task={task} />
                   </article>

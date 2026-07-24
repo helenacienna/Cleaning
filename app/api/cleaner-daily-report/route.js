@@ -17,6 +17,25 @@ function isResolvedIssue(comment = '') {
   return /\[issue-resolved:true\]/i.test(String(comment || ''));
 }
 
+function parseResolutionNote(comment = '') {
+  const match = String(comment || '').match(/\[resolution-note\]\s*([^\n]+)/i);
+  const note = match ? match[1].trim() : '';
+  return /^Corrected during checklist\.?$/i.test(note) ? '' : note;
+}
+
+function parseIssueNote(comment = '') {
+  return String(comment || '')
+    .replace(/\[grade:\d\/5\]\s*/ig, '')
+    .replace(/\[initial-grade:\d\/5\]\s*/ig, '')
+    .replace(/\[issue-resolved:true\]\s*/ig, '')
+    .replace(/\[resolution-note\]\s*[^\n]+\s*/ig, '')
+    .trim();
+}
+
+function hasMeaningfulNote(comment = '') {
+  return Boolean(parseIssueNote(comment) || parseResolutionNote(comment));
+}
+
 export async function POST(request) {
   const prisma = await getPrisma();
 
@@ -81,7 +100,7 @@ export async function POST(request) {
   const lowScores = scoredTasks.filter(({ grade, resolvedIssue }) => !resolvedIssue && Number(grade) <= 2);
   const resolvedIssues = scoredTasks.filter(({ resolvedIssue }) => resolvedIssue);
   const photoCount = tasks.reduce((sum, task) => sum + (task.execution?.photos?.length ?? 0), 0);
-  const noteCount = tasks.filter((task) => (task.execution?.completionComment ?? '').trim().length > 0).length;
+  const noteCount = tasks.filter((task) => hasMeaningfulNote(task.execution?.completionComment ?? '')).length;
   const boardDay = day || tasks.find((task) => task.plannedRunDate || task.dueAt)?.plannedRunDate?.toISOString?.().slice(0, 10) || tasks[0]?.dueAt?.toISOString?.().slice(0, 10) || 'today';
   const resolvedFacility = tasks[0]?.plannedFacility?.name ?? tasks[0]?.facility?.name ?? facility;
   const resolvedStaff = tasks[0]?.assignedStaff?.fullName ?? staffName;
