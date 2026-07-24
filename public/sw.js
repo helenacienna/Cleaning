@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'cienna-cleaning-offline-v3';
+const CACHE_VERSION = 'cienna-cleaning-offline-v4';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const PRECACHE_URLS = [
   '/',
@@ -91,11 +91,9 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (request.method !== 'GET') {
-    event.respondWith(
-      fetch(request).catch(() => wantsJson(request)
-        ? offlineJson('You are offline. Reconnect before saving this change.')
-        : caches.match('/offline.html'))
-    );
+    // Do not proxy uploads/saves through the service worker.
+    // iOS Safari can drop multipart/form-data bodies when a service worker forwards POST requests,
+    // which makes photo uploads arrive at the server as content-length 0.
     return;
   }
 
