@@ -53,7 +53,7 @@ function createInitialTaskState(tasks) {
   }));
 }
 
-export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefreshProgress, onClose, onAllTasksCompleted, reportUrl = '', reportStatus = 'idle', completionMode = 'completed', completeLabel = 'Submit and go back', completeTitle = 'All tasks submitted', completeDescription = 'Everything on this active list has been graded. Submit to go back.' }) {
+export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefreshProgress, onClose, onAllTasksCompleted, onOpenReport, reportUrl = '', reportStatus = 'idle', completionMode = 'completed', completeLabel = 'Submit and go back', completeTitle = 'All tasks submitted', completeDescription = 'Everything on this active list has been graded. Submit to go back.' }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const cardRefs = useRef([]);
@@ -547,9 +547,22 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         >
           {nextIncompleteIndex >= 0 ? 'Next open' : 'All done'}
         </button>
-        <button className="button secondary flow-nav-button" type="button" onClick={onRefreshProgress}>
-          Refresh
-        </button>
+        {onOpenReport ? (
+          <button
+            className="button secondary flow-nav-button"
+            type="button"
+            onClick={() => {
+              void onOpenReport();
+            }}
+            disabled={reportStatus === 'creating'}
+          >
+            {reportStatus === 'creating' ? 'Creating…' : 'Report'}
+          </button>
+        ) : (
+          <button className="button secondary flow-nav-button" type="button" onClick={onRefreshProgress}>
+            Refresh
+          </button>
+        )}
         <button className="button secondary flow-nav-button close-modal-button" type="button" onClick={onClose}>
           Close
         </button>
@@ -564,7 +577,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
               <li>Tap a task to focus it. Use <strong>Next open</strong> to jump to the next unfinished job.</li>
               <li>Grade each job from <strong>1 to 5</strong>: 1-2 needs correction, 3 is partly done, 4-5 is complete.</li>
               <li>If you choose 1 or 2, add a <strong>before photo</strong>, fix the issue, then choose the corrected score and add an <strong>after photo</strong>.</li>
-              <li>Add any required photo or note before saving. Use <strong>Refresh</strong> if progress looks out of date.</li>
+              <li>Add any required photo or note before saving. Use <strong>Report</strong> to open the daily report when needed.</li>
             </ul>
           </div>
         </section>

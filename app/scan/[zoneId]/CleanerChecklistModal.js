@@ -112,6 +112,13 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
     return dailyReportRequestRef.current;
   }
 
+  async function openDailyReport() {
+    const reportUrl = await createDailyReport();
+    if (reportUrl && typeof window !== 'undefined') {
+      window.location.href = reportUrl;
+    }
+  }
+
   function handleComplete() {
     refreshProgress();
     closeChecklist();
@@ -197,6 +204,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
                 onRefreshProgress={refreshProgress}
                 onClose={closeChecklist}
                 onAllTasksCompleted={createDailyReport}
+                onOpenReport={openDailyReport}
                 reportUrl={dailyReportUrl}
                 reportStatus={dailyReportStatus}
                 onComplete={() => {
