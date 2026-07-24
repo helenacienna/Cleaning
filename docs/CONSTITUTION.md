@@ -1,6 +1,6 @@
 # Cienna Cleaning App Constitutional Handbook
 
-_Last updated: 2026-07-23_
+_Last updated: 2026-07-24_
 
 This handbook defines the non-negotiable rules for developing, restoring, deploying, and auditing the Cienna Cleaning Platform. Its purpose is to prevent source-lineage drift, accidental UI regressions, and "fix one thing, break another" changes.
 
@@ -155,6 +155,7 @@ Rules:
 - Prefer small, purposeful commits over mixed mega-commits.
 - If restoring historical UI, compare against current protected behaviour before accepting old files.
 - Do not remove tests that protect currently working behaviour.
+- **Page-scoped UI change rule:** when a change is requested for a specific page, route, component surface, or workflow, all other pages/routes must remain unchanged unless Chris explicitly asks for broader changes. Treat accidental visual/text/layout drift on unrelated pages as a regression, even if the app still builds.
 
 ### 4.3 Before commit
 
@@ -176,6 +177,7 @@ Confirm:
 - latest commit message describes the operational change
 - migration files are included if Prisma schema changed
 - protected workflow tests/build pass
+- for page-scoped UI changes, capture or compare the changed page plus representative unaffected pages before deploy so unrelated pages are proven unchanged
 
 ### 4.5 After deploy
 
@@ -197,6 +199,7 @@ Also check content markers when relevant:
 - facility task view does not show old task-list clutter (`status-scheduled`, visible `>Unallocated<`, `task-inline-status-info`) in the main task view
 - report contains `Supervisor summary`, `Full checklist`, `Email supervisor`
 - report does not leak internal markers such as `[grade:`, `[corrected-score:`, `[correction-later:`
+- for page-scoped UI changes, compare the changed page and representative unaffected pages against the pre-change record; do not hand-wave unrelated differences as acceptable unless they are clearly live data/order changes rather than source/UI changes
 
 ---
 
@@ -214,6 +217,7 @@ A change is a regression if it causes any of the following without explicit appr
 - task completion progress counts unsaved local-only grades as completed
 - schema changes deploy without matching migration or validation
 - app deploys from a dirty/mixed source tree
+- a page-scoped UI change alters unrelated pages/routes without explicit approval
 
 ---
 
