@@ -50,7 +50,7 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
 
       {activePhoto && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${title} photo preview`}>
-          <div className="fullscreen-checklist" style={{ alignItems: 'center', justifyContent: 'center' }}>
+          <div className="fullscreen-checklist photo-lightbox-shell">
             <header className="modal-header compact-modal-header" style={{ width: '100%' }}>
               <div>
                 <span className="badge">Photo preview {hasMultiplePhotos ? `${activeIndex + 1} of ${activePhotos.length}` : ''}</span>
