@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f5146" />
+    <title>Offline · Cienna Cleaning</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f8fafc; color: #0f172a; }
+      main { width: min(92vw, 520px); background: white; border: 1px solid #dbe4ee; border-radius: 28px; padding: 28px; box-shadow: 0 24px 70px rgba(15, 23, 42, 0.12); }
+      .badge { display: inline-flex; border-radius: 999px; background: #dcfce7; color: #166534; padding: 6px 12px; font-size: 0.78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+      h1 { margin: 18px 0 10px; font-size: clamp(1.8rem, 8vw, 2.6rem); line-height: 1; }
+      p { margin: 0 0 14px; color: #475569; line-height: 1.55; }
+      button, a { appearance: none; border: 0; border-radius: 16px; background: #0f5146; color: white; display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 18px; font-weight: 800; text-decoration: none; cursor: pointer; }
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+      .secondary { background: #e2e8f0; color: #0f172a; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="badge">Offline mode</span>
+      <h1>No connection right now</h1>
+      <p>The app is installed and can reopen cached pages, but live cleaner task saves and photo uploads need the network.</p>
+      <p>Reconnect, then refresh this screen or go back to a cleaner page you already opened.</p>
+      <div class="actions">
+        <button type="button" onclick="location.reload()">Try again</button>
+        <a class="secondary" href="/cleaner">Open cached staff lists</a>
+      </div>
+    </main>
+  </body>
+</html>
