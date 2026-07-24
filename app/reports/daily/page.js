@@ -104,6 +104,11 @@ function percent(value, total) {
   return Math.round((value / total) * 100);
 }
 
+function buildCleanerHref(staffName) {
+  const firstName = String(staffName || '').trim().split(/\s+/)[0];
+  return firstName ? `/cleaner/${encodeURIComponent(firstName.toLowerCase())}` : '/cleaner';
+}
+
 function buildEmailHref({ facility, staffName, day, totals, reportUrl }) {
   const subject = `${facility} daily checklist report - ${formatDayLabel(day)}`;
   const body = [
@@ -205,6 +210,7 @@ export default async function DailyReportPage({ searchParams }) {
   const reportPath = `/reports/daily?facility=${encodeURIComponent(facility)}&staff=${encodeURIComponent(staffName)}&day=${encodeURIComponent(day)}${ids.length ? `&ids=${encodeURIComponent(ids.join(','))}` : ''}`;
   const publicBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-3a1422.up.railway.app';
   const emailHref = buildEmailHref({ facility, staffName, day, totals, reportUrl: `${publicBaseUrl}${reportPath}` });
+  const cleanerHref = buildCleanerHref(staffName);
   const resolvedIssues = scored.filter(({ resolvedIssue }) => resolvedIssue);
   const followUps = scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2);
 
@@ -224,7 +230,7 @@ export default async function DailyReportPage({ searchParams }) {
           </div>
         </section>
 
-        <ReportActions emailHref={emailHref} />
+        <ReportActions emailHref={emailHref} backHref={cleanerHref} />
 
         {source !== 'prisma' || !tasks.length ? (
           <section className="card daily-report-card">
