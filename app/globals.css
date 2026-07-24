@@ -4226,16 +4226,17 @@ button.button {
   .photo-lightbox-title { font-size: 18px; }
   .photo-lightbox-toolbar { gap: 6px; }
   .photo-lightbox-toolbar .button, .photo-lightbox-toolbar .badge { min-height: 30px; padding: 5px 8px; font-size: 11px; }
+  .photo-lightbox-group-label { min-height: 24px; padding: 4px 10px; font-size: 12px; }
   .photo-viewer-image,
   .issue-photo-column .photo-viewer-image {
     width: 100vw !important;
-    height: calc(100dvh - 154px) !important;
+    height: calc(100dvh - 190px) !important;
     max-width: 100vw;
-    max-height: calc(100dvh - 154px);
+    max-height: calc(100dvh - 190px);
     border-radius: 10px;
   }
-  .photo-viewer-nav-row { gap: 14px; padding-bottom: 2px; }
-  .photo-viewer-arrow { width: 76px; height: 40px; font-size: 34px; }
+  .photo-viewer-nav-row { gap: 12px; padding-bottom: 2px; }
+  .photo-viewer-arrow { width: 92px; height: 48px; font-size: 42px; }
   .fullscreen-checklist .compact-task-list { max-height: none; height: 100%; }
 }
 
@@ -4671,20 +4672,37 @@ button.button {
 .photo-viewer-stage {
   position: relative;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 8px;
   flex: 1;
   width: 100%;
   height: 100%;
   min-height: 0;
+  touch-action: pan-y;
+}
+
+.photo-lightbox-group-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(15,23,42,0.08);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .photo-viewer-image,
 .issue-photo-column .photo-viewer-image {
   width: min(99vw, 1600px) !important;
-  height: min(84dvh, 1080px) !important;
+  height: min(80dvh, 1040px) !important;
   max-width: 99vw;
-  max-height: 84dvh;
+  max-height: 80dvh;
   border-radius: 18px;
   object-fit: contain;
   background: #fff;
@@ -4692,27 +4710,36 @@ button.button {
 }
 
 .photo-viewer-nav-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto;
   justify-content: center;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   width: 100%;
   padding: 0 0 4px;
 }
 
 .photo-viewer-arrow {
-  width: 68px;
-  height: 48px;
+  width: 88px;
+  height: 56px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(15,23,42,0.14);
   border-radius: 999px;
   background: rgba(255,255,255,0.94);
   color: var(--ink);
-  font-size: 42px;
-  font-weight: 800;
+  font-size: 50px;
+  font-weight: 900;
   line-height: 1;
   box-shadow: 0 12px 32px rgba(15,23,42,0.16);
+}
+
+.photo-viewer-swipe-hint {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
 }
 
 .resolved-issue-buttons {
@@ -4755,16 +4782,22 @@ button.button {
   }
 
   .photo-viewer-arrow {
-    width: 76px;
-    height: 40px;
-    font-size: 34px;
+    width: 92px;
+    height: 48px;
+    font-size: 42px;
+  }
+
+  .photo-lightbox-group-label {
+    min-height: 24px;
+    padding: 4px 10px;
+    font-size: 12px;
   }
 
   .photo-viewer-image,
   .issue-photo-column .photo-viewer-image {
     width: 100vw !important;
-    height: calc(100dvh - 154px) !important;
-    max-height: calc(100dvh - 154px);
+    height: calc(100dvh - 190px) !important;
+    max-height: calc(100dvh - 190px);
     border-radius: 10px;
   }
 
@@ -4916,6 +4949,14 @@ button.button {
   border-radius: 14px;
   border: 1px solid rgba(37,99,235,0.18);
   background: rgba(219,234,254,0.62);
+}
+
+.add-another-photo-continue-button {
+  grid-column: 1 / -1;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .facility-board-report-metrics {

@@ -707,7 +707,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     <div className="issue-photo-column issue-photo-column-before">
                       <strong>Before photos</strong>
                       {beforePhotos.length > 0 ? (
-                        <CleanerPhotoLightbox photos={beforePhotos} title={`${task.title} before photos`} />
+                        <CleanerPhotoLightbox photos={beforePhotos} title={task.title} photoGroupLabel="Before photos" />
                       ) : (
                         <span className="muted">No before photo yet</span>
                       )}
@@ -744,7 +744,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                     <div className="issue-photo-column issue-photo-column-after">
                       <strong>After photos</strong>
                       {afterPhotos.length > 0 ? (
-                        <CleanerPhotoLightbox photos={afterPhotos} title={`${task.title} after photos`} />
+                        <CleanerPhotoLightbox photos={afterPhotos} title={task.title} photoGroupLabel="After photos" />
                       ) : (
                         <span className="muted">No after photo yet</span>
                       )}
@@ -814,7 +814,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                           />
                         </label>
                         <button
-                          className="button primary"
+                          className="button primary add-another-photo-continue-button"
                           type="button"
                           onPointerDown={(event) => event.stopPropagation()}
                           onMouseDown={(event) => event.stopPropagation()}

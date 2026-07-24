@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 function formatPhotoViewerLabel(photo, index, total) {
@@ -12,7 +12,8 @@ function formatPhotoViewerLabel(photo, index, total) {
   return `${typeLabel} ${index + 1}/${total}`;
 }
 
-export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = photos, framed = false }) {
+export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = photos, framed = false, photoGroupLabel = '' }) {
+  const touchStartRef = useRef(null);
   const [activePhotoId, setActivePhotoId] = useState(null);
   const [viewMode, setViewMode] = useState('preview');
   const [deleteStatus, setDeleteStatus] = useState('idle');
@@ -64,6 +65,25 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
     setActivePhotoId(activePhotos[nextIndex].id);
   }
 
+  function handleTouchStart(event) {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }
+
+  function handleTouchEnd(event) {
+    if (!hasMultiplePhotos || !touchStartRef.current) return;
+    const touch = event.changedTouches?.[0];
+    if (!touch) return;
+
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+
+    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY) * 1.4) return;
+    movePhoto(deltaX < 0 ? 1 : -1);
+  }
+
   const viewerPopup = activePhoto ? (
     <div className="modal-backdrop photo-viewer-popup" role="dialog" aria-modal="true" aria-label={`${title} photo viewer`}>
       <div className={`fullscreen-checklist photo-lightbox-shell ${viewMode === 'original' ? 'photo-lightbox-shell-original' : ''}`}>
@@ -84,7 +104,12 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
             {deleteStatus === 'error' ? <span className="badge tone-red">Delete failed</span> : null}
           </div>
         </header>
-        <div className="photo-viewer-stage">
+        <div
+          className="photo-viewer-stage"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {photoGroupLabel ? <span className="photo-lightbox-group-label">{photoGroupLabel}</span> : null}
           <img
             src={activePhoto.photoUrl}
             alt={`${title} preview`}
@@ -99,6 +124,7 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
             <button className="photo-viewer-arrow" type="button" aria-label="Next photo" onClick={() => movePhoto(1)}>
               ›
             </button>
+            <span className="photo-viewer-swipe-hint">Swipe photo to move through photos</span>
           </div>
         ) : null}
       </div>
