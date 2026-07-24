@@ -15,6 +15,7 @@ function formatPhotoViewerLabel(photo, index, total) {
 export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = photos, framed = false }) {
   const [activePhotoId, setActivePhotoId] = useState(null);
   const [viewMode, setViewMode] = useState('preview');
+  const [deleteStatus, setDeleteStatus] = useState('idle');
   const activePhotos = viewerPhotos?.length ? viewerPhotos : photos;
   const activeIndex = activePhotoId ? activePhotos.findIndex((photo) => photo.id === activePhotoId) : -1;
   const activePhoto = activeIndex >= 0 ? activePhotos[activeIndex] : null;
@@ -23,7 +24,32 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
 
   function closeViewer() {
     setViewMode('preview');
+    setDeleteStatus('idle');
     setActivePhotoId(null);
+  }
+
+  async function deleteActivePhoto() {
+    if (!activePhoto || deleteStatus === 'deleting') return;
+
+    const confirmed = window.confirm(`Delete ${photoLabel}? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setDeleteStatus('deleting');
+
+    try {
+      const response = await fetch(`/api/task-photos/${activePhoto.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Delete failed');
+      }
+
+      closeViewer();
+      window.location.reload();
+    } catch {
+      setDeleteStatus('error');
+    }
   }
 
   function openPhoto(photo) {
@@ -51,7 +77,11 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
             ) : (
               <button className="button secondary" type="button" onClick={() => setViewMode('original')}>Open original</button>
             )}
+            <button className="button danger" type="button" onClick={deleteActivePhoto} disabled={deleteStatus === 'deleting'}>
+              {deleteStatus === 'deleting' ? 'Deleting…' : 'Delete'}
+            </button>
             <button className="button secondary" type="button" onClick={closeViewer}>Close</button>
+            {deleteStatus === 'error' ? <span className="badge tone-red">Delete failed</span> : null}
           </div>
         </header>
         <div className="photo-viewer-stage">
