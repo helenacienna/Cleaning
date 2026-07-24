@@ -14,13 +14,25 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const formData = await request.formData().catch((error) => {
-    console.warn('task-photo-upload-formdata-parse-failed', {
+  const debugRequest = request.clone();
+  const formData = await request.formData().catch(async (error) => {
+    const contentLength = Number(request.headers.get('content-length') || 0);
+    let bodyPreview = null;
+
+    if (contentLength > 0 && contentLength <= 4096) {
+      bodyPreview = await debugRequest.text().catch(() => null);
+      if (bodyPreview && bodyPreview.length > 1000) {
+        bodyPreview = `${bodyPreview.slice(0, 1000)}…`;
+      }
+    }
+
+    console.warn('task-photo-upload-formdata-parse-failed', JSON.stringify({
       contentType: request.headers.get('content-type'),
       contentLength: request.headers.get('content-length'),
       userAgent: request.headers.get('user-agent'),
       message: error?.message,
-    });
+      bodyPreview,
+    }));
     return null;
   });
   const formEntries = formData ? Array.from(formData.entries()) : [];
@@ -29,7 +41,7 @@ export async function POST(request) {
   const file = formData?.get('file');
 
   if (typeof taskInstanceId !== 'string' || !file || typeof file.arrayBuffer !== 'function') {
-    console.warn('task-photo-upload-invalid-payload', {
+    console.warn('task-photo-upload-invalid-payload', JSON.stringify({
       contentType: request.headers.get('content-type'),
       contentLength: request.headers.get('content-length'),
       userAgent: request.headers.get('user-agent'),
@@ -44,7 +56,7 @@ export async function POST(request) {
       hasTaskInstanceId: typeof taskInstanceId === 'string',
       hasFile: Boolean(file),
       fileHasArrayBuffer: typeof file?.arrayBuffer === 'function',
-    });
+    }));
     return NextResponse.json({ error: 'Task and photo file are required' }, { status: 400 });
   }
 
