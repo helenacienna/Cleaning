@@ -42,11 +42,10 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
     <div className="modal-backdrop photo-viewer-popup" role="dialog" aria-modal="true" aria-label={`${title} photo viewer`}>
       <div className={`fullscreen-checklist photo-lightbox-shell ${viewMode === 'original' ? 'photo-lightbox-shell-original' : ''}`}>
         <header className="modal-header compact-modal-header photo-lightbox-header" style={{ width: '100%' }}>
-          <div>
+          <strong className="photo-lightbox-title">{title}</strong>
+          <div className="photo-lightbox-toolbar" aria-label="Photo viewer controls">
             <span className="badge">{photoLabel}</span>
-            <strong>{viewMode === 'original' ? 'Original photo view' : title}</strong>
-          </div>
-          <div className="workflow-banner-actions">
+            {viewMode === 'original' ? <span className="badge neutral">Original photo view</span> : null}
             {viewMode === 'original' ? (
               <button className="button secondary" type="button" onClick={() => setViewMode('preview')}>Back</button>
             ) : (
@@ -56,22 +55,22 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
           </div>
         </header>
         <div className="photo-viewer-stage">
-          {hasMultiplePhotos ? (
-            <button className="photo-viewer-arrow photo-viewer-arrow-left" type="button" aria-label="Previous photo" onClick={() => movePhoto(-1)}>
-              ‹
-            </button>
-          ) : null}
           <img
             src={activePhoto.photoUrl}
             alt={`${title} preview`}
             className="photo-viewer-image"
           />
-          {hasMultiplePhotos ? (
-            <button className="photo-viewer-arrow photo-viewer-arrow-right" type="button" aria-label="Next photo" onClick={() => movePhoto(1)}>
+        </div>
+        {hasMultiplePhotos ? (
+          <div className="photo-viewer-nav-row" aria-label="Photo navigation">
+            <button className="photo-viewer-arrow" type="button" aria-label="Previous photo" onClick={() => movePhoto(-1)}>
+              ‹
+            </button>
+            <button className="photo-viewer-arrow" type="button" aria-label="Next photo" onClick={() => movePhoto(1)}>
               ›
             </button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </div>
   ) : null;

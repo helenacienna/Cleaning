@@ -4215,16 +4215,21 @@ button.button {
   .launch-checklist-button { width: 100%; }
   .modal-backdrop { padding: 0; }
   .fullscreen-checklist { width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; padding: 8px; }
-  .photo-lightbox-shell { padding: 4px; }
+  .photo-lightbox-shell { padding: 4px; gap: 6px; }
   .photo-lightbox-shell .modal-header { padding: 6px 8px; }
+  .photo-lightbox-title { font-size: 18px; }
+  .photo-lightbox-toolbar { gap: 6px; }
+  .photo-lightbox-toolbar .button, .photo-lightbox-toolbar .badge { min-height: 30px; padding: 5px 8px; font-size: 11px; }
   .photo-viewer-image,
   .issue-photo-column .photo-viewer-image {
     width: 100vw !important;
-    height: calc(100dvh - 68px) !important;
+    height: calc(100dvh - 136px) !important;
     max-width: 100vw;
-    max-height: calc(100dvh - 68px);
+    max-height: calc(100dvh - 136px);
     border-radius: 10px;
   }
+  .photo-viewer-nav-row { gap: 14px; padding-bottom: 2px; }
+  .photo-viewer-arrow { width: 76px; height: 40px; font-size: 34px; }
   .fullscreen-checklist .compact-task-list { max-height: none; height: 100%; }
 }
 
@@ -4627,10 +4632,34 @@ button.button {
 }
 
 .photo-lightbox-shell {
+  grid-template-rows: auto minmax(0, 1fr) auto;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   padding: 8px;
+}
+
+.photo-lightbox-header {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.photo-lightbox-title {
+  display: block;
+  max-width: min(880px, 96vw);
+  margin: 0;
+  font-size: clamp(18px, 4vw, 26px);
+  line-height: 1.12;
+}
+
+.photo-lightbox-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 
 .photo-viewer-stage {
@@ -4647,40 +4676,37 @@ button.button {
 .photo-viewer-image,
 .issue-photo-column .photo-viewer-image {
   width: min(99vw, 1600px) !important;
-  height: min(91dvh, 1200px) !important;
+  height: min(84dvh, 1080px) !important;
   max-width: 99vw;
-  max-height: 91dvh;
+  max-height: 84dvh;
   border-radius: 18px;
   object-fit: contain;
   background: #fff;
   box-shadow: 0 18px 48px rgba(15,23,42,0.22);
 }
 
+.photo-viewer-nav-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 0 0 4px;
+}
+
 .photo-viewer-arrow {
-  position: absolute;
-  top: 50%;
-  z-index: 2;
-  width: 48px;
-  height: 64px;
+  width: 68px;
+  height: 48px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(15,23,42,0.14);
   border-radius: 999px;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.94);
   color: var(--ink);
-  font-size: 44px;
+  font-size: 42px;
   font-weight: 800;
   line-height: 1;
-  transform: translateY(-50%);
   box-shadow: 0 12px 32px rgba(15,23,42,0.16);
-}
-
-.photo-viewer-arrow-left {
-  left: 12px;
-}
-
-.photo-viewer-arrow-right {
-  right: 12px;
 }
 
 .resolved-issue-buttons {
@@ -4723,25 +4749,17 @@ button.button {
   }
 
   .photo-viewer-arrow {
-    width: 42px;
-    height: 54px;
-    font-size: 38px;
+    width: 76px;
+    height: 40px;
+    font-size: 34px;
   }
 
   .photo-viewer-image,
   .issue-photo-column .photo-viewer-image {
     width: 100vw !important;
-    height: calc(100dvh - 68px) !important;
-    max-height: calc(100dvh - 68px);
+    height: calc(100dvh - 136px) !important;
+    max-height: calc(100dvh - 136px);
     border-radius: 10px;
-  }
-
-  .photo-viewer-arrow-left {
-    left: 4px;
-  }
-
-  .photo-viewer-arrow-right {
-    right: 4px;
   }
 
   .resolved-issue-buttons {
