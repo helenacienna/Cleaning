@@ -2,15 +2,32 @@
 
 import { useState } from 'react';
 
+function formatPhotoViewerLabel(photo, index, total) {
+  const typeLabel = photo?.photoType === 'exception'
+    ? 'Before photo'
+    : photo?.photoType === 'completion'
+      ? 'After photo'
+      : 'Photo';
+  return `${typeLabel} ${index + 1}/${total}`;
+}
+
 export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = photos, framed = false }) {
   const [activePhotoId, setActivePhotoId] = useState(null);
+  const [viewMode, setViewMode] = useState('preview');
   const activePhotos = viewerPhotos?.length ? viewerPhotos : photos;
   const activeIndex = activePhotoId ? activePhotos.findIndex((photo) => photo.id === activePhotoId) : -1;
   const activePhoto = activeIndex >= 0 ? activePhotos[activeIndex] : null;
   const hasMultiplePhotos = activePhotos.length > 1;
+  const photoLabel = activePhoto ? formatPhotoViewerLabel(activePhoto, activeIndex, activePhotos.length) : '';
+
+  function closeViewer() {
+    setViewMode('preview');
+    setActivePhotoId(null);
+  }
 
   function openPhoto(photo) {
     const viewerPhoto = activePhotos.find((candidate) => candidate.id === photo.id) ?? photo;
+    setViewMode('preview');
     setActivePhotoId(viewerPhoto.id);
   }
 
@@ -49,16 +66,20 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
       </div>
 
       {activePhoto && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${title} photo preview`}>
-          <div className="fullscreen-checklist photo-lightbox-shell">
-            <header className="modal-header compact-modal-header" style={{ width: '100%' }}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${title} photo viewer`}>
+          <div className={`fullscreen-checklist photo-lightbox-shell ${viewMode === 'original' ? 'photo-lightbox-shell-original' : ''}`}>
+            <header className="modal-header compact-modal-header photo-lightbox-header" style={{ width: '100%' }}>
               <div>
-                <span className="badge">Photo preview {hasMultiplePhotos ? `${activeIndex + 1} of ${activePhotos.length}` : ''}</span>
-                <strong>{title}</strong>
+                <span className="badge">{photoLabel}</span>
+                <strong>{viewMode === 'original' ? 'Original photo view' : title}</strong>
               </div>
               <div className="workflow-banner-actions">
-                <a className="button secondary" href={activePhoto.photoUrl} target="_blank" rel="noreferrer">Open original</a>
-                <button className="button secondary" type="button" onClick={() => setActivePhotoId(null)}>Close</button>
+                {viewMode === 'original' ? (
+                  <button className="button secondary" type="button" onClick={() => setViewMode('preview')}>Back</button>
+                ) : (
+                  <button className="button secondary" type="button" onClick={() => setViewMode('original')}>Open original</button>
+                )}
+                <button className="button secondary" type="button" onClick={closeViewer}>Close</button>
               </div>
             </header>
             <div className="photo-viewer-stage">
