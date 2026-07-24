@@ -4622,6 +4622,10 @@ button.button {
   border-color: rgba(20,184,120,0.55) !important;
 }
 
+.photo-viewer-popup {
+  z-index: 300;
+}
+
 .photo-lightbox-shell {
   align-items: center;
   justify-content: center;
