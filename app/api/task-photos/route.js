@@ -14,12 +14,37 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const formData = await request.formData().catch(() => null);
+  const formData = await request.formData().catch((error) => {
+    console.warn('task-photo-upload-formdata-parse-failed', {
+      contentType: request.headers.get('content-type'),
+      contentLength: request.headers.get('content-length'),
+      userAgent: request.headers.get('user-agent'),
+      message: error?.message,
+    });
+    return null;
+  });
+  const formEntries = formData ? Array.from(formData.entries()) : [];
   const taskInstanceId = formData?.get('taskInstanceId');
   const photoType = normalisePhotoType(formData?.get('photoType'));
   const file = formData?.get('file');
 
   if (typeof taskInstanceId !== 'string' || !file || typeof file.arrayBuffer !== 'function') {
+    console.warn('task-photo-upload-invalid-payload', {
+      contentType: request.headers.get('content-type'),
+      contentLength: request.headers.get('content-length'),
+      userAgent: request.headers.get('user-agent'),
+      fieldSummary: formEntries.map(([key, value]) => ({
+        key,
+        type: typeof value,
+        constructorName: value?.constructor?.name || null,
+        hasArrayBuffer: typeof value?.arrayBuffer === 'function',
+        size: typeof value?.size === 'number' ? value.size : null,
+        name: typeof value?.name === 'string' ? value.name : null,
+      })),
+      hasTaskInstanceId: typeof taskInstanceId === 'string',
+      hasFile: Boolean(file),
+      fileHasArrayBuffer: typeof file?.arrayBuffer === 'function',
+    });
     return NextResponse.json({ error: 'Task and photo file are required' }, { status: 400 });
   }
 
