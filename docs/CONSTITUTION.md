@@ -133,6 +133,21 @@ git status --short
 git log --oneline -5
 ```
 
+### 3.4 Working-code synchronization
+
+Before starting any code or UI change, declare and verify the single working baseline. Local code, GitHub branch, Railway/live deployment, and any recovery/reference folder must not be assumed to match.
+
+Required sync check:
+
+1. Identify the intended baseline commit/branch and deployment ID.
+2. Confirm the local worktree is clean and points at that baseline or a deliberate descendant.
+3. Confirm the remote branch contains the same commit that will be used for work.
+4. Confirm the live app marker/deployment matches the declared baseline, or document why live is being treated as source-of-truth instead.
+5. If any source differs, stop and reconcile before editing app code. Do not mix files from multiple source lines casually.
+6. Record the baseline in the project notes when the decision matters.
+
+A stale local folder, old branch, downloaded archive, recovery branch, or GitHub `main` must not be used just because it exists. It is usable only after it has passed the sync check.
+
 ---
 
 ## 4. Change Process
@@ -145,6 +160,7 @@ Ask:
 2. Is this UI, data, schema, reporting, offline, photo, or deployment behaviour?
 3. Am I restoring old code? If yes, what current features could it overwrite?
 4. Is there a safer targeted file/commit restore instead of a broad merge?
+5. Have I verified the working-code synchronization rule: local worktree, remote branch, live deployment, and source-of-truth notes all point to the intended baseline?
 
 ### 4.2 During code changes
 
@@ -177,6 +193,7 @@ Confirm:
 - latest commit message describes the operational change
 - migration files are included if Prisma schema changed
 - protected workflow tests/build pass
+- local branch, remote branch, and intended deployment source are synchronized; if live differs from Git source, the discrepancy is documented and approved before deployment
 - for page-scoped UI changes, capture or compare the changed page plus representative unaffected pages before deploy so unrelated pages are proven unchanged
 
 ### 4.5 After deploy
@@ -217,6 +234,7 @@ A change is a regression if it causes any of the following without explicit appr
 - task completion progress counts unsaved local-only grades as completed
 - schema changes deploy without matching migration or validation
 - app deploys from a dirty/mixed source tree
+- app work starts or deploys from an unsynchronized local/remote/live source line without an explicit baseline decision
 - a page-scoped UI change alters unrelated pages/routes without explicit approval
 
 ---
