@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 const REFRESH_DEBOUNCE_MS = 2000;
 const MOBILE_TASK_ALIGNMENT_QUERY = '(max-width: 768px)';
 const MOBILE_TASK_VISIBLE_PADDING = 12;
+const MOBILE_ACTION_VISIBLE_PADDING = 24;
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
@@ -108,10 +109,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       const elementRect = element.getBoundingClientRect();
       const relativeTop = elementRect.top - listRect.top + list.scrollTop;
       const relativeBottom = relativeTop + elementRect.height;
-      const availableHeight = Math.max(120, list.clientHeight - (MOBILE_TASK_VISIBLE_PADDING * 2));
-      const targetScrollTop = elementRect.height > availableHeight
-        ? relativeTop - MOBILE_TASK_VISIBLE_PADDING
-        : relativeBottom - list.clientHeight + MOBILE_TASK_VISIBLE_PADDING;
+      const targetScrollTop = relativeBottom - list.clientHeight + MOBILE_ACTION_VISIBLE_PADDING;
 
       list.scrollTo({
         top: Math.max(0, targetScrollTop),
@@ -123,6 +121,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   function focusJob(index) {
     setCurrentIndex(index);
     scrollElementIntoTaskPosition(cardRefs.current[index], 'center');
+  }
+
+  function focusTaskActions(index, delayMs = 80) {
+    window.setTimeout(() => {
+      scrollElementIntoTaskPosition(cardRefs.current[index], 'end');
+    }, delayMs);
   }
 
   function scrollToIssuePanel(taskId, index, block = 'center') {
@@ -157,9 +161,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         statusMessage: `Original issue score ${Number(current.issueGrade || current.grade)}/5 is locked because a before photo has been added. Use the corrected score buttons below.`,
         statusTone: 'tone-amber',
       });
-      window.setTimeout(() => {
-        scrollToIssuePanel(taskId, index, 'start');
-      }, 20);
+      focusTaskActions(index);
       return;
     }
 
@@ -175,9 +177,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         statusMessage: 'Add before photo(s) of the issue before correction',
         statusTone: 'tone-amber',
       });
-      window.setTimeout(() => {
-        scrollToIssuePanel(taskId, index, 'center');
-      }, 20);
+      focusTaskActions(index);
       return;
     }
 
@@ -289,9 +289,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         statusMessage: 'Issue recorded — add correction note and corrected score',
         statusTone: 'tone-amber',
       });
-      window.setTimeout(() => {
-        scrollToIssuePanel(taskId, index, 'start');
-      }, 20);
+      focusTaskActions(index);
       queueRefresh();
     } catch {
       updateTask(taskId, {
@@ -304,13 +302,14 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     }
   }
 
-  function selectCorrectedGrade(taskId, finalGrade) {
+  function selectCorrectedGrade(taskId, finalGrade, index = currentIndex) {
     updateTask(taskId, {
       finalGrade,
       issueStage: 'needs_after_photo',
       statusMessage: 'Add after photo(s) showing the correction, then save',
       statusTone: 'tone-amber',
     });
+    focusTaskActions(index);
   }
 
   function openAfterCorrectionPhotoPicker(taskId) {
@@ -494,6 +493,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         statusMessage: photoType === 'exception' ? 'Before photo uploaded' : 'After photo uploaded',
         statusTone: 'tone-green',
       });
+      focusTaskActions(index, 120);
       queueRefresh();
     } catch {
       updateTask(taskId, {
@@ -913,7 +913,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                             onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
-                            selectCorrectedGrade(task.id, finalGrade);
+                            selectCorrectedGrade(task.id, finalGrade, index);
                             openAfterCorrectionPhotoPicker(task.id);
                           }}
                           disabled={localState.saving}
