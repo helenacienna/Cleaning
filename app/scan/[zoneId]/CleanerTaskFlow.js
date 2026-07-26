@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const REFRESH_DEBOUNCE_MS = 2000;
 const MOBILE_TASK_ALIGNMENT_QUERY = '(max-width: 768px)';
+const MOBILE_TASK_VISIBLE_PADDING = 12;
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
@@ -88,9 +89,34 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   function scrollElementIntoTaskPosition(element, preferredBlock = 'center') {
     if (!element) return;
 
-    element.scrollIntoView({
-      behavior: 'smooth',
-      block: shouldBottomAlignActiveTask() ? 'end' : preferredBlock,
+    if (!shouldBottomAlignActiveTask()) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: preferredBlock,
+      });
+      return;
+    }
+
+    const list = listRef.current;
+    if (!list) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      const listRect = list.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+      const relativeTop = elementRect.top - listRect.top + list.scrollTop;
+      const relativeBottom = relativeTop + elementRect.height;
+      const availableHeight = Math.max(120, list.clientHeight - (MOBILE_TASK_VISIBLE_PADDING * 2));
+      const targetScrollTop = elementRect.height > availableHeight
+        ? relativeTop - MOBILE_TASK_VISIBLE_PADDING
+        : relativeBottom - list.clientHeight + MOBILE_TASK_VISIBLE_PADDING;
+
+      list.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: 'smooth',
+      });
     });
   }
 
