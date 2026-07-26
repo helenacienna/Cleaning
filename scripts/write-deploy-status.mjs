@@ -29,8 +29,8 @@ const payload = {
   deployedAt: new Date().toISOString(),
   version: gitSha ? `${gitSha}${gitDirty ? '+local' : ''}` : (existing?.version ?? 'manual'),
   summary: process.env.DEPLOY_SUMMARY
-    ?? existing?.summary
     ?? gitSubject
+    ?? existing?.summary
     ?? 'Manual deploy',
 };
 

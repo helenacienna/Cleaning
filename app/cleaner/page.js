@@ -122,8 +122,12 @@ export default async function CleanerLandingPage({ searchParams }) {
           </div>
 
           <div className="task-list">
-            {lists.map((list) => (
-              <Link className="task-row" href={buildStaffDayHref(list.id, defaultStaffOpenDay)} key={list.id}>
+            {lists.map((list) => {
+              const listOpenDay = list.activeBoardDay ?? activeBoardDay ?? defaultStaffOpenDay;
+              const isHistoricOpenDay = Boolean(listOpenDay && listOpenDay !== todayBoardDay);
+
+              return (
+              <Link className="task-row" href={buildStaffDayHref(list.id, listOpenDay, { historic: isHistoricOpenDay })} key={list.id}>
                 <div>
                   <strong>{list.staff}</strong>
                   <div className="muted">{list.stats.facilities} facilities · {list.stats.total} tasks · {list.stats.completed} completed</div>
@@ -135,7 +139,8 @@ export default async function CleanerLandingPage({ searchParams }) {
                   {list.roster?.status ? <span className="flag">{list.roster.status}</span> : null}
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </section>
       </div>

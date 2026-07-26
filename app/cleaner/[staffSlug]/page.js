@@ -11,6 +11,30 @@ function formatTaskStatus(status = '') {
   return String(status).replace(/-/g, ' ');
 }
 
+function formatPhotoCaption(photo, index) {
+  if (photo?.photoType === 'exception') return 'Before issue photo';
+  if (photo?.photoType === 'completion') return 'After correction photo';
+  return `Photo ${index + 1}`;
+}
+
+function TaskPhotoEvidence({ task }) {
+  const photos = task?.photos ?? [];
+  if (!photos.length) return null;
+
+  return (
+    <div className="daily-report-photo-grid cleaner-history-photo-grid">
+      {photos.map((photo, index) => (
+        <figure className="daily-report-photo-card" key={photo.id ?? `${task.id}-photo-${index}`}>
+          <a href={photo.photoUrl} target="_blank" rel="noreferrer">
+            <img src={photo.photoUrl} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" />
+          </a>
+          <figcaption>{formatPhotoCaption(photo, index)}</figcaption>
+        </figure>
+      ))}
+    </div>
+  );
+}
+
 function isCompletedTask(task) {
   return task?.status === 'completed' || Number(task?.score) >= 3;
 }
@@ -161,6 +185,11 @@ function buildDayHref(staffSlug, day, { historic = false } = {}) {
   return `/cleaner/${staffSlug}?${params.toString()}`;
 }
 
+function buildDailyReportHref({ facility, staffName, day }) {
+  const params = new URLSearchParams({ facility, staff: staffName, day });
+  return `/reports/daily?${params.toString()}`;
+}
+
 export async function generateMetadata({ params }) {
   const { staffSlug } = await params;
   const { list } = await getCleanerStaffList(staffSlug);
@@ -255,6 +284,11 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
                       {section.shiftEndAt ? <div>{formatShiftTime(section.shiftEndAt)}</div> : null}
                     </div>
                   ) : section.shiftWindow ? <div className="muted" style={{ marginTop: 6 }}>{section.shiftWindow}</div> : null}
+                  {!isTodayBoard && activeBoardDay ? (
+                    <Link className="button secondary slim" style={{ marginTop: 8 }} href={buildDailyReportHref({ facility: section.facility, staffName: list.staff, day: activeBoardDay })}>
+                      Open photo report
+                    </Link>
+                  ) : null}
                 </div>
               </div>
 
@@ -310,6 +344,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
                                 </div>
                                 <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
                                   {task.photoRequired ? <span className="flag task-inline-flag">Photo</span> : null}
+                                  {task.photoCount ? <span className="flag task-inline-flag">{task.photoCount} photos</span> : null}
                                   {task.commentRequired ? <span className="flag task-inline-flag">Comment</span> : null}
                                   <span className={`task-status status-${task.status} task-inline-status`}>{formatTaskStatus(task.status)}</span>
                                   <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
@@ -338,6 +373,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
                                     </strong>
                                   </div>
                                 </div>
+                                <TaskPhotoEvidence task={task} />
                               </div>
                             </details>
                           ))}

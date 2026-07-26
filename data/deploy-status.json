@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-24T00:40:00.000Z",
-  "version": "164c7db+local",
-  "summary": "Enable swipe scrolling on photo preview strips"
+  "deployedAt": "2026-07-26T00:08:23.608Z",
+  "version": "41f0504+local",
+  "summary": "Fix historical cleaning photos visibility"
 }
