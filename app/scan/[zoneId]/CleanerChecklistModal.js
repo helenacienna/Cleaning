@@ -28,7 +28,7 @@ function readStoredChecklistState(label) {
   }
 }
 
-export default function CleanerChecklistModal({ tasks, label, staffName }) {
+export default function CleanerChecklistModal({ tasks, label, staffName, reportHref = '' }) {
   const storedChecklistState = readStoredChecklistState(label);
   const [isOpen, setIsOpen] = useState(storedChecklistState.isOpen);
   const [stage, setStage] = useState(storedChecklistState.stage);
@@ -178,6 +178,11 @@ export default function CleanerChecklistModal({ tasks, label, staffName }) {
         <button className="button primary launch-checklist-button" type="button" onClick={handleOpen}>
           Open active checklist
         </button>
+        {reportHref ? (
+          <a className="button secondary launch-checklist-button" href={reportHref}>
+            Open report
+          </a>
+        ) : null}
       </section>
 
       {isOpen && (

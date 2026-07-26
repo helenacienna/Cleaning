@@ -289,14 +289,12 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
 
               <div style={{ marginBottom: 12 }}>
                 {isTodayBoard ? (
-                  <>
-                    <CleanerChecklistModal tasks={section.tasks} label={section.facility} staffName={list.staff} />
-                    {activeBoardDay ? (
-                      <Link className="button secondary launch-checklist-button" style={{ marginTop: 8 }} href={buildDailyReportHref({ facility: section.facility, staffName: list.staff, day: activeBoardDay })}>
-                        Open report
-                      </Link>
-                    ) : null}
-                  </>
+                  <CleanerChecklistModal
+                    tasks={section.tasks}
+                    label={section.facility}
+                    staffName={list.staff}
+                    reportHref={activeBoardDay ? buildDailyReportHref({ facility: section.facility, staffName: list.staff, day: activeBoardDay }) : ''}
+                  />
                 ) : (
                   <section className="card checklist-launch-card">
                     {todayHref ? (
@@ -305,7 +303,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
                       </Link>
                     ) : null}
                     {activeBoardDay ? (
-                      <Link className="button secondary launch-checklist-button" style={{ marginTop: 8 }} href={buildDailyReportHref({ facility: section.facility, staffName: list.staff, day: activeBoardDay })}>
+                      <Link className="button secondary launch-checklist-button" href={buildDailyReportHref({ facility: section.facility, staffName: list.staff, day: activeBoardDay })}>
                         Open report
                       </Link>
                     ) : null}
