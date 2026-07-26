@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 const REFRESH_DEBOUNCE_MS = 2000;
 const MOBILE_TASK_ALIGNMENT_QUERY = '(max-width: 768px)';
 const MOBILE_TASK_VISIBLE_PADDING = 12;
-const MOBILE_ACTION_VISIBLE_PADDING = 56;
+const MOBILE_ACTION_VISIBLE_PADDING = 132;
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
