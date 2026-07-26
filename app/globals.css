@@ -4210,7 +4210,7 @@ button.button {
   .schedule-task-main { min-width: 0; }
   .qr-card { grid-template-columns: 1fr; }
   .cleaner-task { grid-template-columns: 1fr; }
-  .compact-task-list { max-height: 80vh; padding: 12vh 4px; gap: 10px; }
+  .compact-task-list { max-height: 80vh; padding: 12vh 4px; scroll-padding: 12vh 0 max(8px, env(safe-area-inset-bottom)); gap: 10px; }
   .compact-task-card { min-height: auto; }
   .compact-task-top { grid-template-columns: 38px 1fr; padding-right: 0; padding-top: 28px; }
   .compact-task-top .task-status { grid-column: 1 / -1; justify-self: flex-start; }

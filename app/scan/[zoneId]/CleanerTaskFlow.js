@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 const REFRESH_DEBOUNCE_MS = 2000;
+const MOBILE_TASK_ALIGNMENT_QUERY = '(max-width: 768px)';
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
@@ -79,22 +80,30 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     }, REFRESH_DEBOUNCE_MS);
   }
 
+  function shouldBottomAlignActiveTask() {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia?.(MOBILE_TASK_ALIGNMENT_QUERY)?.matches ?? false;
+  }
+
+  function scrollElementIntoTaskPosition(element, preferredBlock = 'center') {
+    if (!element) return;
+
+    element.scrollIntoView({
+      behavior: 'smooth',
+      block: shouldBottomAlignActiveTask() ? 'end' : preferredBlock,
+    });
+  }
+
   function focusJob(index) {
     setCurrentIndex(index);
-    cardRefs.current[index]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-    });
+    scrollElementIntoTaskPosition(cardRefs.current[index], 'center');
   }
 
   function scrollToIssuePanel(taskId, index, block = 'center') {
     setCurrentIndex(index);
     const issuePanel = issuePanelRefs.current[taskId];
     if (issuePanel) {
-      issuePanel.scrollIntoView({
-        behavior: 'smooth',
-        block,
-      });
+      scrollElementIntoTaskPosition(issuePanel, block);
       return;
     }
     focusJob(index);
@@ -479,15 +488,20 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     const list = listRef.current;
     if (!list) return;
 
-    const listCentre = list.getBoundingClientRect().top + list.clientHeight / 2;
+    const listRect = list.getBoundingClientRect();
+    const focusLine = shouldBottomAlignActiveTask()
+      ? listRect.bottom
+      : listRect.top + list.clientHeight / 2;
     let closestIndex = currentIndex;
     let closestDistance = Number.POSITIVE_INFINITY;
 
     cardRefs.current.forEach((card, index) => {
       if (!card) return;
       const rect = card.getBoundingClientRect();
-      const cardCentre = rect.top + rect.height / 2;
-      const distance = Math.abs(cardCentre - listCentre);
+      const cardFocusPoint = shouldBottomAlignActiveTask()
+        ? rect.bottom
+        : rect.top + rect.height / 2;
+      const distance = Math.abs(cardFocusPoint - focusLine);
 
       if (distance < closestDistance) {
         closestDistance = distance;
