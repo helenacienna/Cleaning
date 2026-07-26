@@ -284,11 +284,6 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
                       {section.shiftEndAt ? <div>{formatShiftTime(section.shiftEndAt)}</div> : null}
                     </div>
                   ) : section.shiftWindow ? <div className="muted" style={{ marginTop: 6 }}>{section.shiftWindow}</div> : null}
-                  {!isTodayBoard && activeBoardDay ? (
-                    <Link className="button secondary slim" style={{ marginTop: 8 }} href={buildDailyReportHref({ facility: section.facility, staffName: list.staff, day: activeBoardDay })}>
-                      Open photo report
-                    </Link>
-                  ) : null}
                 </div>
               </div>
 
