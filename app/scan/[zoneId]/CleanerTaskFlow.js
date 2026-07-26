@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 const REFRESH_DEBOUNCE_MS = 2000;
 const MOBILE_TASK_ALIGNMENT_QUERY = '(max-width: 768px)';
 const MOBILE_TASK_VISIBLE_PADDING = 12;
-const MOBILE_ACTION_VISIBLE_PADDING = 24;
+const MOBILE_ACTION_VISIBLE_PADDING = 56;
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
@@ -564,12 +564,58 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   }).length;
   const allTasksCompleted = tasks.length > 0 && completedCount === tasks.length;
   const nextIncompleteIndex = findNextIncompleteIndex();
+  const currentTask = tasks[currentIndex] ?? null;
+  const currentLocalState = currentTask ? (taskState[currentTask.id] || {}) : {};
+  const currentIssueStage = currentLocalState.issueStage ?? '';
+  const currentPhotoCount = currentLocalState.photoCount ?? 0;
+  const currentPhotoLength = currentLocalState.photos?.length ?? 0;
+  const shouldKeepActionsVisible = Boolean(
+    currentTask
+      && shouldBottomAlignActiveTask()
+      && (
+        currentLocalState.askAnotherPhoto
+        || ['needs_issue_photo', 'needs_correction', 'needs_after_photo'].includes(currentIssueStage)
+        || (Number(currentLocalState.grade) >= 1 && Number(currentLocalState.grade) <= 2 && !currentLocalState.resolvedIssue)
+      ),
+  );
 
   useEffect(() => {
     if (allTasksCompleted) {
       void onAllTasksCompleted?.();
     }
   }, [allTasksCompleted, onAllTasksCompleted]);
+
+  useEffect(() => {
+    if (!shouldKeepActionsVisible) return;
+    focusTaskActions(currentIndex, 80);
+    focusTaskActions(currentIndex, 350);
+    focusTaskActions(currentIndex, 800);
+  }, [currentIndex, currentIssueStage, currentLocalState.askAnotherPhoto, currentLocalState.finalGrade, currentPhotoCount, currentPhotoLength, shouldKeepActionsVisible]);
+
+  useEffect(() => {
+    if (!shouldKeepActionsVisible || typeof ResizeObserver === 'undefined') return undefined;
+    const card = cardRefs.current[currentIndex];
+    if (!card) return undefined;
+
+    let resizeTimer = null;
+    const observer = new ResizeObserver(() => {
+      if (resizeTimer) {
+        window.clearTimeout(resizeTimer);
+      }
+      resizeTimer = window.setTimeout(() => {
+        scrollElementIntoTaskPosition(card, 'end');
+      }, 80);
+    });
+
+    observer.observe(card);
+
+    return () => {
+      if (resizeTimer) {
+        window.clearTimeout(resizeTimer);
+      }
+      observer.disconnect();
+    };
+  }, [currentIndex, shouldKeepActionsVisible]);
 
   return (
     <div className="compact-flow">
