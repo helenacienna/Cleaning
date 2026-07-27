@@ -2458,14 +2458,14 @@ code {
   border-radius: 10px;
   background: rgba(255,255,255,0.74);
   border: 1px solid rgba(15,23,42,0.06);
-  font-size: 12px;
-  line-height: 1.16;
+  font-size: 14px;
+  line-height: 1.18;
   color: var(--muted);
 }
 
 .floating-grade-reference-item strong {
   color: var(--text);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 1000;
 }
 
@@ -4253,8 +4253,8 @@ button.button {
   .flow-position { grid-template-columns: minmax(104px, 1.15fr) repeat(3, minmax(58px, 0.85fr)); gap: 5px; padding: 5px; }
   .flow-position .button, .flow-current-job-chip { min-height: 32px; padding: 5px 6px; font-size: 11px; border-radius: 10px; }
   .floating-grade-reference { grid-template-columns: 1fr; gap: 3px; padding: 4px; }
-  .floating-grade-reference-item { display: flex; justify-content: space-between; gap: 8px; padding: 6px 8px; font-size: 12px; }
-  .floating-grade-reference-item strong { font-size: 13px; white-space: nowrap; }
+  .floating-grade-reference-item { display: flex; justify-content: space-between; gap: 8px; padding: 7px 9px; font-size: 14px; }
+  .floating-grade-reference-item strong { font-size: 15px; white-space: nowrap; }
   .checklist-launch-card { align-items: stretch; flex-direction: column; }
   .modal-header { align-items: center; flex-direction: row; }
   .launch-checklist-button { width: 100%; }
@@ -4859,8 +4859,40 @@ button.button {
 }
 
 .daily-report-task-row.report-resolved {
+  grid-template-columns: 1fr;
   background: rgba(236,253,245,0.92);
   border-color: rgba(99,230,165,0.34);
+}
+
+.daily-report-resolved-score-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.daily-report-resolved-evidence {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+  margin-top: 12px;
+}
+
+.daily-report-resolved-evidence-column {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.daily-report-resolved-evidence-column > .badge {
+  justify-self: start;
+}
+
+.daily-report-resolved-evidence-balanced .daily-report-resolved-evidence-column > .badge {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
 }
 
 .hierarchy-outcome-progress {
@@ -4885,6 +4917,10 @@ button.button {
   width: 100%;
 }
 
+.daily-report-photo-grid-resolved {
+  margin-top: 0;
+}
+
 .daily-report-photo-card {
   margin: 0;
   overflow: hidden;
@@ -4903,10 +4939,25 @@ button.button {
 }
 
 .daily-report-photo-card figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 8px 10px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
+}
+
+.daily-report-photo-count-chip {
+  flex: 0 0 auto;
+  font-size: 10px;
+}
+
+@media (max-width: 760px) {
+  .daily-report-resolved-evidence {
+    grid-template-columns: 1fr;
+  }
 }
 
 .daily-report-task-row > .daily-report-photo-grid {

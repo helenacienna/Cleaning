@@ -59,18 +59,68 @@ function taskPhotos(task) {
   return task.execution?.photos ?? [];
 }
 
-function PhotoEvidence({ task }) {
-  const photos = taskPhotos(task);
+function photoCountLabel(count) {
+  return `${count} photo${count === 1 ? '' : 's'}`;
+}
+
+function photoLabel(photo, index) {
+  if (photo.photoType === 'exception') return 'Before issue photo';
+  if (photo.photoType === 'completion') return 'After correction photo';
+  return `Photo ${index + 1}`;
+}
+
+function PhotoEvidence({ task, photos: providedPhotos = null, className = '' }) {
+  const photos = providedPhotos ?? taskPhotos(task);
   if (!photos.length) return null;
 
+  const typeCounts = photos.reduce((counts, photo) => {
+    const key = photo.photoType || 'general';
+    counts[key] = (counts[key] ?? 0) + 1;
+    return counts;
+  }, {});
+
   return (
-    <div className="daily-report-photo-grid">
+    <div className={`daily-report-photo-grid ${className}`.trim()}>
       {photos.map((photo, index) => (
         <figure className="daily-report-photo-card" key={photo.id}>
           <img src={`/api/task-photos/${photo.id}`} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" />
-          <figcaption>{photo.photoType === 'exception' ? 'Before issue photo' : photo.photoType === 'completion' ? 'After correction photo' : `Photo ${index + 1}`}</figcaption>
+          <figcaption>
+            <span>{photoLabel(photo, index)}</span>
+            <span className="flag daily-report-photo-count-chip">{photoCountLabel(typeCounts[photo.photoType || 'general'] ?? photos.length)}</span>
+          </figcaption>
         </figure>
       ))}
+    </div>
+  );
+}
+
+function ResolvedIssueEvidence({ task, grade, initialGrade }) {
+  const photos = taskPhotos(task);
+  const beforePhotos = photos.filter((photo) => photo.photoType === 'exception');
+  const afterPhotos = photos.filter((photo) => photo.photoType === 'completion');
+  const otherPhotos = photos.filter((photo) => photo.photoType !== 'exception' && photo.photoType !== 'completion');
+  const balancedSinglePair = beforePhotos.length === 1 && afterPhotos.length === 1;
+
+  if (!photos.length) {
+    return (
+      <div className="daily-report-resolved-score-row">
+        <span className={`badge tone-${initialGrade === 1 ? 'red' : 'amber'}`}>Initial Score {initialGrade}</span>
+        <span className="badge tone-green">Corrected Score {grade}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`daily-report-resolved-evidence ${balancedSinglePair ? 'daily-report-resolved-evidence-balanced' : ''}`}>
+      <div className="daily-report-resolved-evidence-column">
+        <span className={`badge tone-${initialGrade === 1 ? 'red' : 'amber'}`}>Initial Score {initialGrade}</span>
+        <PhotoEvidence task={task} photos={beforePhotos} className="daily-report-photo-grid-resolved" />
+      </div>
+      <div className="daily-report-resolved-evidence-column">
+        <span className="badge tone-green">Corrected Score {grade}</span>
+        <PhotoEvidence task={task} photos={afterPhotos} className="daily-report-photo-grid-resolved" />
+      </div>
+      {otherPhotos.length ? <PhotoEvidence task={task} photos={otherPhotos} /> : null}
     </div>
   );
 }
@@ -294,12 +344,7 @@ export default async function DailyReportPage({ searchParams }) {
                         <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
                         {parseIssueNote(task) ? <p><strong>Initial issue:</strong> {parseIssueNote(task)}</p> : null}
                         {parseResolutionNote(task) ? <p><strong>Correction:</strong> {parseResolutionNote(task)}</p> : null}
-                        <PhotoEvidence task={task} />
-                      </div>
-                      <div className="daily-report-task-meta">
-                        <span className={`badge tone-${initialGrade === 1 ? 'red' : 'amber'}`}>Initial Score {initialGrade}</span>
-                        <span className="badge tone-green">Corrected Score {grade}</span>
-                        {(task.execution?.photos?.length ?? 0) > 0 ? <span className="flag">{task.execution.photos.length} photos</span> : null}
+                        <ResolvedIssueEvidence task={task} grade={grade} initialGrade={initialGrade} />
                       </div>
                     </article>
                   ))}
@@ -326,7 +371,6 @@ export default async function DailyReportPage({ searchParams }) {
                       </div>
                       <div className="daily-report-task-meta">
                         <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
-                        {(task.execution?.photos?.length ?? 0) > 0 ? <span className="flag">{task.execution.photos.length} photos</span> : null}
                       </div>
                     </article>
                   ))}
@@ -353,7 +397,6 @@ export default async function DailyReportPage({ searchParams }) {
                     </div>
                     <div className="daily-report-task-meta">
                       <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
-                      {(task.execution?.photos?.length ?? 0) > 0 ? <span className="flag">{task.execution.photos.length} photos</span> : null}
                       {hasMeaningfulNote(task) ? <span className="flag">Note</span> : null}
                     </div>
                     <PhotoEvidence task={task} />

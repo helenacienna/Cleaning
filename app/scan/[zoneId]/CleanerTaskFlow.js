@@ -357,8 +357,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       }, 20);
     } else {
       const nextIndex = Math.min(index + 1, tasks.length - 1);
+      setCurrentIndex(nextIndex);
       window.setTimeout(() => {
-        focusJob(nextIndex);
+        focusTaskActions(nextIndex, 0);
       }, 20);
     }
     queueRefresh();
