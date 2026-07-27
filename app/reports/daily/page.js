@@ -161,7 +161,7 @@ function scoreLabel(grade, task) {
   if (parseResolvedIssue(task) && initialGrade) return `Resolved ${initialGrade}→${grade}`;
   if (Number(grade) >= 1) return `${grade}/5`;
   if (task.status === 'completed') return 'Complete';
-  return 'Not scored';
+  return 'Not Graded';
 }
 
 function dayDate(day) {
@@ -189,12 +189,12 @@ function percent(value, total) {
 }
 
 const SCORE_DISTRIBUTION = [
-  { key: '1', label: 'Score 1', shortLabel: '1', className: 'score-1', color: '#ff7b91' },
-  { key: '2', label: 'Score 2', shortLabel: '2', className: 'score-2', color: '#ffa06e' },
-  { key: '3', label: 'Score 3', shortLabel: '3', className: 'score-3', color: '#ffca6a' },
-  { key: '4', label: 'Score 4', shortLabel: '4', className: 'score-4', color: '#59c3ff' },
-  { key: '5', label: 'Score 5', shortLabel: '5', className: 'score-5', color: '#63e6a5' },
-  { key: 'notScored', label: 'Not scored', shortLabel: 'NS', className: 'score-not-scored', color: '#cbd5e1' },
+  { key: '5', label: 'Grade 5', shortLabel: '5', className: 'score-5', color: '#63e6a5' },
+  { key: '4', label: 'Grade 4', shortLabel: '4', className: 'score-4', color: '#59c3ff' },
+  { key: '3', label: 'Grade 3', shortLabel: '3', className: 'score-3', color: '#ffca6a' },
+  { key: '2', label: 'Grade 2', shortLabel: '2', className: 'score-2', color: '#ffa06e' },
+  { key: '1', label: 'Grade 1', shortLabel: '1', className: 'score-1', color: '#ff7b91' },
+  { key: 'notScored', label: 'Not Graded', shortLabel: 'NG', className: 'score-not-scored', color: '#cbd5e1' },
 ];
 
 function buildScoreDistribution(scored) {
@@ -211,6 +211,7 @@ function buildScoreDistribution(scored) {
   return SCORE_DISTRIBUTION.map((item) => ({
     ...item,
     count: counts[item.key] ?? 0,
+    fraction: `${counts[item.key] ?? 0}/${scored.length}`,
     percent: percent(counts[item.key] ?? 0, scored.length),
   }));
 }
@@ -356,21 +357,24 @@ export default async function DailyReportPage({ searchParams }) {
             <p>{formatDayLabel(day)} · {staffName || 'Cleaner'}</p>
           </div>
           <div className="daily-report-hero-stats">
-            <div className="daily-report-score-card">
-              <span>Completion</span>
-              <strong>{completionPercent}%</strong>
-              <div>{totals.completed}/{totals.total} complete</div>
-            </div>
-            <div className="daily-report-score-distribution-card">
-              <div className="daily-report-score-pie" style={scorePieStyle} aria-label="Score distribution pie chart">
+            <div className="daily-report-score-card daily-report-score-card-with-pie">
+              <div>
+                <span>Completion</span>
+                <strong>{completionPercent}%</strong>
+                <div>{totals.completed}/{totals.total} complete</div>
+              </div>
+              <div className="daily-report-score-pie" style={scorePieStyle} aria-label="Grade distribution pie chart">
                 <span>{totals.total}</span>
               </div>
-              <div className="daily-report-score-breakdown" aria-label="Score distribution breakdown">
+            </div>
+            <div className="daily-report-score-distribution-card">
+              <div className="daily-report-score-breakdown" aria-label="Grade distribution breakdown">
                 {scoreDistribution.map((item) => (
                   <div className="daily-report-score-breakdown-row" key={item.key}>
                     <span className={`score-dot ${item.className}`} aria-hidden="true" />
                     <strong>{item.label}</strong>
-                    <span>{item.count} · {item.percent}%</span>
+                    <span>{item.fraction}</span>
+                    <span>{item.percent}%</span>
                   </div>
                 ))}
               </div>
