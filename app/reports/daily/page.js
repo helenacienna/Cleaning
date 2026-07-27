@@ -52,7 +52,28 @@ function hasMeaningfulNote(task) {
 }
 
 function hasNumericGrade(grade) {
-  return Number.isFinite(Number(grade));
+  return grade !== null && grade !== undefined && grade !== '' && Number.isFinite(Number(grade));
+}
+
+function reportSortGrade(entry) {
+  if (!hasNumericGrade(entry.grade)) return 99;
+  return Number(entry.grade);
+}
+
+function taskPhotoCount(task) {
+  return task.execution?.photos?.length ?? 0;
+}
+
+function sortReportEntries(entries) {
+  return [...entries].sort((a, b) => {
+    const gradeDifference = reportSortGrade(a) - reportSortGrade(b);
+    if (gradeDifference !== 0) return gradeDifference;
+
+    const photoDifference = taskPhotoCount(b.task) - taskPhotoCount(a.task);
+    if (photoDifference !== 0) return photoDifference;
+
+    return (a.originalIndex ?? 0) - (b.originalIndex ?? 0);
+  });
 }
 
 function taskPhotos(task) {
@@ -253,12 +274,14 @@ export default async function DailyReportPage({ searchParams }) {
   const day = typeof params?.day === 'string' ? params.day : '';
   const { source, tasks } = await loadReport({ facility, staffName, day, ids });
 
-  const scored = tasks.map((task) => ({
+  const scored = tasks.map((task, originalIndex) => ({
     task,
     grade: parseGrade(task),
     initialGrade: parseInitialGrade(task),
     resolvedIssue: parseResolvedIssue(task),
+    originalIndex,
   }));
+  const sortedScored = sortReportEntries(scored);
   const totals = {
     total: tasks.length,
     completed: scored.filter(({ grade, task }) => Number(grade) >= 3 || task.status === 'completed').length,
@@ -274,8 +297,8 @@ export default async function DailyReportPage({ searchParams }) {
   const publicBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-3a1422.up.railway.app';
   const emailHref = buildEmailHref({ facility, staffName, day, totals, reportUrl: `${publicBaseUrl}${reportPath}` });
   const cleanerHref = buildCleanerHref(staffName);
-  const resolvedIssues = scored.filter(({ resolvedIssue }) => resolvedIssue);
-  const followUps = scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2);
+  const resolvedIssues = sortReportEntries(scored.filter(({ resolvedIssue }) => resolvedIssue));
+  const followUps = sortReportEntries(scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2));
 
   return (
     <main className="page daily-report-page">
@@ -386,7 +409,7 @@ export default async function DailyReportPage({ searchParams }) {
                 </div>
               </div>
               <div className="daily-report-task-list">
-                {scored.map(({ task, grade }, index) => (
+                {sortedScored.map(({ task, grade }, index) => (
                   <article className="daily-report-task-row" key={task.id}>
                     <div className="daily-report-task-main">
                       <span className="task-number">{index + 1}</span>

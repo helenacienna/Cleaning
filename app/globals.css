@@ -4933,8 +4933,9 @@ button.button {
 .daily-report-photo-card img {
   display: block;
   width: 100%;
-  height: 160px;
-  object-fit: cover;
+  height: auto;
+  max-height: 260px;
+  object-fit: contain;
   background: rgba(15,23,42,0.06);
 }
 

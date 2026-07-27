@@ -69,6 +69,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const [gradeReferenceHiddenByScroll, setGradeReferenceHiddenByScroll] = useState(false);
   const cardRefs = useRef([]);
+  const gradePanelRefs = useRef([]);
   const issuePanelRefs = useRef({});
   const afterCorrectionPhotoInputRefs = useRef({});
   const afterCorrectionAlbumInputRefs = useRef({});
@@ -138,8 +139,15 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
 
   function focusTaskActions(index, delayMs = 80) {
     window.setTimeout(() => {
-      scrollElementIntoTaskPosition(cardRefs.current[index], 'end');
+      scrollElementIntoTaskPosition(gradePanelRefs.current[index] || cardRefs.current[index], 'end');
     }, delayMs);
+  }
+
+  function focusTaskActionsAfterLayout(index) {
+    setGradeReferenceHiddenByScroll(false);
+    focusTaskActions(index, 40);
+    focusTaskActions(index, 180);
+    focusTaskActions(index, 420);
   }
 
   function scrollToIssuePanel(taskId, index, block = 'center') {
@@ -358,9 +366,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     } else {
       const nextIndex = Math.min(index + 1, tasks.length - 1);
       setCurrentIndex(nextIndex);
-      window.setTimeout(() => {
-        focusTaskActions(nextIndex, 0);
-      }, 20);
+      focusTaskActionsAfterLayout(nextIndex);
     }
     queueRefresh();
   }
@@ -727,7 +733,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               </div>
 
-              <div className="grade-panel compact-grade-panel">
+              <div
+                className="grade-panel compact-grade-panel"
+                ref={(node) => { gradePanelRefs.current[index] = node; }}
+              >
                 <div className="grade-panel-header-row">
                   <div>
                     <strong>Grade completion</strong>
