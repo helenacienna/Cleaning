@@ -47,7 +47,9 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
   }
 
   const dailyTasks = tasks.filter((task) => !task.frequency || task.frequency === 'daily');
-  const activeTasks = stage === 'assigned' && assignedRemainingTasks.length ? assignedRemainingTasks : tasks.filter((task) => task.frequency && task.frequency !== 'daily');
+  const assignedTasks = tasks.filter((task) => task.frequency && task.frequency !== 'daily');
+  const effectiveStage = stage === 'daily' && !dailyTasks.length ? 'assigned' : stage;
+  const activeTasks = effectiveStage === 'assigned' && assignedRemainingTasks.length ? assignedRemainingTasks : assignedTasks;
   const boardDay = tasks.find((task) => task.boardDayKey)?.boardDayKey ?? '';
 
   function closeChecklist() {
@@ -59,7 +61,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
 
   function handleOpen() {
     refreshProgress();
-    setStage('daily');
+    setStage(dailyTasks.length ? 'daily' : 'assigned');
     setAssignedRemainingTasks([]);
     setDailyReportUrl('');
     setDailyReportStatus('idle');
@@ -139,8 +141,8 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
       return;
     }
 
-    window.sessionStorage.setItem(`cleanerChecklist:${label}`, JSON.stringify({ isOpen: true, stage }));
-  }, [isOpen, label, stage]);
+    window.sessionStorage.setItem(`cleanerChecklist:${label}`, JSON.stringify({ isOpen: true, stage: effectiveStage }));
+  }, [isOpen, label, stage, effectiveStage]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -190,9 +192,9 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
           <div className="fullscreen-checklist">
             <header className="modal-header compact-modal-header">
               <div>
-                <strong>{label} {stage === 'daily' ? 'Daily List' : stage === 'remaining' ? 'Remaining Work' : 'Assigned Active List'}</strong>
+                <strong>{label} {effectiveStage === 'daily' ? 'Daily List' : effectiveStage === 'remaining' ? 'Remaining Work' : 'Assigned Active List'}</strong>
               </div>
-              {stage === 'remaining' ? (
+              {effectiveStage === 'remaining' ? (
                 <div className="workflow-banner-actions">
                   <button className="button secondary" type="button" onClick={refreshProgress}>
                     Refresh progress
@@ -202,7 +204,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
               ) : null}
             </header>
 
-            {stage === 'daily' ? (
+            {effectiveStage === 'daily' ? (
               <CleanerTaskFlow
                 tasks={dailyTasks}
                 onTaskSaved={refreshProgress}
@@ -222,7 +224,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                 completeTitle="Daily tasks complete"
                 completeDescription="All daily tasks have been graded. Anything scored 1–3 will be added to the revisit list."
               />
-            ) : stage === 'remaining' ? (
+            ) : effectiveStage === 'remaining' ? (
               <RemainingWorkPanel
                 facility={label}
                 day={boardDay}
