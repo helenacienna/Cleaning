@@ -101,40 +101,6 @@ async function ensureDefaultRoute(prisma, facility) {
   });
 }
 
-async function ensureRouteComplete(prisma, routeId, facilityId) {
-  const [templates, existingItems] = await Promise.all([
-    getFacilityTemplates(prisma, facilityId),
-    prisma.cleaningRouteItem.findMany({ where: { routeId }, select: { taskTemplateId: true, sequence: true } }),
-  ]);
-  const existingIds = new Set(existingItems.map((item) => item.taskTemplateId));
-  const missingTemplates = templates.filter((template) => !existingIds.has(template.id));
-
-  if (!missingTemplates.length) {
-    return;
-  }
-
-  const maxSequence = existingItems.reduce((max, item) => Math.max(max, Number(item.sequence) || 0), 0);
-  await prisma.cleaningRouteItem.createMany({
-    data: missingTemplates.map((template, index) => ({
-      routeId,
-      taskTemplateId: template.id,
-      sequence: maxSequence + ((index + 1) * 10),
-    })),
-    skipDuplicates: true,
-  });
-}
-
-async function ensureAllRoutesComplete(prisma, facilityId) {
-  const routes = await prisma.cleaningRoute.findMany({
-    where: { facilityId, active: true },
-    select: { id: true },
-  });
-
-  for (const route of routes) {
-    await ensureRouteComplete(prisma, route.id, facilityId);
-  }
-}
-
 async function resolveTemplateIds(prisma, body) {
   const orderedTemplateIds = Array.isArray(body?.orderedTemplateIds)
     ? body.orderedTemplateIds.filter((id) => typeof id === 'string' && id.trim())
@@ -162,19 +128,14 @@ async function resolveTemplateIds(prisma, body) {
 
 async function saveRouteItems(prisma, routeId, templateIds, facilityId) {
   const templates = await getFacilityTemplates(prisma, facilityId);
-  const facilityTemplateIds = templates.map((template) => template.id);
-  const providedIds = [...new Set(templateIds.filter((id) => facilityTemplateIds.includes(id)))];
-  const providedSet = new Set(providedIds);
-  const completeTemplateIds = [
-    ...providedIds,
-    ...facilityTemplateIds.filter((id) => !providedSet.has(id)),
-  ];
+  const facilityTemplateIds = new Set(templates.map((template) => template.id));
+  const selectedTemplateIds = [...new Set(templateIds.filter((id) => facilityTemplateIds.has(id)))];
 
   await prisma.$transaction(async (tx) => {
     await tx.cleaningRouteItem.deleteMany({ where: { routeId } });
-    if (completeTemplateIds.length) {
+    if (selectedTemplateIds.length) {
       await tx.cleaningRouteItem.createMany({
-        data: completeTemplateIds.map((taskTemplateId, index) => ({
+        data: selectedTemplateIds.map((taskTemplateId, index) => ({
           routeId,
           taskTemplateId,
           sequence: (index + 1) * 10,
@@ -194,7 +155,6 @@ export async function GET(request) {
   if (!facility) return NextResponse.json({ error: 'Facility not found' }, { status: 404 });
 
   await ensureDefaultRoute(prisma, facility);
-  await ensureAllRoutesComplete(prisma, facility.id);
   const routes = await listRoutes(prisma, facility.id);
 
   return NextResponse.json({
@@ -228,7 +188,13 @@ export async function POST(request) {
     });
   }
 
-  await saveRouteItems(prisma, route.id, templateIds.length ? templateIds : (await getFacilityTemplates(prisma, facility.id)).map((template) => template.id), facility.id);
+  const shouldUseProvidedItems = Array.isArray(body?.orderedTemplateIds) || Array.isArray(body?.orderedInstanceIds);
+  await saveRouteItems(
+    prisma,
+    route.id,
+    shouldUseProvidedItems ? templateIds : (await getFacilityTemplates(prisma, facility.id)).map((template) => template.id),
+    facility.id,
+  );
   const routes = await listRoutes(prisma, facility.id);
 
   return NextResponse.json({ ok: true, routeId: route.id, routes: routes.map(mapRoute) });
@@ -262,12 +228,12 @@ export async function PATCH(request) {
     });
   }
 
+  const shouldUpdateItems = Array.isArray(body?.orderedTemplateIds) || Array.isArray(body?.orderedInstanceIds);
   const templateIds = await resolveTemplateIds(prisma, body);
-  if (templateIds.length) {
+  if (shouldUpdateItems) {
     await saveRouteItems(prisma, routeId, templateIds, route.facilityId);
   }
 
-  await ensureAllRoutesComplete(prisma, route.facilityId);
   const routes = await listRoutes(prisma, route.facilityId);
   return NextResponse.json({ ok: true, routes: routes.map(mapRoute) });
 }

@@ -3700,6 +3700,43 @@ button.button {
   opacity: 0.55;
 }
 
+.facility-task-order-card-excluded {
+  background: #f8fafc;
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.facility-task-order-card-excluded .facility-task-order-main,
+.facility-task-order-card-excluded .facility-task-order-number {
+  color: #64748b;
+}
+
+.facility-task-order-include {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 102px;
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #0f3f74;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  user-select: none;
+}
+
+.facility-task-order-include input {
+  width: 17px;
+  height: 17px;
+  accent-color: #2563eb;
+}
+
+.facility-task-order-card-excluded .facility-task-order-include {
+  background: #e2e8f0;
+  color: #475569;
+}
+
 .facility-task-order-handle {
   color: var(--muted);
   font-weight: 900;

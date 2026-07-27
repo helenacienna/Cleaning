@@ -46,14 +46,31 @@ function mapRouteItemToTask(item, index) {
   };
 }
 
+function mapTemplateToRouteTask(card, index) {
+  return {
+    id: card.id,
+    taskTemplateUuid: card.id,
+    templateId: card.templateId,
+    title: card.title,
+    zone: card.zone,
+    taskGroup: card.taskGroup,
+    staff: 'Route template',
+    frequency: card.frequency || 'Template',
+    displayOrder: Number.parseInt(String(card.jobOrderNumber ?? '').replace(/\D/g, ''), 10) || (index + 1) * 10,
+    jobOrderNumber: Number.parseInt(String(card.jobOrderNumber ?? '').replace(/\D/g, ''), 10) || (index + 1) * 10,
+  };
+}
+
 function routeItemsToTasks(route) {
   return [...(route?.items ?? [])]
     .sort((left, right) => (left.sequence ?? 0) - (right.sequence ?? 0))
     .map(mapRouteItemToTask);
 }
 
-function getOrderedTemplateIds(tasks = []) {
-  return tasks.map((task) => task.taskTemplateUuid).filter(Boolean);
+function getOrderedTemplateIds(tasks = [], selectedIds = null) {
+  return tasks
+    .map((task) => task.taskTemplateUuid)
+    .filter((id) => id && (!selectedIds || selectedIds.has(id)));
 }
 
 function getTaskSearchText(task = {}) {
@@ -77,10 +94,19 @@ function filterTasks(tasks = [], searchQuery = '') {
   return tasks.filter((task) => getTaskSearchText(task).includes(query));
 }
 
-export default function FacilityTaskOrderView({ tasks = [], facility }) {
-  const [orderedTasks, setOrderedTasks] = useState(() => sortTasks(tasks));
+export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], facility }) {
+  const templateTasks = useMemo(() => (
+    Array.isArray(taskTemplates) && taskTemplates.length
+      ? taskTemplates
+        .filter((card) => !facility || card.facility === facility)
+        .map(mapTemplateToRouteTask)
+      : []
+  ), [taskTemplates, facility]);
+  const baseTasks = useMemo(() => (templateTasks.length ? sortTasks(templateTasks) : sortTasks(tasks)), [templateTasks, tasks]);
+  const [orderedTasks, setOrderedTasks] = useState(() => baseTasks);
   const [routes, setRoutes] = useState([]);
   const [selectedRouteId, setSelectedRouteId] = useState('');
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState(() => new Set(baseTasks.map((task) => task.taskTemplateUuid).filter(Boolean)));
   const [searchQuery, setSearchQuery] = useState('');
   const [draggingId, setDraggingId] = useState(null);
   const [notice, setNotice] = useState('');
@@ -88,17 +114,23 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? null;
   const visibleTasks = useMemo(() => filterTasks(orderedTasks, searchQuery), [orderedTasks, searchQuery]);
   const isSearching = searchQuery.trim().length > 0;
+  const selectedVisibleCount = visibleTasks.filter((task) => selectedTemplateIds.has(task.taskTemplateUuid)).length;
 
   const zoneSections = useMemo(() => groupByZone(visibleTasks), [visibleTasks]);
 
-  function applyRouteToTasks(route, baseTasks = tasks) {
+  function applyRouteToTasks(route, nextBaseTasks = baseTasks) {
     const routeTasks = routeItemsToTasks(route);
+    const routeTemplateIds = new Set(routeTasks.map((task) => task.taskTemplateUuid).filter(Boolean));
     if (routeTasks.length) {
-      setOrderedTasks(routeTasks);
+      const remainingTasks = sortTasks(nextBaseTasks).filter((task) => !routeTemplateIds.has(task.taskTemplateUuid));
+      setOrderedTasks([...routeTasks, ...remainingTasks]);
+      setSelectedTemplateIds(routeTemplateIds);
       return;
     }
 
-    setOrderedTasks(sortTasks(baseTasks));
+    const fallbackTasks = sortTasks(nextBaseTasks);
+    setOrderedTasks(fallbackTasks);
+    setSelectedTemplateIds(new Set(fallbackTasks.map((task) => task.taskTemplateUuid).filter(Boolean)));
   }
 
 
@@ -118,7 +150,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
         setRoutes(payload.routes);
         const defaultRoute = payload.routes.find((route) => route.isDefault) ?? payload.routes[0] ?? null;
         setSelectedRouteId(defaultRoute?.id ?? '');
-        applyRouteToTasks(defaultRoute, tasks);
+        applyRouteToTasks(defaultRoute, baseTasks);
       } catch (error) {
         if (!cancelled) {
           setNotice(error.message || 'Could not load saved routes.');
@@ -128,7 +160,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
 
     loadRoutes();
     return () => { cancelled = true; };
-  }, [facility, tasks]);
+  }, [facility, baseTasks]);
 
   async function saveOrder(nextTasks) {
     setIsSaving(true);
@@ -154,7 +186,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
     }
   }
 
-  async function saveNamedRoute(nextTasks) {
+  async function saveNamedRoute(nextTasks, nextSelectedTemplateIds = selectedTemplateIds) {
     if (!selectedRouteId) {
       await saveOrder(nextTasks);
       return;
@@ -169,7 +201,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           routeId: selectedRouteId,
-          orderedTemplateIds: getOrderedTemplateIds(nextTasks),
+          orderedTemplateIds: getOrderedTemplateIds(nextTasks, nextSelectedTemplateIds),
         }),
       });
 
@@ -179,6 +211,10 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
       }
 
       setRoutes(payload.routes);
+      const refreshedRoute = payload.routes.find((route) => route.id === selectedRouteId) ?? null;
+      if (refreshedRoute) {
+        applyRouteToTasks(refreshedRoute, baseTasks);
+      }
       setNotice(`Saved route: ${selectedRoute?.name ?? 'selected route'}.`);
     } catch (error) {
       setNotice(error.message || 'Could not save named route.');
@@ -203,7 +239,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
         body: JSON.stringify({
           facility,
           name: name.trim(),
-          orderedTemplateIds: getOrderedTemplateIds(orderedTasks),
+          orderedTemplateIds: getOrderedTemplateIds(orderedTasks, selectedTemplateIds),
         }),
       });
       const payload = await response.json().catch(() => null);
@@ -213,6 +249,10 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
 
       setRoutes(payload.routes);
       setSelectedRouteId(payload.routeId);
+      const createdRoute = payload.routes.find((route) => route.id === payload.routeId) ?? null;
+      if (createdRoute) {
+        applyRouteToTasks(createdRoute, baseTasks);
+      }
       setNotice(`Created route: ${name.trim()}.`);
     } catch (error) {
       setNotice(error.message || 'Could not create route.');
@@ -256,7 +296,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
       const response = await fetch('/api/task-template-order', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderedIds: getOrderedTemplateIds(orderedTasks) }),
+        body: JSON.stringify({ orderedIds: getOrderedTemplateIds(orderedTasks, selectedTemplateIds) }),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
@@ -298,12 +338,41 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
     void saveNamedRoute(renumberedTasks);
   }
 
+  function setTaskIncluded(task, included) {
+    if (!task?.taskTemplateUuid || isSaving) return;
+    const nextSelectedTemplateIds = new Set(selectedTemplateIds);
+    if (included) {
+      nextSelectedTemplateIds.add(task.taskTemplateUuid);
+    } else {
+      nextSelectedTemplateIds.delete(task.taskTemplateUuid);
+    }
+
+    setSelectedTemplateIds(nextSelectedTemplateIds);
+    void saveNamedRoute(orderedTasks, nextSelectedTemplateIds);
+  }
+
+  function setVisibleTasksIncluded(included) {
+    if (isSaving) return;
+    const nextSelectedTemplateIds = new Set(selectedTemplateIds);
+    visibleTasks.forEach((task) => {
+      if (!task.taskTemplateUuid) return;
+      if (included) {
+        nextSelectedTemplateIds.add(task.taskTemplateUuid);
+      } else {
+        nextSelectedTemplateIds.delete(task.taskTemplateUuid);
+      }
+    });
+
+    setSelectedTemplateIds(nextSelectedTemplateIds);
+    void saveNamedRoute(orderedTasks, nextSelectedTemplateIds);
+  }
+
   return (
     <section className="facility-task-order-shell">
       <div className="card facility-task-order-intro">
         <div>
           <h2>Task order</h2>
-          <p className="muted">Drag every facility task into the saved route order for {facility}. Daily checklists use this route as the template, even when only some tasks are scheduled.</p>
+          <p className="muted">Tick the tasks included in this route, then drag them into the order they should be checked. This lets you build focused routes such as a supervisor walkthrough.</p>
         </div>
         <div className="facility-task-order-controls">
           <label className="field-label compact-select-label">
@@ -313,7 +382,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
               onChange={(event) => {
                 const route = routes.find((item) => item.id === event.target.value) ?? null;
                 setSelectedRouteId(event.target.value);
-                applyRouteToTasks(route, tasks);
+                applyRouteToTasks(route, baseTasks);
               }}
             >
               {routes.map((route) => <option key={route.id} value={route.id}>{route.name}{route.isDefault ? ' · default' : ''}</option>)}
@@ -321,8 +390,8 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
           </label>
           <button className="button secondary slim" type="button" onClick={createRoute} disabled={isSaving}>New route</button>
           <button className="button secondary slim" type="button" onClick={makeDefaultRoute} disabled={isSaving || !selectedRouteId || selectedRoute?.isDefault}>Make default</button>
-          <button className="button primary slim" type="button" onClick={applyRouteToLiveChecklist} disabled={isSaving || !orderedTasks.length}>Apply to live checklist</button>
-          <div className="badge">{isSearching ? `${visibleTasks.length}/${orderedTasks.length} shown` : `${orderedTasks.length} route tasks`}</div>
+          <button className="button primary slim" type="button" onClick={applyRouteToLiveChecklist} disabled={isSaving || !selectedTemplateIds.size}>Apply to live checklist</button>
+          <div className="badge">{selectedTemplateIds.size}/{orderedTasks.length} selected</div>
         </div>
       </div>
 
@@ -339,6 +408,8 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
           />
         </label>
         {isSearching ? <button className="button secondary slim" type="button" onClick={() => setSearchQuery('')}>Clear</button> : null}
+        <button className="button secondary slim" type="button" onClick={() => setVisibleTasksIncluded(true)} disabled={isSaving || !visibleTasks.length}>Select shown</button>
+        <button className="button secondary slim" type="button" onClick={() => setVisibleTasksIncluded(false)} disabled={isSaving || !visibleTasks.length || !selectedVisibleCount}>Deselect shown</button>
       </div>
 
       <div className="facility-task-order-zones">
@@ -352,7 +423,7 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
               {section.tasks.map((task) => (
                 <div
                   key={task.id}
-                  className={`facility-task-order-card ${draggingId === task.id ? 'dragging' : ''}`}
+                  className={`facility-task-order-card ${draggingId === task.id ? 'dragging' : ''} ${selectedTemplateIds.has(task.taskTemplateUuid) ? '' : 'facility-task-order-card-excluded'}`}
                   draggable={!isSaving}
                   onDragStart={(event) => {
                     setDraggingId(task.id);
@@ -371,6 +442,15 @@ export default function FacilityTaskOrderView({ tasks = [], facility }) {
                   }}
                   onDragEnd={() => setDraggingId(null)}
                 >
+                  <label className="facility-task-order-include" onClick={(event) => event.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedTemplateIds.has(task.taskTemplateUuid)}
+                      disabled={isSaving || !task.taskTemplateUuid}
+                      onChange={(event) => setTaskIncluded(task, event.target.checked)}
+                    />
+                    <span>{selectedTemplateIds.has(task.taskTemplateUuid) ? 'Included' : 'Excluded'}</span>
+                  </label>
                   <span className="facility-task-order-handle" aria-hidden="true">⋮⋮</span>
                   <strong className="facility-task-order-number">#{String(getTaskOrder(task)).padStart(3, '0')}</strong>
                   <div className="facility-task-order-main">

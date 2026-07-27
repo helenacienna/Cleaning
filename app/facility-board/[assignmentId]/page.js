@@ -632,7 +632,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
       )}
 
       {view === 'order' ? (
-        <FacilityTaskOrderView tasks={assignment.tasks} facility={assignment.location} />
+        <FacilityTaskOrderView tasks={assignment.tasks} taskTemplates={board?.taskTemplates ?? []} facility={assignment.location} />
       ) : view === 'tasks' ? (
         <section className="facility-board-task-columns">
           {[{
