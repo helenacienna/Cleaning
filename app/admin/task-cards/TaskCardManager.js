@@ -232,7 +232,7 @@ export default function TaskCardManager({ cards, zones, initialTemplateId = null
     <section className="card task-card-page-shell">
       <div className="admin-calendar-header">
         <div>
-          <h2>Task cards</h2>
+          <h2>Task Admin</h2>
           <p className="muted">Manage reusable task card templates that feed the main board and runtime task instances.</p>
         </div>
         <div className="admin-calendar-controls">

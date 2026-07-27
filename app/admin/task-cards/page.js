@@ -3,7 +3,7 @@ import TaskCardManager from './TaskCardManager';
 import { getTaskCardLibraryData } from '../../../lib/app-data';
 
 export const metadata = {
-  title: 'Task Cards · Cienna Cleaning',
+  title: 'Task Admin · Cienna Cleaning',
 };
 
 export default async function TaskCardsPage({ searchParams }) {
@@ -16,7 +16,7 @@ export default async function TaskCardsPage({ searchParams }) {
       <div className="topbar">
         <div className="brand">
           <p>Cienna Cleaning Admin</p>
-          <h1>Task card library</h1>
+          <h1>Task Admin</h1>
         </div>
         <div className="badge-row">
           <Link className="button secondary" href="/">Back to dashboard</Link>
