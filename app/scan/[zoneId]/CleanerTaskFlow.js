@@ -8,11 +8,11 @@ const MOBILE_TASK_VISIBLE_PADDING = 12;
 const MOBILE_ACTION_VISIBLE_PADDING = 170;
 const PROGRAMMATIC_SCROLL_GRACE_MS = 1200;
 const GRADE_REFERENCE = [
-  ['Grade 1', 'Needs Correction Urgently'],
-  ['Grade 2', 'Needs Correction Today'],
-  ['Grade 3', 'Cleaner to Improve ASAP'],
-  ['Grade 4', 'Acceptable'],
-  ['Grade 5', 'Perfect'],
+  ['Grade 1', 'Needs Correction Urgently', 'grade-reference-1'],
+  ['Grade 2', 'Needs Correction Today', 'grade-reference-2'],
+  ['Grade 3', 'Cleaner to Improve ASAP', 'grade-reference-3'],
+  ['Grade 4', 'Acceptable', 'grade-reference-4'],
+  ['Grade 5', 'Perfect', 'grade-reference-5'],
 ];
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
@@ -677,8 +677,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         </button>
         {showGradeReference ? (
           <div className="floating-grade-reference" aria-label="Grade score reference">
-            {GRADE_REFERENCE.map(([grade, description]) => (
-              <span className="floating-grade-reference-item" key={grade}>
+            {GRADE_REFERENCE.map(([grade, description, toneClass]) => (
+              <span className={`floating-grade-reference-item ${toneClass}`} key={grade}>
                 <strong>{grade}</strong>
                 <span>{description}</span>
               </span>
@@ -730,7 +730,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 <div className="grade-panel-header-row">
                   <div>
                     <strong>Grade completion</strong>
-                    <span className="muted">1-2 flags follow-up, 3 partial, 4-5 complete</span>
                   </div>
                   <span className={`completion-bubble grade-panel-completion-bubble ${completionChipClass}`}>
                     {completionChipLabel}
