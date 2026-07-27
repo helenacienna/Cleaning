@@ -188,6 +188,50 @@ function percent(value, total) {
   return Math.round((value / total) * 100);
 }
 
+const SCORE_DISTRIBUTION = [
+  { key: '1', label: 'Score 1', shortLabel: '1', className: 'score-1', color: '#ff7b91' },
+  { key: '2', label: 'Score 2', shortLabel: '2', className: 'score-2', color: '#ffa06e' },
+  { key: '3', label: 'Score 3', shortLabel: '3', className: 'score-3', color: '#ffca6a' },
+  { key: '4', label: 'Score 4', shortLabel: '4', className: 'score-4', color: '#59c3ff' },
+  { key: '5', label: 'Score 5', shortLabel: '5', className: 'score-5', color: '#63e6a5' },
+  { key: 'notScored', label: 'Not scored', shortLabel: 'NS', className: 'score-not-scored', color: '#cbd5e1' },
+];
+
+function buildScoreDistribution(scored) {
+  const counts = SCORE_DISTRIBUTION.reduce((acc, item) => ({ ...acc, [item.key]: 0 }), {});
+
+  scored.forEach(({ grade }) => {
+    if (hasNumericGrade(grade) && Number(grade) >= 1 && Number(grade) <= 5) {
+      counts[String(Number(grade))] += 1;
+      return;
+    }
+    counts.notScored += 1;
+  });
+
+  return SCORE_DISTRIBUTION.map((item) => ({
+    ...item,
+    count: counts[item.key] ?? 0,
+    percent: percent(counts[item.key] ?? 0, scored.length),
+  }));
+}
+
+function buildPieGradient(distribution) {
+  const total = distribution.reduce((sum, item) => sum + item.count, 0);
+  if (!total) return 'conic-gradient(#e2e8f0 0deg 360deg)';
+
+  let cursor = 0;
+  const segments = distribution
+    .filter((item) => item.count > 0)
+    .map((item) => {
+      const start = cursor;
+      const end = cursor + (item.count / total) * 360;
+      cursor = end;
+      return `${item.color} ${start.toFixed(2)}deg ${end.toFixed(2)}deg`;
+    });
+
+  return `conic-gradient(${segments.join(', ')})`;
+}
+
 function buildCleanerHref(staffName) {
   const firstName = String(staffName || '').trim().split(/\s+/)[0];
   return firstName ? `/cleaner/${encodeURIComponent(firstName.toLowerCase())}` : '/cleaner';
@@ -282,6 +326,8 @@ export default async function DailyReportPage({ searchParams }) {
     originalIndex,
   }));
   const sortedScored = sortReportEntries(scored);
+  const scoreDistribution = buildScoreDistribution(scored);
+  const scorePieStyle = { '--score-pie': buildPieGradient(scoreDistribution) };
   const totals = {
     total: tasks.length,
     completed: scored.filter(({ grade, task }) => Number(grade) >= 3 || task.status === 'completed').length,
@@ -309,10 +355,26 @@ export default async function DailyReportPage({ searchParams }) {
             <h1>{facility || 'Facility'} daily clean</h1>
             <p>{formatDayLabel(day)} · {staffName || 'Cleaner'}</p>
           </div>
-          <div className="daily-report-score-card">
-            <span>Completion</span>
-            <strong>{completionPercent}%</strong>
-            <div>{totals.completed}/{totals.total} complete</div>
+          <div className="daily-report-hero-stats">
+            <div className="daily-report-score-card">
+              <span>Completion</span>
+              <strong>{completionPercent}%</strong>
+              <div>{totals.completed}/{totals.total} complete</div>
+            </div>
+            <div className="daily-report-score-distribution-card">
+              <div className="daily-report-score-pie" style={scorePieStyle} aria-label="Score distribution pie chart">
+                <span>{totals.total}</span>
+              </div>
+              <div className="daily-report-score-breakdown" aria-label="Score distribution breakdown">
+                {scoreDistribution.map((item) => (
+                  <div className="daily-report-score-breakdown-row" key={item.key}>
+                    <span className={`score-dot ${item.className}`} aria-hidden="true" />
+                    <strong>{item.label}</strong>
+                    <span>{item.count} · {item.percent}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -409,10 +471,9 @@ export default async function DailyReportPage({ searchParams }) {
                 </div>
               </div>
               <div className="daily-report-task-list">
-                {sortedScored.map(({ task, grade }, index) => (
+                {sortedScored.map(({ task, grade }) => (
                   <article className="daily-report-task-row" key={task.id}>
                     <div className="daily-report-task-main">
-                      <span className="task-number">{index + 1}</span>
                       <div>
                         <strong>{task.titleSnapshot}</strong>
                         <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
