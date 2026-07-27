@@ -185,8 +185,12 @@ function buildDayHref(staffSlug, day, { historic = false } = {}) {
   return `/cleaner/${staffSlug}?${params.toString()}`;
 }
 
-function buildDailyReportHref({ facility, staffName, day }) {
+function buildDailyReportHref({ facility, staffName, day, taskIds = [] }) {
   const params = new URLSearchParams({ facility, staff: staffName, day });
+  const ids = taskIds.filter(Boolean);
+  if (ids.length) {
+    params.set('ids', ids.join(','));
+  }
   return `/reports/daily?${params.toString()}`;
 }
 
@@ -293,7 +297,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
                     tasks={section.tasks}
                     label={section.facility}
                     staffName={list.staff}
-                    reportHref={activeBoardDay ? buildDailyReportHref({ facility: section.facility, staffName: list.staff, day: activeBoardDay }) : ''}
+                    reportHref={activeBoardDay ? buildDailyReportHref({ facility: section.facility, staffName: list.staff, day: activeBoardDay, taskIds: section.tasks.map((task) => task.id) }) : ''}
                   />
                 ) : (
                   <section className="card checklist-launch-card">
@@ -303,7 +307,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
                       </Link>
                     ) : null}
                     {activeBoardDay ? (
-                      <Link className="button secondary launch-checklist-button" href={buildDailyReportHref({ facility: section.facility, staffName: list.staff, day: activeBoardDay })}>
+                      <Link className="button secondary launch-checklist-button" href={buildDailyReportHref({ facility: section.facility, staffName: list.staff, day: activeBoardDay, taskIds: section.tasks.map((task) => task.id) })}>
                         Open report
                       </Link>
                     ) : null}
