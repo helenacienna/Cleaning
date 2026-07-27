@@ -6,6 +6,14 @@ const REFRESH_DEBOUNCE_MS = 2000;
 const MOBILE_TASK_ALIGNMENT_QUERY = '(max-width: 768px)';
 const MOBILE_TASK_VISIBLE_PADDING = 12;
 const MOBILE_ACTION_VISIBLE_PADDING = 170;
+const PROGRAMMATIC_SCROLL_GRACE_MS = 1200;
+const GRADE_REFERENCE = [
+  ['Grade 1', 'Needs Correction Urgently'],
+  ['Grade 2', 'Needs Correction Today'],
+  ['Grade 3', 'Cleaner to Improve ASAP'],
+  ['Grade 4', 'Acceptable'],
+  ['Grade 5', 'Perfect'],
+];
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
 
 function isTaskCompleted(task) {
@@ -59,6 +67,7 @@ function createInitialTaskState(tasks) {
 export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefreshProgress, onClose, onAllTasksCompleted, onOpenReport, reportUrl = '', reportStatus = 'idle', completionMode = 'completed', completeLabel = 'Submit and go back', completeTitle = 'All tasks submitted', completeDescription = 'Everything on this active list has been graded. Submit to go back.' }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
+  const [gradeReferenceHiddenByScroll, setGradeReferenceHiddenByScroll] = useState(false);
   const cardRefs = useRef([]);
   const issuePanelRefs = useRef({});
   const afterCorrectionPhotoInputRefs = useRef({});
@@ -66,6 +75,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const listRef = useRef(null);
   const refreshTimerRef = useRef(null);
   const endCardRef = useRef(null);
+  const programmaticScrollUntilRef = useRef(0);
 
   function queueRefresh() {
     if (!onTaskSaved) {
@@ -89,6 +99,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
 
   function scrollElementIntoTaskPosition(element, preferredBlock = 'center') {
     if (!element) return;
+
+    programmaticScrollUntilRef.current = Date.now() + PROGRAMMATIC_SCROLL_GRACE_MS;
 
     if (!shouldBottomAlignActiveTask()) {
       element.scrollIntoView({
@@ -119,6 +131,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   }
 
   function focusJob(index) {
+    setGradeReferenceHiddenByScroll(false);
     setCurrentIndex(index);
     scrollElementIntoTaskPosition(cardRefs.current[index], 'center');
   }
@@ -514,6 +527,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     const list = listRef.current;
     if (!list) return;
 
+    if (Date.now() > programmaticScrollUntilRef.current) {
+      setGradeReferenceHiddenByScroll(true);
+    }
+
     const listRect = list.getBoundingClientRect();
     const focusLine = shouldBottomAlignActiveTask()
       ? listRect.bottom
@@ -569,6 +586,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const currentIssueStage = currentLocalState.issueStage ?? '';
   const currentPhotoCount = currentLocalState.photoCount ?? 0;
   const currentPhotoLength = currentLocalState.photos?.length ?? 0;
+  const currentSelectedGrade = currentTask ? (currentLocalState.grade ?? currentTask.score) : null;
+  const showGradeReference = Boolean(
+    currentTask
+      && !gradeReferenceHiddenByScroll
+      && !(Number(currentSelectedGrade) >= 1 && Number(currentSelectedGrade) <= 5)
+  );
   const shouldKeepActionsVisible = Boolean(
     currentTask
       && shouldBottomAlignActiveTask()
@@ -652,6 +675,16 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         <button className="button secondary flow-nav-button close-modal-button" type="button" onClick={onClose}>
           Close
         </button>
+        {showGradeReference ? (
+          <div className="floating-grade-reference" aria-label="Grade score reference">
+            {GRADE_REFERENCE.map(([grade, description]) => (
+              <span className="floating-grade-reference-item" key={grade}>
+                <strong>{grade}</strong>
+                <span>{description}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
