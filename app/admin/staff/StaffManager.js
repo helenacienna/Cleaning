@@ -241,32 +241,30 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: 1760, borderCollapse: 'collapse', fontSize: 13 }}>
+          <table style={{ width: '100%', minWidth: 1180, borderCollapse: 'collapse', fontSize: 11, tableLayout: 'fixed' }}>
             <thead>
               <tr>
-                <th style={{ ...headerCellStyle, minWidth: 180 }}>Staff</th>
+                <th style={{ ...headerCellStyle, width: 126 }}>Staff</th>
                 {WEEKDAY_OPTIONS.map((day) => (
-                  <th key={`head-${day.key}`} style={{ ...headerCellStyle, minWidth: 240 }}>
-                    <div style={{ display: 'grid', gap: 2 }}>
-                      <strong style={{ fontSize: 14, color: '#fff' }}>{FULL_WEEKDAY_LABELS[day.key] ?? day.label}</strong>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)' }}>{day.label} roster column</span>
-                    </div>
+                  <th key={`head-${day.key}`} style={headerCellStyle}>
+                    <strong style={{ fontSize: 12, color: '#fff' }}>{FULL_WEEKDAY_LABELS[day.key] ?? day.label}</strong>
                   </th>
                 ))}
-                <th style={headerCellStyle}>Save</th>
+                <th style={{ ...headerCellStyle, width: 72 }}>Save</th>
               </tr>
             </thead>
             <tbody>
               {staff.map((member) => (
                 <tr key={member.id} style={{ verticalAlign: 'top', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                   <td style={bodyCellStyle}>
-                    <div style={{ display: 'grid', gap: 8, minWidth: 170 }}>
+                    <div style={{ display: 'grid', gap: 3 }}>
                       <input
                         type="text"
                         value={member.fullName}
                         onChange={(event) => updateStaff(member.id, 'fullName', event.target.value)}
                         disabled={!liveDataAvailable || state.savingId === member.id}
                         placeholder="Staff name"
+                        style={compactInputStyle}
                       />
                       <input
                         type="text"
@@ -274,71 +272,77 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
                         onChange={(event) => updateStaff(member.id, 'phone', event.target.value)}
                         disabled={!liveDataAvailable || state.savingId === member.id}
                         placeholder="Phone"
+                        style={compactInputStyle}
                       />
-                      <div className="muted">{member.staffCode}</div>
+                      <div className="muted" style={{ fontSize: 10 }}>{member.staffCode}</div>
                     </div>
                   </td>
                   {WEEKDAY_OPTIONS.map((day) => {
                     const dayRoster = ensureDayEnabled(member.weeklyAvailability?.[day.key]);
                     return (
-                      <td key={`${member.id}-${day.key}`} style={{ ...bodyCellStyle, minWidth: 240 }}>
-                        <div style={{ display: 'grid', gap: 8 }}>
-                          <div style={{ display: 'grid', gap: 6, padding: 8, borderRadius: 10, background: 'rgba(255,255,255,0.03)' }}>
-                            <div style={{ fontSize: 12, fontWeight: 600 }}>Day shift</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                      <td key={`${member.id}-${day.key}`} style={bodyCellStyle}>
+                        <div style={{ display: 'grid', gap: 4 }}>
+                          <div style={{ display: 'grid', gap: 3, padding: 4, borderRadius: 8, background: 'rgba(255,255,255,0.03)' }}>
+                            <div style={{ fontSize: 10, fontWeight: 700 }}>Shift</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
                               <input
                                 type="time"
                                 value={dayRoster.start ?? ''}
                                 onChange={(event) => updateDay(member.id, day.key, 'start', event.target.value)}
                                 disabled={!liveDataAvailable || state.savingId === member.id}
+                                style={compactInputStyle}
                               />
                               <input
                                 type="time"
                                 value={dayRoster.finish ?? ''}
                                 onChange={(event) => updateDay(member.id, day.key, 'finish', event.target.value)}
                                 disabled={!liveDataAvailable || state.savingId === member.id}
+                                style={compactInputStyle}
                               />
                             </div>
-                            <div className="muted">{formatRosterWindow(dayRoster.start, dayRoster.finish) || 'No day shift set'}</div>
                           </div>
 
-                          <div style={{ display: 'grid', gap: 6 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600 }}>Facility runs</div>
+                          <div style={{ display: 'grid', gap: 4 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700 }}>Runs</div>
                             {(dayRoster.shifts ?? []).map((shift, shiftIndex) => (
-                              <div key={`${member.id}-${day.key}-${shiftIndex}`} style={{ display: 'grid', gap: 6, padding: 8, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)' }}>
+                              <div key={`${member.id}-${day.key}-${shiftIndex}`} style={{ display: 'grid', gap: 3, padding: 4, borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)' }}>
                                 <select
                                   value={shift.facilityId ?? ''}
                                   onChange={(event) => updateSubShift(member.id, day.key, shiftIndex, 'facilityId', event.target.value)}
                                   disabled={!liveDataAvailable || state.savingId === member.id}
+                                  style={compactInputStyle}
                                 >
-                                  <option value="">Select location</option>
+                                  <option value="">Location</option>
                                   {facilityOptions.map((facility) => (
                                     <option key={`${member.id}-${day.key}-${shiftIndex}-${facility.id}`} value={facility.id}>{facility.name}</option>
                                   ))}
                                 </select>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
                                   <input
                                     type="time"
                                     value={shift.start ?? ''}
                                     onChange={(event) => updateSubShift(member.id, day.key, shiftIndex, 'start', event.target.value)}
                                     disabled={!liveDataAvailable || state.savingId === member.id}
+                                    style={compactInputStyle}
                                   />
                                   <input
                                     type="time"
                                     value={shift.finish ?? ''}
                                     onChange={(event) => updateSubShift(member.id, day.key, shiftIndex, 'finish', event.target.value)}
                                     disabled={!liveDataAvailable || state.savingId === member.id}
+                                    style={compactInputStyle}
                                   />
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                                  <div className="muted">• {facilityLabel(shift, facilitiesById)} · {formatRosterWindow(shift.start, shift.finish) || 'No time set'}</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4, alignItems: 'center' }}>
+                                  <div className="muted" style={{ fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{facilityLabel(shift, facilitiesById)}</div>
                                   <button
                                     type="button"
                                     className="button secondary slim"
+                                    style={compactButtonStyle}
                                     onClick={() => removeSubShift(member.id, day.key, shiftIndex)}
                                     disabled={!liveDataAvailable || state.savingId === member.id}
                                   >
-                                    Remove
+                                    ×
                                   </button>
                                 </div>
                               </div>
@@ -346,10 +350,11 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
                             <button
                               type="button"
                               className="button secondary slim"
+                              style={compactButtonStyle}
                               onClick={() => addSubShift(member.id, day.key)}
                               disabled={!liveDataAvailable || state.savingId === member.id}
                             >
-                              Add facility run
+                              Add run
                             </button>
                           </div>
                         </div>
@@ -359,11 +364,12 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
                   <td style={bodyCellStyle}>
                     <button
                       type="button"
-                      className="button primary"
+                      className="button primary slim"
+                      style={compactButtonStyle}
                       onClick={() => saveStaff(member)}
                       disabled={!liveDataAvailable || state.savingId === member.id || !String(member.fullName ?? '').trim()}
                     >
-                      {state.savingId === member.id ? 'Saving…' : 'Save row'}
+                      {state.savingId === member.id ? 'Saving…' : 'Save'}
                     </button>
                   </td>
                 </tr>
@@ -430,10 +436,25 @@ const headerCellStyle = {
   background: '#111827',
   color: '#fff',
   textAlign: 'left',
-  padding: '10px 8px',
+  padding: '6px 5px',
   borderBottom: '1px solid rgba(255,255,255,0.22)',
 };
 
 const bodyCellStyle = {
-  padding: 8,
+  padding: 4,
+};
+
+const compactInputStyle = {
+  width: '100%',
+  minWidth: 0,
+  fontSize: 10,
+  padding: '2px 4px',
+  minHeight: 22,
+};
+
+const compactButtonStyle = {
+  width: '100%',
+  minHeight: 22,
+  padding: '2px 6px',
+  fontSize: 10,
 };
