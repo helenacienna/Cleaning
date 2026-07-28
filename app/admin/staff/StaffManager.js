@@ -231,13 +231,17 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: 1900, borderCollapse: 'collapse', fontSize: 13 }}>
+          <table style={{ width: '100%', minWidth: 1760, borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
-                <th style={headerCellStyle}>Staff</th>
-                <th style={headerCellStyle}>Phone</th>
+                <th style={{ ...headerCellStyle, minWidth: 180 }}>Staff</th>
                 {WEEKDAY_OPTIONS.map((day) => (
-                  <th key={`head-${day.key}`} style={{ ...headerCellStyle, minWidth: 240 }}>{day.label}</th>
+                  <th key={`head-${day.key}`} style={{ ...headerCellStyle, minWidth: 240 }}>
+                    <div style={{ display: 'grid', gap: 2 }}>
+                      <strong style={{ fontSize: 14 }}>{day.label}</strong>
+                      <span className="muted" style={{ fontSize: 11 }}>Day column</span>
+                    </div>
+                  </th>
                 ))}
                 <th style={headerCellStyle}>Save</th>
               </tr>
@@ -254,18 +258,15 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
                         disabled={!liveDataAvailable || state.savingId === member.id}
                         placeholder="Staff name"
                       />
+                      <input
+                        type="text"
+                        value={member.phone ?? ''}
+                        onChange={(event) => updateStaff(member.id, 'phone', event.target.value)}
+                        disabled={!liveDataAvailable || state.savingId === member.id}
+                        placeholder="Phone"
+                      />
                       <div className="muted">{member.staffCode}</div>
                     </div>
-                  </td>
-                  <td style={bodyCellStyle}>
-                    <input
-                      type="text"
-                      value={member.phone ?? ''}
-                      onChange={(event) => updateStaff(member.id, 'phone', event.target.value)}
-                      disabled={!liveDataAvailable || state.savingId === member.id}
-                      placeholder="Phone"
-                      style={{ minWidth: 140 }}
-                    />
                   </td>
                   {WEEKDAY_OPTIONS.map((day) => {
                     const dayRoster = ensureDayEnabled(member.weeklyAvailability?.[day.key]);
