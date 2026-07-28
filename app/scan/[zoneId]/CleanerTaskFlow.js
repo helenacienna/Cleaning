@@ -101,9 +101,13 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   function scrollElementIntoTaskPosition(element, preferredBlock = 'center') {
     if (!element) return;
 
-    programmaticScrollUntilRef.current = Date.now() + PROGRAMMATIC_SCROLL_GRACE_MS;
-
     if (!shouldBottomAlignActiveTask()) {
+      const rect = element.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      if (rect.top < 0 || rect.bottom <= viewportHeight) {
+        return;
+      }
+      programmaticScrollUntilRef.current = Date.now() + PROGRAMMATIC_SCROLL_GRACE_MS;
       element.scrollIntoView({
         behavior: 'smooth',
         block: preferredBlock,
@@ -113,6 +117,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
 
     const list = listRef.current;
     if (!list) {
+      const rect = element.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      if (rect.top < 0 || rect.bottom <= viewportHeight) {
+        return;
+      }
+      programmaticScrollUntilRef.current = Date.now() + PROGRAMMATIC_SCROLL_GRACE_MS;
       element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       return;
     }
@@ -122,10 +132,16 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       const elementRect = element.getBoundingClientRect();
       const relativeTop = elementRect.top - listRect.top + list.scrollTop;
       const relativeBottom = relativeTop + elementRect.height;
-      const targetScrollTop = relativeBottom - list.clientHeight + MOBILE_ACTION_VISIBLE_PADDING;
+      const targetScrollTop = Math.max(0, relativeBottom - list.clientHeight + MOBILE_ACTION_VISIBLE_PADDING);
+      const currentScrollTop = list.scrollTop;
 
+      if (targetScrollTop <= currentScrollTop + 1) {
+        return;
+      }
+
+      programmaticScrollUntilRef.current = Date.now() + PROGRAMMATIC_SCROLL_GRACE_MS;
       list.scrollTo({
-        top: Math.max(0, targetScrollTop),
+        top: targetScrollTop,
         behavior: 'smooth',
       });
     });

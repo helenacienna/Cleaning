@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-28T12:24:31.979Z",
-  "version": "158b8ac+local",
-  "summary": "Separate facility board report controls"
+  "deployedAt": "2026-07-28T13:09:17.827Z",
+  "version": "c7b15ca+local",
+  "summary": "Prevent active checklist upward auto scroll"
 }
