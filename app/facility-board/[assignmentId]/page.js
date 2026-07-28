@@ -214,7 +214,7 @@ function formatGroupSummaryLabel(tasks = []) {
   return `${formatGroupStatusLabel(tasks)} ${formatAssignedStaffLabel(tasks)}`;
 }
 
-function formatBoardDateLabel(dayKey, timeZone = DEFAULT_APP_TIME_ZONE) {
+function formatBoardDateLabel(dayKey, timeZone = DEFAULT_APP_TIME_ZONE, options = {}) {
   if (!dayKey) {
     return 'No board day selected';
   }
@@ -225,10 +225,41 @@ function formatBoardDateLabel(dayKey, timeZone = DEFAULT_APP_TIME_ZONE) {
   }
 
   return getTimeZoneFormatter('en-AU', timeZone, {
-    weekday: 'short',
+    weekday: options.long ? 'long' : 'short',
     day: 'numeric',
     month: 'short',
   }).format(date).replace(',', '');
+}
+
+function FacilityBoardDatePicker({ boardDay, boardDays = [], view, timeZone }) {
+  return (
+    <details className="facility-board-date-picker-menu">
+      <summary className="facility-board-date-picker-trigger">
+        <span className="facility-board-date-picker-kicker">View date</span>
+        <strong>{formatBoardDateLabel(boardDay, timeZone, { long: true })}</strong>
+        <span aria-hidden="true">⌄</span>
+      </summary>
+      <div className="facility-board-date-picker-dropdown">
+        <form className="facility-board-date-picker-form" method="get">
+          <label className="field-label">
+            <span>Choose date</span>
+            <input type="date" name="day" defaultValue={boardDay} />
+          </label>
+          <input type="hidden" name="view" value={view} />
+          <button className="button primary slim" type="submit">Open date</button>
+        </form>
+        {boardDays.length ? (
+          <div className="facility-board-date-picker-list">
+            {boardDays.map((day) => (
+              <Link key={day} className={`facility-board-date-picker-link ${day === boardDay ? 'facility-board-date-picker-link-active' : ''}`} href={`?day=${day}&view=${view}`}>
+                {formatBoardDateLabel(day, timeZone, { long: true })}
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </details>
+  );
 }
 
 function groupStatusToneClass(tasks = []) {
@@ -545,10 +576,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
   const groupedByStaff = groupTasksByStaff(assignment.tasks, board?.staffMeta);
   const totalZones = new Set(grouped.map((group) => group.zone)).size;
   const boardDays = board?.days ?? [];
-  const activeBoardDayIndex = boardDays.indexOf(assignment.boardDay);
-  const previousBoardDay = activeBoardDayIndex > 0 ? boardDays[activeBoardDayIndex - 1] : null;
-  const nextBoardDay = activeBoardDayIndex >= 0 && activeBoardDayIndex < boardDays.length - 1 ? boardDays[activeBoardDayIndex + 1] : null;
-  const todayBoardDay = getActiveBoardDay(boardDays, undefined, timeZone);
   const queryBase = `?day=${assignment.boardDay}`;
   const positionedStaff = groupedByStaff.filter((staffGroup) => Number.isFinite(staffGroup.shiftStartMinutes) && Number.isFinite(staffGroup.shiftEndMinutes) && staffGroup.shiftEndMinutes > staffGroup.shiftStartMinutes);
   const unpositionedStaff = groupedByStaff.filter((staffGroup) => !(Number.isFinite(staffGroup.shiftStartMinutes) && Number.isFinite(staffGroup.shiftEndMinutes) && staffGroup.shiftEndMinutes > staffGroup.shiftStartMinutes));
@@ -584,26 +611,13 @@ export default async function FacilityBoardPage({ params, searchParams }) {
           <div className="facility-board-detail-title-block">
             <span className="badge">{source === 'prisma' ? 'Facility board · live' : 'Facility board · demo task content'}</span>
             <h1>{assignment.location} facility tasks</h1>
-            <p className="muted">{formatBoardDateLabel(assignment.boardDay, timeZone)} · {assignment.stats.staffCount || 0} assigned staff · {totalZones} zones · {facilityResultLabel}</p>
+            <p className="muted">{assignment.stats.staffCount || 0} assigned staff · {totalZones} zones · {facilityResultLabel}</p>
           </div>
         </div>
 
-        <div className="cta-row no-top-gap facility-board-detail-actions facility-board-header-nav-row">
+        <div className="facility-board-header-control-row">
+          <FacilityBoardDatePicker boardDay={assignment.boardDay} boardDays={boardDays} view={view} timeZone={timeZone} />
           <ViewOptionsMenu queryBase={queryBase} view={view} />
-          <div className="facility-board-inline-day-nav">
-            <div className="facility-board-inline-day-nav-row">
-              {previousBoardDay ? <Link className="button secondary slim" href={`?day=${previousBoardDay}&view=${view}`}>← Prev</Link> : <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">← Prev</span>}
-              <div className="button secondary slim facility-board-inline-day-label">{formatBoardDateLabel(assignment.boardDay, timeZone)}</div>
-              {nextBoardDay ? <Link className="button secondary slim" href={`?day=${nextBoardDay}&view=${view}`}>Next →</Link> : <span className="button secondary slim sticky-board-link-disabled" aria-disabled="true">Next →</span>}
-            </div>
-            <div className="facility-board-day-chip-row">
-              {boardDays.map((day) => (
-                <Link key={day} className={`button slim ${day === assignment.boardDay ? 'primary' : 'secondary'}`} href={`?day=${day}&view=${view}`}>
-                  {formatBoardDateLabel(day, timeZone)}
-                </Link>
-              ))}
-            </div>
-          </div>
         </div>
 
         <section className="facility-board-report-metrics" aria-label="Facility task summary">

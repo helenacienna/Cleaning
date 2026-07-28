@@ -4327,6 +4327,20 @@ button.button {
 .facility-board-view-link:hover{background:#59c3ff1a}
 .facility-board-view-link-active{background:linear-gradient(135deg,#59c3ff2e,#58f0c129);border:1px solid #59c3ff3d;font-weight:700}
 .facility-board-view-link-action{font-weight:700}
+.facility-board-header-control-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;width:100%}
+.facility-board-date-picker-menu{position:relative;min-width:220px}
+.facility-board-date-picker-menu summary{list-style:none}
+.facility-board-date-picker-menu summary::-webkit-details-marker{display:none}
+.facility-board-date-picker-trigger{cursor:pointer;border:1px solid #0f172a14;background:#fff;border-radius:16px;box-shadow:0 10px 24px #0f172a0f;color:#0f172a;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;min-width:220px;padding:10px 12px;text-align:left}
+.facility-board-date-picker-trigger strong{font-size:14px;line-height:1.1}
+.facility-board-date-picker-kicker{color:#64748b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;grid-column:1/-1}
+.facility-board-date-picker-menu[open] .facility-board-date-picker-trigger>span[aria-hidden="true"]{transform:rotate(180deg)}
+.facility-board-date-picker-dropdown{z-index:20;background:#fffffffb;border:1px solid #0f172a1a;border-radius:18px;box-shadow:0 18px 45px #0f172a24;display:grid;gap:10px;left:0;min-width:300px;padding:12px;position:absolute;top:calc(100% + 8px)}
+.facility-board-date-picker-form{display:grid;gap:8px}
+.facility-board-date-picker-list{display:grid;gap:4px;max-height:280px;overflow:auto;padding-top:6px;border-top:1px solid #0f172a14}
+.facility-board-date-picker-link{border-radius:12px;color:#0f172a;padding:8px 10px;font-size:13px;display:block}
+.facility-board-date-picker-link:hover{background:#59c3ff1a}
+.facility-board-date-picker-link-active{background:linear-gradient(135deg,#59c3ff2e,#58f0c129);border:1px solid #59c3ff3d;font-weight:800}
 .facility-board-inline-day-nav{gap:8px;width:min(420px,100%);display:grid}
 .facility-board-inline-day-nav-row{grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px;width:100%;display:grid}
 .facility-board-day-chip-row{scrollbar-width:none;gap:8px;max-width:100%;padding:2px 2px 4px;display:flex;overflow-x:auto}
