@@ -638,7 +638,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
         </div>
 
         <section className="facility-board-report-metrics" aria-label="Facility task summary">
-          <div className="daily-report-metric"><span>Unresolved</span><strong className={reportTotals.unresolvedIssues ? 'tone-red' : 'tone-green'}>{reportTotals.unresolvedIssues}</strong></div>
+          <div className="daily-report-metric"><span>Resolved issues</span><strong className={reportTotals.resolvedIssues ? 'tone-amber' : 'tone-green'}>{reportTotals.resolvedIssues}</strong></div>
           <div className="daily-report-score-card facility-board-report-score-card">
             <span>Completion</span>
             <strong>{reportTotals.completionPercent}%</strong>
@@ -649,7 +649,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
           <div className="daily-report-metric"><span>Partial</span><strong className="tone-amber">{reportTotals.partial}</strong></div>
           <div className="daily-report-metric"><span>Photos</span><strong>{reportTotals.photoCount}</strong></div>
           <div className="daily-report-metric"><span>Notes</span><strong>{reportTotals.noteCount}</strong></div>
-          <div className="daily-report-metric"><span>Resolved issues</span><strong className={reportTotals.resolvedIssues ? 'tone-amber' : 'tone-green'}>{reportTotals.resolvedIssues}</strong></div>
+          <div className="daily-report-metric"><span>Unresolved</span><strong className={reportTotals.unresolvedIssues ? 'tone-red' : 'tone-green'}>{reportTotals.unresolvedIssues}</strong></div>
         </section>
 
         {renderOutcomeProgress(assignment.tasks)}

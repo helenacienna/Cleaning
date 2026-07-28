@@ -2460,15 +2460,16 @@ code {
   border-radius: 7px;
   background: rgba(255,255,255,0.62);
   border: 1px solid rgba(15,23,42,0.045);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.05;
   color: var(--muted);
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .floating-grade-reference-item strong {
   color: var(--text);
-  font-size: 11px;
+  font-size: 13.2px;
   font-weight: 900;
 }
 
@@ -4314,8 +4315,8 @@ button.button {
   .flow-position { grid-template-columns: minmax(104px, 1.15fr) repeat(3, minmax(58px, 0.85fr)); gap: 5px; padding: 5px; }
   .flow-position .button, .flow-current-job-chip { min-height: 32px; padding: 5px 6px; font-size: 11px; border-radius: 10px; }
   .floating-grade-reference { grid-template-columns: 1fr; gap: 2px; padding: 2px; }
-  .floating-grade-reference-item { justify-content: space-between; gap: 6px; padding: 2px 5px; font-size: 9px; border-radius: 6px; }
-  .floating-grade-reference-item strong { font-size: 10px; white-space: nowrap; }
+  .floating-grade-reference-item { justify-content: space-between; gap: 6px; padding: 2px 5px; font-size: 11px; border-radius: 6px; }
+  .floating-grade-reference-item strong { font-size: 12px; white-space: nowrap; }
   .checklist-launch-card { align-items: stretch; flex-direction: column; }
   .modal-header { align-items: center; flex-direction: row; }
   .launch-checklist-button { width: 100%; }
@@ -4351,7 +4352,7 @@ button.button {
 .facility-board-view-link:hover{background:#59c3ff1a}
 .facility-board-view-link-active{background:linear-gradient(135deg,#59c3ff2e,#58f0c129);border:1px solid #59c3ff3d;font-weight:700}
 .facility-board-view-link-action{font-weight:700}
-.facility-board-header-control-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%}
+.facility-board-header-control-row{display:grid;grid-template-columns:minmax(190px,220px) minmax(0,1fr) minmax(190px,220px);align-items:center;gap:12px;width:100%}
 .facility-board-date-picker-menu{position:relative;min-width:190px}
 .facility-board-date-picker-menu summary{list-style:none}
 .facility-board-date-picker-menu summary::-webkit-details-marker{display:none}
@@ -4414,6 +4415,8 @@ button.button {
 .facility-board-extra-task-row{grid-template-columns:minmax(0,1fr);align-items:flex-start}
 .facility-board-extra-task-meta{color:var(--muted);gap:2px;margin-top:4px;font-size:11px;line-height:1.2;display:grid}
 @media (max-width: 980px){
+  .facility-board-header-control-row{grid-template-columns:1fr}
+  .facility-board-date-picker-menu,.facility-board-date-picker-trigger,.facility-board-view-menu,.facility-board-view-trigger{width:100%;min-width:0}
   .facility-board-task-columns{grid-template-columns:1fr}
   .facility-board-inline-day-nav,.facility-board-view-menu,.facility-board-view-trigger,.facility-board-view-dropdown{width:100%}
   .facility-board-inline-day-nav-row{grid-template-columns:minmax(0,1fr)}
