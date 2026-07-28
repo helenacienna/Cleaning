@@ -170,11 +170,11 @@ function reportScoreKey(grade) {
 
 function buildReportScoreSections(scored) {
   const sectionConfig = [
-    { key: '5', title: 'Grade 5', description: 'Perfect / completed to standard.' },
-    { key: '4', title: 'Grade 4', description: 'Acceptable / completed.' },
-    { key: '3', title: 'Grade 3', description: 'Partial or cleaner to improve.' },
-    { key: '2', title: 'Grade 2', description: 'Needs correction today.' },
     { key: '1', title: 'Grade 1', description: 'Needs correction urgently.' },
+    { key: '2', title: 'Grade 2', description: 'Needs correction today.' },
+    { key: '3', title: 'Grade 3', description: 'Partial or cleaner to improve.' },
+    { key: '4', title: 'Grade 4', description: 'Acceptable / completed.' },
+    { key: '5', title: 'Grade 5', description: 'Perfect / completed to standard.' },
     { key: 'notScored', title: 'Not graded', description: 'Tasks without a saved score.' },
   ];
 
@@ -459,30 +459,6 @@ export default async function DailyReportPage({ searchParams }) {
               </div>
             </section>
 
-            {resolvedIssues.length ? (
-              <section className="card daily-report-card daily-report-followups">
-                <div className="panel-title">
-                  <div>
-                    <h2>Resolved issues</h2>
-                    <p className="muted">Problems found during the walkthrough and corrected before completion.</p>
-                  </div>
-                </div>
-                <div className="daily-report-task-list">
-                  {resolvedIssues.map(({ task, grade, initialGrade }) => (
-                    <article className="daily-report-task-row report-resolved" key={`resolved-${task.id}`}>
-                      <div>
-                        <strong>{task.titleSnapshot}</strong>
-                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
-                        {parseIssueNote(task) ? <p><strong>Initial issue:</strong> {parseIssueNote(task)}</p> : null}
-                        {parseResolutionNote(task) ? <p><strong>Correction:</strong> {parseResolutionNote(task)}</p> : null}
-                        <ResolvedIssueEvidence task={task} grade={grade} initialGrade={initialGrade} />
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
             {followUps.length ? (
               <section className="card daily-report-card daily-report-followups">
                 <div className="panel-title">
@@ -502,6 +478,30 @@ export default async function DailyReportPage({ searchParams }) {
                       </div>
                       <div className="daily-report-task-meta">
                         <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {resolvedIssues.length ? (
+              <section className="card daily-report-card daily-report-followups">
+                <div className="panel-title">
+                  <div>
+                    <h2>Resolved issues</h2>
+                    <p className="muted">Problems found during the walkthrough and corrected before completion.</p>
+                  </div>
+                </div>
+                <div className="daily-report-task-list">
+                  {resolvedIssues.map(({ task, grade, initialGrade }) => (
+                    <article className="daily-report-task-row report-resolved" key={`resolved-${task.id}`}>
+                      <div>
+                        <strong>{task.titleSnapshot}</strong>
+                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                        {parseIssueNote(task) ? <p><strong>Initial issue:</strong> {parseIssueNote(task)}</p> : null}
+                        {parseResolutionNote(task) ? <p><strong>Correction:</strong> {parseResolutionNote(task)}</p> : null}
+                        <ResolvedIssueEvidence task={task} grade={grade} initialGrade={initialGrade} />
                       </div>
                     </article>
                   ))}

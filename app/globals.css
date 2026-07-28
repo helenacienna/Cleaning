@@ -4777,23 +4777,149 @@ button.button {
   }
 }
 
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
 @media print {
   .no-print {
     display: none !important;
   }
+  html,
+  body {
+    background: #ffffff !important;
+  }
   .page.daily-report-page {
-    padding: 0;
+    padding: 0 !important;
     background: #ffffff;
   }
   .daily-report-shell {
     width: 100%;
+    gap: 8px;
+  }
+  .daily-report-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(230px, 290px);
+    gap: 8px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+  .daily-report-hero h1 {
+    margin: 4px 0;
+    font-size: 24px;
+  }
+  .daily-report-hero p,
+  .daily-report-card p {
+    margin: 2px 0;
+  }
+  .daily-report-score-card {
+    padding: 8px;
+    border-radius: 12px;
+  }
+  .daily-report-score-card strong {
+    font-size: 24px;
+  }
+  .daily-report-score-pie {
+    width: 74px;
+    height: 74px;
+  }
+  .daily-report-score-breakdown-row {
+    padding: 3px 0;
+    font-size: 10px;
+  }
+  .daily-report-metrics {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .daily-report-metric {
+    padding: 7px;
+    border-radius: 10px;
+  }
+  .daily-report-metric strong {
+    font-size: 20px;
+  }
+  .daily-report-card {
+    padding: 10px;
+    border-radius: 12px;
+  }
+  .daily-report-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .daily-report-summary-grid > div {
+    padding: 7px;
+    border-radius: 10px;
+  }
+  .daily-report-score-sections {
+    gap: 8px;
+  }
+  .daily-report-score-section {
+    gap: 5px;
+    padding-top: 8px;
+  }
+  .daily-report-score-section-heading h3 {
+    font-size: 14px;
+  }
+  .daily-report-score-section-heading p,
+  .daily-report-task-row .muted {
+    font-size: 9px;
+  }
+  .daily-report-task-list,
+  .daily-report-photo-task-list {
+    gap: 5px;
+  }
+  .daily-report-task-row {
+    padding: 6px 7px;
+    border-radius: 10px;
+    box-shadow: none;
+  }
+  .daily-report-task-row strong {
+    font-size: 11px;
+  }
+  .daily-report-task-row p {
+    font-size: 10px;
+  }
+  .daily-report-compact-task-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .daily-report-task-row-compact {
+    padding: 5px 6px;
+    border-radius: 9px;
+  }
+  .daily-report-task-row-compact strong {
+    font-size: 10px;
+  }
+  .daily-report-task-row-compact .badge,
+  .daily-report-task-row-compact .flag {
+    font-size: 8px;
+    padding: 2px 4px;
+  }
+  .daily-report-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .daily-report-photo-card {
+    border-radius: 9px;
+    box-shadow: none;
+  }
+  .daily-report-photo-card img {
+    max-height: 115mm;
+  }
+  .daily-report-photo-card figcaption {
+    padding: 4px 6px;
+    font-size: 9px;
   }
   .daily-report-hero,
   .daily-report-card,
   .daily-report-metric,
-  .daily-report-task-row {
+  .daily-report-task-row,
+  .daily-report-score-section,
+  .daily-report-photo-card {
     box-shadow: none;
     break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 
