@@ -344,6 +344,25 @@ export default async function DailyReportPage({ searchParams }) {
   const publicBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-3a1422.up.railway.app';
   const emailHref = buildEmailHref({ facility, staffName, day, totals, reportUrl: `${publicBaseUrl}${reportPath}` });
   const cleanerHref = buildCleanerHref(staffName);
+  const reportPayload = {
+    facility,
+    staffName,
+    day,
+    dayLabel: formatDayLabel(day),
+    totals,
+    reportUrl: `${publicBaseUrl}${reportPath}`,
+    tasks: sortedScored.map(({ task, grade, initialGrade, resolvedIssue }) => ({
+      title: task.titleSnapshot,
+      zone: task.plannedZone?.name ?? task.zone?.name,
+      group: task.plannedTaskGroup?.name ?? task.taskGroup?.name,
+      grade: scoreLabel(grade, task),
+      initialGrade,
+      resolvedIssue,
+      issueNote: parseIssueNote(task),
+      resolutionNote: parseResolutionNote(task),
+      photoCount: taskPhotoCount(task),
+    })),
+  };
   const resolvedIssues = sortReportEntries(scored.filter(({ resolvedIssue }) => resolvedIssue));
   const followUps = sortReportEntries(scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2));
 
@@ -382,7 +401,7 @@ export default async function DailyReportPage({ searchParams }) {
           </div>
         </section>
 
-        <ReportActions emailHref={emailHref} backHref={cleanerHref} />
+        <ReportActions emailHref={emailHref} backHref={cleanerHref} reportPayload={reportPayload} />
 
         {source !== 'prisma' || !tasks.length ? (
           <section className="card daily-report-card">

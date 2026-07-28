@@ -4576,6 +4576,12 @@ button.button {
   flex-wrap: wrap;
 }
 
+.daily-report-email-status {
+  align-self: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .daily-report-metrics {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
