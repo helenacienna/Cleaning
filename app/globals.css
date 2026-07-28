@@ -4378,6 +4378,12 @@ button.button {
 .facility-board-task-column-header .badge{padding:6px 9px;font-size:11px;position:absolute;top:0;right:0}
 .facility-board-expand-button{white-space:nowrap;padding-left:10px;padding-right:10px;font-size:11px;position:absolute;top:0;left:0}
 .facility-board-task-column-groups,.facility-board-extra-list{gap:8px;display:grid}
+.facility-board-extra-expand{display:grid;gap:8px}
+.facility-board-extra-expand summary{list-style:none}
+.facility-board-extra-expand summary::-webkit-details-marker{display:none}
+.facility-board-extra-expand-button{justify-content:center;gap:8px;width:100%}
+.facility-board-extra-expand[open] .facility-board-extra-expand-button span{transform:rotate(180deg)}
+.facility-board-extra-list-expanded{padding-top:2px}
 .facility-board-task-column .progress{margin-top:-2px}
 .facility-board-task-column .task-disclosure,.facility-board-task-column .task-row{background:#ffffffeb}
 .zone-summary-row-compact{gap:3px;padding:4px}

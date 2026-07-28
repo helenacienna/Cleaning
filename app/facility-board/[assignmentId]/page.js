@@ -361,9 +361,29 @@ function renderOutcomeProgress(tasks = [], className = 'progress') {
   return (
     <div className={`${className} outcome-progress`}>
       {OUTCOME_PROGRESS_SEGMENTS.map(([key, segmentClass]) => counts[key] ? (
-        <span key={key} className={segmentClass} style={{ width: `${total ? (counts[key] / total) * 100 : 0}%` }} />
+        <span
+          key={key}
+          className={segmentClass}
+          style={{ width: `${total ? (counts[key] / total) * 100 : 0}%` }}
+          title={`${key.replace(/-/g, ' ')}: ${counts[key]} of ${total}`}
+          aria-label={`${key.replace(/-/g, ' ')}: ${counts[key]} of ${total}`}
+        />
       ) : null)}
     </div>
+  );
+}
+
+function renderExtraTaskCard(task, assignment) {
+  return (
+    <ExtraTaskScheduleCard
+      key={`${assignment.id}-extra-${task.templateId}`}
+      task={{
+        ...task,
+        lastCompletedLabel: formatLastCompletedAge(task.lastCompleted, parseBoardDayDate(assignment.boardDay)),
+      }}
+      facility={assignment.location}
+      day={assignment.boardDay}
+    />
   );
 }
 
@@ -618,6 +638,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
         </div>
 
         <section className="facility-board-report-metrics" aria-label="Facility task summary">
+          <div className="daily-report-metric"><span>Unresolved</span><strong className={reportTotals.unresolvedIssues ? 'tone-red' : 'tone-green'}>{reportTotals.unresolvedIssues}</strong></div>
           <div className="daily-report-score-card facility-board-report-score-card">
             <span>Completion</span>
             <strong>{reportTotals.completionPercent}%</strong>
@@ -626,10 +647,9 @@ export default async function FacilityBoardPage({ params, searchParams }) {
           <div className="daily-report-metric"><span>Total tasks</span><strong>{reportTotals.total}</strong></div>
           <div className="daily-report-metric"><span>Completed</span><strong className="tone-green">{reportTotals.completed}</strong></div>
           <div className="daily-report-metric"><span>Partial</span><strong className="tone-amber">{reportTotals.partial}</strong></div>
-          <div className="daily-report-metric"><span>Resolved issues</span><strong className={reportTotals.resolvedIssues ? 'tone-amber' : 'tone-green'}>{reportTotals.resolvedIssues}</strong></div>
-          <div className="daily-report-metric"><span>Unresolved</span><strong className={reportTotals.unresolvedIssues ? 'tone-red' : 'tone-green'}>{reportTotals.unresolvedIssues}</strong></div>
           <div className="daily-report-metric"><span>Photos</span><strong>{reportTotals.photoCount}</strong></div>
           <div className="daily-report-metric"><span>Notes</span><strong>{reportTotals.noteCount}</strong></div>
+          <div className="daily-report-metric"><span>Resolved issues</span><strong className={reportTotals.resolvedIssues ? 'tone-amber' : 'tone-green'}>{reportTotals.resolvedIssues}</strong></div>
         </section>
 
         {renderOutcomeProgress(assignment.tasks)}
@@ -689,17 +709,22 @@ export default async function FacilityBoardPage({ params, searchParams }) {
 
               {section.key === 'extra' ? (
                 <div className="facility-board-extra-list">
-                  {section.tasks.length ? section.tasks.map((task) => (
-                    <ExtraTaskScheduleCard
-                      key={`${assignment.id}-extra-${task.templateId}`}
-                      task={{
-                        ...task,
-                        lastCompletedLabel: formatLastCompletedAge(task.lastCompleted, parseBoardDayDate(assignment.boardDay)),
-                      }}
-                      facility={assignment.location}
-                      day={assignment.boardDay}
-                    />
-                  )) : (
+                  {section.tasks.length ? (
+                    <>
+                      {section.tasks.slice(0, 5).map((task) => renderExtraTaskCard(task, assignment))}
+                      {section.tasks.length > 5 ? (
+                        <details className="facility-board-extra-expand">
+                          <summary className="button secondary slim facility-board-extra-expand-button">
+                            Show {section.tasks.length - 5} more extra tasks
+                            <span aria-hidden="true">⌄</span>
+                          </summary>
+                          <div className="facility-board-extra-list facility-board-extra-list-expanded">
+                            {section.tasks.slice(5).map((task) => renderExtraTaskCard(task, assignment))}
+                          </div>
+                        </details>
+                      ) : null}
+                    </>
+                  ) : (
                     <div className="task-row unscheduled-task-empty">
                       <div>
                         <strong>No extra tasks available</strong>
