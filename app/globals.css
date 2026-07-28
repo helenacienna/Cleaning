@@ -2882,6 +2882,7 @@ button.button {
   display: grid;
   gap: 6px;
   padding: 8px 10px;
+  position: relative;
 }
 
 .facility-board-detail-top {
@@ -4352,7 +4353,10 @@ button.button {
 .facility-board-view-link:hover{background:#59c3ff1a}
 .facility-board-view-link-active{background:linear-gradient(135deg,#59c3ff2e,#58f0c129);border:1px solid #59c3ff3d;font-weight:700}
 .facility-board-view-link-action{font-weight:700}
-.facility-board-header-control-row{display:grid;grid-template-columns:minmax(190px,220px) minmax(0,1fr) minmax(190px,220px);align-items:center;gap:12px;width:100%}
+.facility-board-header-control-row{display:grid;grid-template-columns:minmax(190px,220px) minmax(0,1fr) minmax(240px,max-content);align-items:center;gap:12px;min-height:58px;position:relative;width:100%}
+.facility-board-header-control-row>.facility-board-detail-title-block{left:50%;max-width:min(520px,42vw);position:absolute;top:50%;transform:translate(-50%,-50%);width:max-content;z-index:1}
+.facility-board-header-actions{align-items:center;display:flex;gap:8px;justify-content:flex-end;justify-self:end;position:relative;z-index:2}
+.facility-board-report-button{min-height:42px;padding:9px 13px}
 .facility-board-date-picker-menu{position:relative;min-width:190px}
 .facility-board-date-picker-menu summary{list-style:none}
 .facility-board-date-picker-menu summary::-webkit-details-marker{display:none}
@@ -4415,7 +4419,10 @@ button.button {
 .facility-board-extra-task-row{grid-template-columns:minmax(0,1fr);align-items:flex-start}
 .facility-board-extra-task-meta{color:var(--muted);gap:2px;margin-top:4px;font-size:11px;line-height:1.2;display:grid}
 @media (max-width: 980px){
-  .facility-board-header-control-row{grid-template-columns:1fr}
+  .facility-board-header-control-row{grid-template-columns:1fr;min-height:0}
+  .facility-board-header-control-row>.facility-board-detail-title-block{left:auto;max-width:100%;position:static;top:auto;transform:none;width:100%}
+  .facility-board-header-actions{display:grid;grid-template-columns:1fr;justify-self:stretch;width:100%}
+  .facility-board-report-button{justify-content:center;width:100%}
   .facility-board-date-picker-menu,.facility-board-date-picker-trigger,.facility-board-view-menu,.facility-board-view-trigger{width:100%;min-width:0}
   .facility-board-task-columns{grid-template-columns:1fr}
   .facility-board-inline-day-nav,.facility-board-view-menu,.facility-board-view-trigger,.facility-board-view-dropdown{width:100%}

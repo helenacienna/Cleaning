@@ -597,6 +597,13 @@ export default async function FacilityBoardPage({ params, searchParams }) {
   const totalZones = new Set(grouped.map((group) => group.zone)).size;
   const boardDays = board?.days ?? [];
   const queryBase = `?day=${assignment.boardDay}`;
+  const reportParams = new URLSearchParams({
+    facility: assignment.location,
+    staff: assignment.shift,
+    day: assignment.boardDay,
+    ids: assignment.tasks.map((task) => task.id).join(','),
+  });
+  const reportHref = `/reports/daily?${reportParams.toString()}`;
   const positionedStaff = groupedByStaff.filter((staffGroup) => Number.isFinite(staffGroup.shiftStartMinutes) && Number.isFinite(staffGroup.shiftEndMinutes) && staffGroup.shiftEndMinutes > staffGroup.shiftStartMinutes);
   const unpositionedStaff = groupedByStaff.filter((staffGroup) => !(Number.isFinite(staffGroup.shiftStartMinutes) && Number.isFinite(staffGroup.shiftEndMinutes) && staffGroup.shiftEndMinutes > staffGroup.shiftStartMinutes));
   const defaultEarliestMinute = 360;
@@ -634,7 +641,10 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             <h1>{assignment.location} facility tasks</h1>
             <p className="muted">{assignment.stats.staffCount || 0} assigned staff · {totalZones} zones · {facilityResultLabel}</p>
           </div>
-          <ViewOptionsMenu queryBase={queryBase} view={view} />
+          <div className="facility-board-header-actions">
+            <Link className="button secondary facility-board-report-button" href={reportHref}>Report</Link>
+            <ViewOptionsMenu queryBase={queryBase} view={view} />
+          </div>
         </div>
 
         <section className="facility-board-report-metrics" aria-label="Facility task summary">
