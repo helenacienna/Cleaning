@@ -224,8 +224,169 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
       <article className="task-card-editor" style={{ marginBottom: 16 }}>
         <div className="panel-title" style={{ marginBottom: 12 }}>
           <div>
-            <h4>Staff list</h4>
-            <p className="muted">Only the basics for now: name and phone.</p>
+            <h4>Weekly roster</h4>
+            <p className="muted">Days run across the top. Each day is one column, with staff cards stacked underneath.</p>
+          </div>
+          <span className="badge">1 column per day</span>
+        </div>
+
+        <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, minmax(250px, 1fr))',
+              gap: 12,
+              minWidth: 1850,
+              alignItems: 'start',
+            }}
+          >
+            {WEEKDAY_OPTIONS.map((day) => (
+              <section key={`day-column-${day.key}`} className="card" style={{ padding: 12, background: 'rgba(255,255,255,0.025)' }}>
+                <div
+                  style={{
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1,
+                    padding: '10px 8px',
+                    margin: '-12px -12px 12px',
+                    borderRadius: '14px 14px 0 0',
+                    background: 'var(--card, #111)',
+                    borderBottom: '1px solid rgba(255,255,255,0.12)',
+                  }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>{day.label}</div>
+                  <div className="muted" style={{ fontSize: 12 }}>{staff.length} staff</div>
+                </div>
+
+                <div style={{ display: 'grid', gap: 12 }}>
+                  {staff.map((member) => {
+                    const dayRoster = ensureDayEnabled(member.weeklyAvailability?.[day.key]);
+                    return (
+                      <article key={`${member.id}-${day.key}`} style={{ display: 'grid', gap: 10, padding: 10, borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.12)' }}>
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          <input
+                            type="text"
+                            value={member.fullName}
+                            onChange={(event) => updateStaff(member.id, 'fullName', event.target.value)}
+                            disabled={!liveDataAvailable || state.savingId === member.id}
+                            placeholder="Staff name"
+                            aria-label={`${member.staffCode} name`}
+                          />
+                          <input
+                            type="text"
+                            value={member.phone ?? ''}
+                            onChange={(event) => updateStaff(member.id, 'phone', event.target.value)}
+                            disabled={!liveDataAvailable || state.savingId === member.id}
+                            placeholder="Phone"
+                            aria-label={`${member.staffCode} phone`}
+                          />
+                          <div className="muted" style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                            <span>{member.staffCode}</span>
+                            <span>{member.active === false ? 'Inactive' : 'Active'}</span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gap: 6, padding: 8, borderRadius: 10, background: 'rgba(255,255,255,0.03)' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700 }}>Day shift</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                            <input
+                              type="time"
+                              value={dayRoster.start ?? ''}
+                              onChange={(event) => updateDay(member.id, day.key, 'start', event.target.value)}
+                              disabled={!liveDataAvailable || state.savingId === member.id}
+                              aria-label={`${member.fullName} ${day.label} start`}
+                            />
+                            <input
+                              type="time"
+                              value={dayRoster.finish ?? ''}
+                              onChange={(event) => updateDay(member.id, day.key, 'finish', event.target.value)}
+                              disabled={!liveDataAvailable || state.savingId === member.id}
+                              aria-label={`${member.fullName} ${day.label} finish`}
+                            />
+                          </div>
+                          <div className="muted">{formatRosterWindow(dayRoster.start, dayRoster.finish) || 'No day shift set'}</div>
+                        </div>
+
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700 }}>Facility runs</div>
+                          {(dayRoster.shifts ?? []).map((shift, shiftIndex) => (
+                            <div key={`${member.id}-${day.key}-${shiftIndex}`} style={{ display: 'grid', gap: 6, padding: 8, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)' }}>
+                              <select
+                                value={shift.facilityId ?? ''}
+                                onChange={(event) => updateSubShift(member.id, day.key, shiftIndex, 'facilityId', event.target.value)}
+                                disabled={!liveDataAvailable || state.savingId === member.id}
+                                aria-label={`${member.fullName} ${day.label} facility run location`}
+                              >
+                                <option value="">Select location</option>
+                                {facilityOptions.map((facility) => (
+                                  <option key={`${member.id}-${day.key}-${shiftIndex}-${facility.id}`} value={facility.id}>{facility.name}</option>
+                                ))}
+                              </select>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                                <input
+                                  type="time"
+                                  value={shift.start ?? ''}
+                                  onChange={(event) => updateSubShift(member.id, day.key, shiftIndex, 'start', event.target.value)}
+                                  disabled={!liveDataAvailable || state.savingId === member.id}
+                                  aria-label={`${member.fullName} ${day.label} facility start`}
+                                />
+                                <input
+                                  type="time"
+                                  value={shift.finish ?? ''}
+                                  onChange={(event) => updateSubShift(member.id, day.key, shiftIndex, 'finish', event.target.value)}
+                                  disabled={!liveDataAvailable || state.savingId === member.id}
+                                  aria-label={`${member.fullName} ${day.label} facility finish`}
+                                />
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+                                <div className="muted" style={{ display: 'grid', gap: 2 }}>
+                                  <div>• {facilityLabel(shift, facilitiesById)}</div>
+                                  <div>{formatRosterWindow(shift.start, shift.finish) || 'No time set'}</div>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="button secondary slim"
+                                  onClick={() => removeSubShift(member.id, day.key, shiftIndex)}
+                                  disabled={!liveDataAvailable || state.savingId === member.id}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="button secondary slim"
+                            onClick={() => addSubShift(member.id, day.key)}
+                            disabled={!liveDataAvailable || state.savingId === member.id}
+                          >
+                            Add facility run
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="button primary slim"
+                          onClick={() => saveStaff(member)}
+                          disabled={!liveDataAvailable || state.savingId === member.id || !String(member.fullName ?? '').trim()}
+                        >
+                          {state.savingId === member.id ? 'Saving…' : `Save ${member.fullName || 'staff'}`}
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+      </article>
+
+      <article className="task-card-editor" style={{ marginBottom: 16 }}>
+        <div className="panel-title" style={{ marginBottom: 12 }}>
+          <div>
+            <h4>Add new staff member</h4>
+            <p className="muted">New staff are added below the weekly roster so the working schedule stays first.</p>
           </div>
           <span className="badge">Simple details</span>
         </div>
@@ -265,151 +426,6 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
           </button>
         </div>
       </article>
-
-      <article className="task-card-editor" style={{ marginBottom: 16 }}>
-        <div className="panel-title" style={{ marginBottom: 12 }}>
-          <div>
-            <h4>Weekly spreadsheet</h4>
-            <p className="muted">Rows are staff. Each day cell has one overall day shift plus stacked facility runs underneath.</p>
-          </div>
-          <span className="badge">Easy-read weekly view</span>
-        </div>
-
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: 1900, borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr>
-                <th style={headerCellStyle}>Staff</th>
-                <th style={headerCellStyle}>Phone</th>
-                {WEEKDAY_OPTIONS.map((day) => (
-                  <th key={`head-${day.key}`} style={{ ...headerCellStyle, minWidth: 240 }}>{day.label}</th>
-                ))}
-                <th style={headerCellStyle}>Save</th>
-              </tr>
-            </thead>
-            <tbody>
-              {staff.map((member) => (
-                <tr key={member.id} style={{ verticalAlign: 'top', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                  <td style={bodyCellStyle}>
-                    <div style={{ display: 'grid', gap: 8, minWidth: 170 }}>
-                      <input
-                        type="text"
-                        value={member.fullName}
-                        onChange={(event) => updateStaff(member.id, 'fullName', event.target.value)}
-                        disabled={!liveDataAvailable || state.savingId === member.id}
-                        placeholder="Staff name"
-                      />
-                      <div className="muted">{member.staffCode}</div>
-                    </div>
-                  </td>
-                  <td style={bodyCellStyle}>
-                    <input
-                      type="text"
-                      value={member.phone ?? ''}
-                      onChange={(event) => updateStaff(member.id, 'phone', event.target.value)}
-                      disabled={!liveDataAvailable || state.savingId === member.id}
-                      placeholder="Phone"
-                      style={{ minWidth: 140 }}
-                    />
-                  </td>
-                  {WEEKDAY_OPTIONS.map((day) => {
-                    const dayRoster = ensureDayEnabled(member.weeklyAvailability?.[day.key]);
-                    return (
-                      <td key={`${member.id}-${day.key}`} style={{ ...bodyCellStyle, minWidth: 240 }}>
-                        <div style={{ display: 'grid', gap: 8 }}>
-                          <div style={{ display: 'grid', gap: 6, padding: 8, borderRadius: 10, background: 'rgba(255,255,255,0.03)' }}>
-                            <div style={{ fontSize: 12, fontWeight: 600 }}>Day shift</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                              <input
-                                type="time"
-                                value={dayRoster.start ?? ''}
-                                onChange={(event) => updateDay(member.id, day.key, 'start', event.target.value)}
-                                disabled={!liveDataAvailable || state.savingId === member.id}
-                              />
-                              <input
-                                type="time"
-                                value={dayRoster.finish ?? ''}
-                                onChange={(event) => updateDay(member.id, day.key, 'finish', event.target.value)}
-                                disabled={!liveDataAvailable || state.savingId === member.id}
-                              />
-                            </div>
-                            <div className="muted">{formatRosterWindow(dayRoster.start, dayRoster.finish) || 'No day shift set'}</div>
-                          </div>
-
-                          <div style={{ display: 'grid', gap: 6 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600 }}>Facility runs</div>
-                            {(dayRoster.shifts ?? []).map((shift, shiftIndex) => (
-                              <div key={`${member.id}-${day.key}-${shiftIndex}`} style={{ display: 'grid', gap: 6, padding: 8, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)' }}>
-                                <select
-                                  value={shift.facilityId ?? ''}
-                                  onChange={(event) => updateSubShift(member.id, day.key, shiftIndex, 'facilityId', event.target.value)}
-                                  disabled={!liveDataAvailable || state.savingId === member.id}
-                                >
-                                  <option value="">Select location</option>
-                                  {facilityOptions.map((facility) => (
-                                    <option key={`${member.id}-${day.key}-${shiftIndex}-${facility.id}`} value={facility.id}>{facility.name}</option>
-                                  ))}
-                                </select>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                                  <input
-                                    type="time"
-                                    value={shift.start ?? ''}
-                                    onChange={(event) => updateSubShift(member.id, day.key, shiftIndex, 'start', event.target.value)}
-                                    disabled={!liveDataAvailable || state.savingId === member.id}
-                                  />
-                                  <input
-                                    type="time"
-                                    value={shift.finish ?? ''}
-                                    onChange={(event) => updateSubShift(member.id, day.key, shiftIndex, 'finish', event.target.value)}
-                                    disabled={!liveDataAvailable || state.savingId === member.id}
-                                  />
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
-                                  <div className="muted" style={{ display: 'grid', gap: 2 }}>
-                                    <div>• {facilityLabel(shift, facilitiesById)}</div>
-                                    <div>{formatRosterWindow(shift.start, shift.finish) || 'No time set'}</div>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    className="button secondary slim"
-                                    onClick={() => removeSubShift(member.id, day.key, shiftIndex)}
-                                    disabled={!liveDataAvailable || state.savingId === member.id}
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              className="button secondary slim"
-                              onClick={() => addSubShift(member.id, day.key)}
-                              disabled={!liveDataAvailable || state.savingId === member.id}
-                            >
-                              Add facility run
-                            </button>
-                          </div>
-                        </div>
-                      </td>
-                    );
-                  })}
-                  <td style={bodyCellStyle}>
-                    <button
-                      type="button"
-                      className="button primary"
-                      onClick={() => saveStaff(member)}
-                      disabled={!liveDataAvailable || state.savingId === member.id || !String(member.fullName ?? '').trim()}
-                    >
-                      {state.savingId === member.id ? 'Saving…' : 'Save row'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </article>
-
       <div style={{ marginTop: 12 }}>
         {state.error && <div className="tone-red">{state.error}</div>}
         {state.success && <div className="tone-green">{state.success}</div>}
@@ -418,15 +434,3 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
   );
 }
 
-const headerCellStyle = {
-  position: 'sticky',
-  top: 0,
-  background: 'var(--card, #111)',
-  textAlign: 'left',
-  padding: '10px 8px',
-  borderBottom: '1px solid rgba(255,255,255,0.12)',
-};
-
-const bodyCellStyle = {
-  padding: 8,
-};
