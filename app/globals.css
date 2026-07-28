@@ -2876,8 +2876,8 @@ button.button {
 
 .facility-board-detail-hero {
   display: grid;
-  gap: 8px;
-  padding: 12px;
+  gap: 6px;
+  padding: 8px 10px;
 }
 
 .facility-board-detail-top {
@@ -2893,6 +2893,12 @@ button.button {
   gap: 2px;
 }
 
+.facility-board-detail-title-block-compact {
+  justify-items: center;
+  text-align: center;
+  align-self: center;
+}
+
 .facility-board-detail-actions {
   justify-content: flex-end;
   flex-wrap: wrap;
@@ -2905,14 +2911,29 @@ button.button {
   line-height: 1.05;
 }
 
+.facility-board-detail-title-block-compact h1 {
+  margin: 1px 0 0;
+  font-size: 21px;
+}
+
 .facility-board-detail-top .badge {
   padding: 5px 8px;
   font-size: 10px;
 }
 
+.facility-board-detail-title-block-compact .badge {
+  padding: 3px 7px;
+  font-size: 9px;
+}
+
 .facility-board-detail-top .muted {
   font-size: 12px;
   line-height: 1.2;
+}
+
+.facility-board-detail-title-block-compact .muted {
+  font-size: 11px;
+  line-height: 1.15;
 }
 
 .facility-board-detail-top .cta-row {
@@ -4320,20 +4341,20 @@ button.button {
 .facility-board-view-menu{position:relative}
 .facility-board-view-menu summary{list-style:none}
 .facility-board-view-menu summary::-webkit-details-marker{display:none}
-.facility-board-view-trigger{cursor:pointer;justify-content:center;align-items:center;gap:8px;min-width:168px;display:inline-flex}
+.facility-board-view-trigger{cursor:pointer;justify-content:center;align-items:center;gap:8px;min-width:148px;padding:8px 10px;display:inline-flex}
 .facility-board-view-menu[open] .facility-board-view-trigger span{transform:rotate(180deg)}
 .facility-board-view-dropdown{z-index:20;background:#fffffffa;border:1px solid #0f172a1a;border-radius:16px;gap:4px;min-width:240px;padding:8px;display:grid;position:absolute;top:calc(100% + 8px);right:0;box-shadow:0 18px 45px #0f172a24}
 .facility-board-view-link{border-radius:12px;padding:10px 12px;font-size:14px;display:block}
 .facility-board-view-link:hover{background:#59c3ff1a}
 .facility-board-view-link-active{background:linear-gradient(135deg,#59c3ff2e,#58f0c129);border:1px solid #59c3ff3d;font-weight:700}
 .facility-board-view-link-action{font-weight:700}
-.facility-board-header-control-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;width:100%}
-.facility-board-date-picker-menu{position:relative;min-width:220px}
+.facility-board-header-control-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%}
+.facility-board-date-picker-menu{position:relative;min-width:190px}
 .facility-board-date-picker-menu summary{list-style:none}
 .facility-board-date-picker-menu summary::-webkit-details-marker{display:none}
-.facility-board-date-picker-trigger{cursor:pointer;border:1px solid #0f172a14;background:#fff;border-radius:16px;box-shadow:0 10px 24px #0f172a0f;color:#0f172a;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;min-width:220px;padding:10px 12px;text-align:left}
-.facility-board-date-picker-trigger strong{font-size:14px;line-height:1.1}
-.facility-board-date-picker-kicker{color:#64748b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;grid-column:1/-1}
+.facility-board-date-picker-trigger{cursor:pointer;border:1px solid #0f172a14;background:#fff;border-radius:14px;box-shadow:0 8px 20px #0f172a0d;color:#0f172a;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 8px;align-items:center;min-width:190px;padding:7px 10px;text-align:left}
+.facility-board-date-picker-trigger strong{font-size:13px;line-height:1.05}
+.facility-board-date-picker-kicker{color:#64748b;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;grid-column:1/-1}
 .facility-board-date-picker-menu[open] .facility-board-date-picker-trigger>span[aria-hidden="true"]{transform:rotate(180deg)}
 .facility-board-date-picker-dropdown{z-index:20;background:#fffffffb;border:1px solid #0f172a1a;border-radius:18px;box-shadow:0 18px 45px #0f172a24;display:grid;gap:10px;left:0;min-width:300px;padding:12px;position:absolute;top:calc(100% + 8px)}
 .facility-board-date-picker-form{display:grid;gap:8px}

@@ -607,16 +607,13 @@ export default async function FacilityBoardPage({ params, searchParams }) {
   return (
     <main className="page facility-board-detail-shell">
       <section className="card facility-board-detail-hero">
-        <div className="facility-board-detail-top">
-          <div className="facility-board-detail-title-block">
+        <div className="facility-board-header-control-row">
+          <FacilityBoardDatePicker boardDay={assignment.boardDay} boardDays={boardDays} view={view} timeZone={timeZone} />
+          <div className="facility-board-detail-title-block facility-board-detail-title-block-compact">
             <span className="badge">{source === 'prisma' ? 'Facility board · live' : 'Facility board · demo task content'}</span>
             <h1>{assignment.location} facility tasks</h1>
             <p className="muted">{assignment.stats.staffCount || 0} assigned staff · {totalZones} zones · {facilityResultLabel}</p>
           </div>
-        </div>
-
-        <div className="facility-board-header-control-row">
-          <FacilityBoardDatePicker boardDay={assignment.boardDay} boardDays={boardDays} view={view} timeZone={timeZone} />
           <ViewOptionsMenu queryBase={queryBase} view={view} />
         </div>
 
