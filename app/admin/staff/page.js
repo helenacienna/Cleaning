@@ -34,7 +34,6 @@ export default async function StaffPage() {
           </div>
           <div className="badge-row">
             <Link className="button secondary" href="/">Back to dashboard</Link>
-            <Link className="button secondary" href="/">Open dashboard</Link>
           </div>
         </div>
 
@@ -76,8 +75,6 @@ export default async function StaffPage() {
         </div>
         <div className="badge-row">
           <Link className="button secondary" href="/">Back to dashboard</Link>
-          <Link className="button secondary" href="/">Open dashboard</Link>
-          <span className="badge">Weekly roster</span>
         </div>
       </div>
 

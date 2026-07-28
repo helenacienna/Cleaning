@@ -248,9 +248,7 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
       <div className="panel-title">
         <div>
           <h3>Weekly roster</h3>
-          <p className="muted">Keep staff details light, then build each weekday as one day shift with one or more facility runs inside it.</p>
         </div>
-        <span className="badge">{liveDataAvailable ? 'Live staff data' : 'Live data unavailable'}</span>
       </div>
 
       {!liveDataAvailable && (
@@ -264,9 +262,7 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
         <div className="panel-title" style={{ marginBottom: 12 }}>
           <div>
             <h4>Weekly schedule list</h4>
-            <p className="muted">Staff are listed once with their current scheduled times for the week. Use Edit only when changes are needed.</p>
           </div>
-          <span className="badge">Compact roster view</span>
         </div>
 
         <div style={{ display: 'grid', gap: 10 }}>
@@ -310,7 +306,7 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
 
                 {isEditing && (
                   <div style={editPanelStyle}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) minmax(140px, 220px)', gap: 8, marginBottom: 10 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginBottom: 10 }}>
                       <label className="field-label" style={{ margin: 0 }}>
                         <span>Name</span>
                         <input
@@ -528,7 +524,7 @@ const editPanelStyle = {
 
 const weekdayEditGridStyle = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
+  gridTemplateColumns: '1fr',
   gap: 8,
 };
 
