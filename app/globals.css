@@ -4678,10 +4678,85 @@ button.button {
   gap: 5px;
 }
 
+.daily-report-score-sections {
+  display: grid;
+  gap: 16px;
+}
+
+.daily-report-score-section {
+  display: grid;
+  gap: 9px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15,23,42,0.08);
+}
+
+.daily-report-score-section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.daily-report-score-section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.daily-report-score-section-heading h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.daily-report-score-section-heading p {
+  margin: 2px 0 0;
+}
+
+.daily-report-photo-task-list {
+  gap: 10px;
+}
+
+.daily-report-task-row-photo {
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+}
+
+.daily-report-compact-task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.daily-report-task-row-compact {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  padding: 7px 8px;
+  border-radius: 12px;
+}
+
+.daily-report-task-row-compact strong {
+  font-size: 13px;
+}
+
+.daily-report-task-row-compact .muted {
+  font-size: 11px;
+}
+
+.daily-report-task-row-compact .badge,
+.daily-report-task-row-compact .flag {
+  font-size: 10px;
+  padding: 4px 6px;
+}
+
 @media (max-width: 760px) {
   .daily-report-hero,
   .daily-report-task-row {
     grid-template-columns: 1fr;
+  }
+  .daily-report-compact-task-grid {
+    grid-template-columns: 1fr;
+  }
+  .daily-report-score-section-heading {
+    flex-direction: column;
   }
   .daily-report-score-card-with-pie {
     grid-template-columns: 1fr;

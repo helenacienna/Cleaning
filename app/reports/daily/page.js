@@ -164,6 +164,28 @@ function scoreLabel(grade, task) {
   return 'Not Graded';
 }
 
+function reportScoreKey(grade) {
+  return hasNumericGrade(grade) && Number(grade) >= 1 && Number(grade) <= 5 ? String(Number(grade)) : 'notScored';
+}
+
+function buildReportScoreSections(scored) {
+  const sectionConfig = [
+    { key: '5', title: 'Grade 5', description: 'Perfect / completed to standard.' },
+    { key: '4', title: 'Grade 4', description: 'Acceptable / completed.' },
+    { key: '3', title: 'Grade 3', description: 'Partial or cleaner to improve.' },
+    { key: '2', title: 'Grade 2', description: 'Needs correction today.' },
+    { key: '1', title: 'Grade 1', description: 'Needs correction urgently.' },
+    { key: 'notScored', title: 'Not graded', description: 'Tasks without a saved score.' },
+  ];
+
+  return sectionConfig.map((section) => {
+    const entries = scored.filter(({ grade }) => reportScoreKey(grade) === section.key);
+    const withPhotos = sortReportEntries(entries.filter(({ task }) => taskPhotoCount(task) > 0));
+    const withoutPhotos = sortReportEntries(entries.filter(({ task }) => taskPhotoCount(task) === 0));
+    return { ...section, entries, withPhotos, withoutPhotos };
+  }).filter((section) => section.entries.length > 0);
+}
+
 function dayDate(day) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day || '')) return null;
   return new Date(`${day}T00:00:00.000Z`);
@@ -365,6 +387,7 @@ export default async function DailyReportPage({ searchParams }) {
   };
   const resolvedIssues = sortReportEntries(scored.filter(({ resolvedIssue }) => resolvedIssue));
   const followUps = sortReportEntries(scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2));
+  const scoreSections = buildReportScoreSections(scored);
 
   return (
     <main className="page daily-report-page">
@@ -489,25 +512,57 @@ export default async function DailyReportPage({ searchParams }) {
             <section className="card daily-report-card">
               <div className="panel-title">
                 <div>
-                  <h2>Full checklist</h2>
-                  <p className="muted">All daily tasks from this active checklist.</p>
+                  <h2>Checklist by score</h2>
+                  <p className="muted">Tasks are grouped by score. Items with photos are shown first and stay full-width.</p>
                 </div>
               </div>
-              <div className="daily-report-task-list">
-                {sortedScored.map(({ task, grade }) => (
-                  <article className="daily-report-task-row" key={task.id}>
-                    <div className="daily-report-task-main">
+              <div className="daily-report-score-sections">
+                {scoreSections.map((section) => (
+                  <section className="daily-report-score-section" key={section.key}>
+                    <div className="daily-report-score-section-heading">
                       <div>
-                        <strong>{task.titleSnapshot}</strong>
-                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                        <h3>{section.title}</h3>
+                        <p className="muted">{section.description}</p>
                       </div>
+                      <span className="badge">{section.entries.length} task{section.entries.length === 1 ? '' : 's'}</span>
                     </div>
-                    <div className="daily-report-task-meta">
-                      <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
-                      {hasMeaningfulNote(task) ? <span className="flag">Note</span> : null}
-                    </div>
-                    <PhotoEvidence task={task} />
-                  </article>
+                    {section.withPhotos.length ? (
+                      <div className="daily-report-task-list daily-report-photo-task-list">
+                        {section.withPhotos.map(({ task, grade }) => (
+                          <article className="daily-report-task-row daily-report-task-row-photo" key={task.id}>
+                            <div className="daily-report-task-main">
+                              <div>
+                                <strong>{task.titleSnapshot}</strong>
+                                <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                              </div>
+                            </div>
+                            <div className="daily-report-task-meta">
+                              <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
+                              {hasMeaningfulNote(task) ? <span className="flag">Note</span> : null}
+                              <span className="flag">{photoCountLabel(taskPhotoCount(task))}</span>
+                            </div>
+                            <PhotoEvidence task={task} />
+                          </article>
+                        ))}
+                      </div>
+                    ) : null}
+                    {section.withoutPhotos.length ? (
+                      <div className="daily-report-compact-task-grid">
+                        {section.withoutPhotos.map(({ task, grade }) => (
+                          <article className="daily-report-task-row daily-report-task-row-compact" key={task.id}>
+                            <div className="daily-report-task-main">
+                              <strong>{task.titleSnapshot}</strong>
+                              <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                            </div>
+                            <div className="daily-report-task-meta">
+                              <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
+                              {hasMeaningfulNote(task) ? <span className="flag">Note</span> : null}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    ) : null}
+                  </section>
                 ))}
               </div>
             </section>
