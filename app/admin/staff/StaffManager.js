@@ -8,6 +8,16 @@ const EMPTY_NEW_STAFF = {
   phone: '',
 };
 
+const FULL_WEEKDAY_LABELS = {
+  mon: 'Monday',
+  tue: 'Tuesday',
+  wed: 'Wednesday',
+  thu: 'Thursday',
+  fri: 'Friday',
+  sat: 'Saturday',
+  sun: 'Sunday',
+};
+
 function buildEmptyWeek() {
   return normalizeWeeklyRoster({});
 }
@@ -238,8 +248,8 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
                 {WEEKDAY_OPTIONS.map((day) => (
                   <th key={`head-${day.key}`} style={{ ...headerCellStyle, minWidth: 240 }}>
                     <div style={{ display: 'grid', gap: 2 }}>
-                      <strong style={{ fontSize: 14 }}>{day.label}</strong>
-                      <span className="muted" style={{ fontSize: 11 }}>Day column</span>
+                      <strong style={{ fontSize: 14, color: '#fff' }}>{FULL_WEEKDAY_LABELS[day.key] ?? day.label}</strong>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)' }}>{day.label} roster column</span>
                     </div>
                   </th>
                 ))}
@@ -417,10 +427,11 @@ export default function StaffManager({ initialStaff = [], facilityOptions = [], 
 const headerCellStyle = {
   position: 'sticky',
   top: 0,
-  background: 'var(--card, #111)',
+  background: '#111827',
+  color: '#fff',
   textAlign: 'left',
   padding: '10px 8px',
-  borderBottom: '1px solid rgba(255,255,255,0.12)',
+  borderBottom: '1px solid rgba(255,255,255,0.22)',
 };
 
 const bodyCellStyle = {
