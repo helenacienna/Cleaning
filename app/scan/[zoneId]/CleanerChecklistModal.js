@@ -21,6 +21,8 @@ const ADD_TASK_EMPTY_STATE = {
   pendingTask: null,
   customTitle: '',
   customNotes: '',
+  cleanerNote: '',
+  selectedStaff: null,
 };
 
 function readStoredChecklistState(label) {
@@ -122,6 +124,8 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
       ...current,
       mode: 'allocate',
       pendingTask: taskPayload,
+      selectedStaff: null,
+      cleanerNote: taskPayload?.notes ?? '',
       error: '',
       success: '',
     }));
@@ -140,6 +144,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
           staffName: staffMember?.fullName ?? staffName,
           staffId: staffMember?.id ?? undefined,
           ...payload,
+          notes: String(addTaskState.cleanerNote ?? '').trim() || String(payload?.notes ?? '').trim(),
         }),
       });
       const result = await response.json().catch(() => null);
@@ -347,7 +352,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                       <button
                         className={addTaskState.mode === 'custom' ? 'button secondary slim' : 'button primary slim'}
                         type="button"
-                        onClick={() => setAddTaskState((current) => ({ ...current, mode: current.mode === 'custom' ? 'cards' : 'custom', pendingTask: null, error: '', success: '' }))}
+                        onClick={() => setAddTaskState((current) => ({ ...current, mode: current.mode === 'custom' ? 'cards' : 'custom', pendingTask: null, selectedStaff: null, cleanerNote: '', error: '', success: '' }))}
                         disabled={addTaskState.saving}
                       >
                         {addTaskState.mode === 'custom' ? 'Task cards' : 'Add ad hoc'}
@@ -362,7 +367,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                         <button
                           className="button secondary slim"
                           type="button"
-                          onClick={() => setAddTaskState((current) => ({ ...current, mode: current.pendingTask?.customTask ? 'custom' : 'cards', pendingTask: null, error: '', success: '' }))}
+                          onClick={() => setAddTaskState((current) => ({ ...current, mode: current.pendingTask?.customTask ? 'custom' : 'cards', pendingTask: null, selectedStaff: null, cleanerNote: '', error: '', success: '' }))}
                           disabled={addTaskState.saving}
                           style={{ justifySelf: 'start' }}
                         >
@@ -380,9 +385,9 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                             <button
                               key={member.id}
                               type="button"
-                              className="button secondary"
+                              className={addTaskState.selectedStaff?.id === member.id ? 'button primary' : 'button secondary'}
                               style={staffChoiceStyle}
-                              onClick={() => addTaskForToday(addTaskState.pendingTask, member)}
+                              onClick={() => setAddTaskState((current) => ({ ...current, selectedStaff: member }))}
                               disabled={addTaskState.saving || !addTaskState.pendingTask}
                             >
                               <strong>{member.fullName}</strong>
@@ -391,6 +396,24 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                           )) : null}
                           {!addTaskState.loading && !addTaskState.staff.length ? <div className="muted">No active cleaner staff found.</div> : null}
                         </div>
+                        <label className="field-label" style={{ marginTop: 10 }}>
+                          <span>Cleaner note for this job</span>
+                          <textarea
+                            value={addTaskState.cleanerNote}
+                            onChange={(event) => setAddTaskState((current) => ({ ...current, cleanerNote: event.target.value }))}
+                            placeholder="Optional: key instructions, equipment, or access notes"
+                            rows={3}
+                            disabled={addTaskState.saving}
+                          />
+                        </label>
+                        <button
+                          className="button primary"
+                          type="button"
+                          onClick={() => addTaskForToday(addTaskState.pendingTask, addTaskState.selectedStaff)}
+                          disabled={addTaskState.saving || !addTaskState.pendingTask || !addTaskState.selectedStaff}
+                        >
+                          {addTaskState.selectedStaff ? `Add to ${addTaskState.selectedStaff.fullName}` : 'Choose staff first'}
+                        </button>
                       </div>
                     ) : addTaskState.mode === 'custom' ? (
                       <div style={adHocDetailsStyle}>
@@ -426,7 +449,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                             type="search"
                             value={addTaskState.search}
                             onChange={(event) => setAddTaskState((current) => ({ ...current, search: event.target.value, expandedZone: '' }))}
-                            placeholder="Search task, zone, group or number…"
+                            placeholder="Search task…"
                             disabled={addTaskState.loading || addTaskState.saving}
                           />
                         </label>
@@ -467,12 +490,11 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                                   zone: card.zone,
                                   taskGroup: card.taskGroup,
                                   label: card.title,
-                                  meta: `${card.taskGroup || 'No group'} · ${card.frequency || 'manual'} · ${card.templateId}`,
+                                  meta: card.frequency ? `${card.frequency}` : '',
                                 })}
                                 disabled={addTaskState.saving}
                               >
                                 <strong>{card.title}</strong>
-                                <span>{card.taskGroup || 'No group'} · {card.frequency || 'manual'} · {card.templateId}</span>
                               </button>
                             )) : null}
                             {!addTaskState.loading && selectedZone && !selectedZoneTasks.length ? <div className="muted">No task cards in this zone.</div> : null}

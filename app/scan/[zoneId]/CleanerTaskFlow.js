@@ -68,6 +68,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const [gradeReferenceHiddenByScroll, setGradeReferenceHiddenByScroll] = useState(false);
+  const [dismissedAllocatedNoticeKey, setDismissedAllocatedNoticeKey] = useState('');
   const cardRefs = useRef([]);
   const gradePanelRefs = useRef([]);
   const issuePanelRefs = useRef({});
@@ -610,6 +611,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const currentPhotoCount = currentLocalState.photoCount ?? 0;
   const currentPhotoLength = currentLocalState.photos?.length ?? 0;
   const currentSelectedGrade = currentTask ? (currentLocalState.grade ?? currentTask.score) : null;
+  const allocatedNoticeTasks = tasks.filter((task) => task.addedToday);
+  const allocatedNoticeKey = allocatedNoticeTasks.map((task) => task.id).join('|');
+  const showAllocatedTaskNotice = Boolean(allocatedNoticeKey && dismissedAllocatedNoticeKey !== allocatedNoticeKey);
   const showGradeReference = Boolean(
     currentTask
       && !gradeReferenceHiddenByScroll
@@ -665,6 +669,26 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
 
   return (
     <div className="compact-flow">
+      {showAllocatedTaskNotice ? (
+        <div className="modal-backdrop" role="presentation" style={{ zIndex: 45 }}>
+          <section className="card" role="dialog" aria-modal="true" aria-label="Allocated task notice" style={{ width: 'min(92vw, 480px)', margin: '12vh auto', display: 'grid', gap: 12 }}>
+            <div>
+              <span className="badge">Allocated task notice</span>
+              <h3 style={{ margin: '6px 0 0' }}>You have specific allocated task{allocatedNoticeTasks.length === 1 ? '' : 's'} today</h3>
+              <p className="muted" style={{ margin: '6px 0 0' }}>Please check these first — they may need special equipment or instructions.</p>
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {allocatedNoticeTasks.map((task) => (
+                <div className="card" key={task.id} style={{ padding: 10 }}>
+                  <strong>{task.title}</strong>
+                  {task.instructionNote ? <p style={{ margin: '6px 0 0' }}>{task.instructionNote}</p> : null}
+                </div>
+              ))}
+            </div>
+            <button className="button primary" type="button" onClick={() => setDismissedAllocatedNoticeKey(allocatedNoticeKey)}>Open my list</button>
+          </section>
+        </div>
+      ) : null}
       <div className="flow-position" aria-label="Checklist controls">
         <span className="badge flow-current-job-chip">Current job {Math.min(currentIndex + 1, tasks.length)} of {tasks.length}</span>
         <button
@@ -746,6 +770,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 <div className="compact-task-copy">
                   {task.zone ? <div className="compact-task-zone">{task.zone}</div> : null}
                   <div className="compact-task-title">{task.title}</div>
+                  {task.instructionNote ? <div className="muted" style={{ marginTop: 6 }}>{task.instructionNote}</div> : null}
                 </div>
               </div>
 

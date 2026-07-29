@@ -54,6 +54,7 @@ export async function POST(request) {
   const staffId = String(body?.staffId ?? '').trim();
   const staffName = String(body?.staffName ?? '').trim();
   const customTask = Boolean(body?.customTask);
+  const cleanerNote = String(body?.notes ?? '').trim();
   const boardDay = String(body?.day ?? '').trim();
   const parsedDay = parseExtraTaskBoardDay(boardDay);
 
@@ -164,7 +165,7 @@ export async function POST(request) {
       plannedZoneId: taskZone.id,
       plannedTaskGroupId: taskGroupRecord.id,
       titleSnapshot: taskTemplate?.title ?? title,
-      descriptionSnapshot: taskTemplate?.description ?? (String(body?.notes ?? '').trim() || null),
+      descriptionSnapshot: cleanerNote || taskTemplate?.description || null,
       sourceType: 'ad_hoc',
       dueAt: parsedDay.dueAt,
       planningDueAt: calculatePlanningDueAt(parsedDay.dueAt),
@@ -179,7 +180,7 @@ export async function POST(request) {
       estimatedMinutes: taskTemplate?.estimatedMinutes ?? null,
       manuallyCreated: true,
       isExceptionTask: customTask,
-      exceptionReason: customTask ? 'Custom ad hoc task added from active checklist' : 'Added from facility extra tasks',
+      exceptionReason: cleanerNote || (customTask ? 'Custom ad hoc task added from active checklist' : 'Added from facility extra tasks'),
     },
     select: {
       id: true,
