@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-29T11:52:29.292Z",
-  "version": "85d6d8f+local",
-  "summary": "Temporarily add allocation test cleanup route"
+  "deployedAt": "2026-07-29T11:54:39.324Z",
+  "version": "6083158+local",
+  "summary": "Delete allocation test task and hide cancelled work"
 }
