@@ -17,6 +17,8 @@ const ADD_TASK_EMPTY_STATE = {
   expandedZone: '',
   mode: 'cards',
   cards: [],
+  staff: [],
+  pendingTask: null,
   customTitle: '',
   customNotes: '',
 };
@@ -85,20 +87,28 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
   }
 
   async function openAddTaskPopup() {
-    setAddTaskState((current) => ({ ...ADD_TASK_EMPTY_STATE, open: true, loading: true, cards: current.cards ?? [] }));
+    setAddTaskState((current) => ({ ...ADD_TASK_EMPTY_STATE, open: true, loading: true, cards: current.cards ?? [], staff: current.staff ?? [] }));
     try {
-      const response = await fetch('/api/task-library', { cache: 'no-store' });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok || !Array.isArray(payload?.cards)) {
-        throw new Error(payload?.error || 'Unable to load task cards');
+      const [taskResponse, staffResponse] = await Promise.all([
+        fetch('/api/task-library', { cache: 'no-store' }),
+        fetch('/api/staff', { cache: 'no-store' }),
+      ]);
+      const taskPayload = await taskResponse.json().catch(() => null);
+      const staffPayload = await staffResponse.json().catch(() => null);
+      if (!taskResponse.ok || !Array.isArray(taskPayload?.cards)) {
+        throw new Error(taskPayload?.error || 'Unable to load task cards');
+      }
+      if (!staffResponse.ok || !Array.isArray(staffPayload?.staff)) {
+        throw new Error(staffPayload?.error || 'Unable to load staff');
       }
       setAddTaskState((current) => ({
         ...current,
         loading: false,
-        cards: payload.cards.filter((card) => card.active !== false && (!card.facility || card.facility === label)),
+        cards: taskPayload.cards.filter((card) => card.active !== false && (!card.facility || card.facility === label)),
+        staff: staffPayload.staff.filter((member) => member.active !== false && member.role === 'cleaner'),
       }));
     } catch (error) {
-      setAddTaskState((current) => ({ ...current, loading: false, error: error.message || 'Could not load task cards.' }));
+      setAddTaskState((current) => ({ ...current, loading: false, error: error.message || 'Could not load task cards and staff.' }));
     }
   }
 
@@ -107,7 +117,17 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
     setAddTaskState(ADD_TASK_EMPTY_STATE);
   }
 
-  async function addTaskForToday(payload) {
+  function selectTaskForAllocation(taskPayload) {
+    setAddTaskState((current) => ({
+      ...current,
+      mode: 'allocate',
+      pendingTask: taskPayload,
+      error: '',
+      success: '',
+    }));
+  }
+
+  async function addTaskForToday(payload, staffMember = null) {
     if (!boardDay || addTaskState.saving) return;
     setAddTaskState((current) => ({ ...current, saving: true, error: '', success: '' }));
     try {
@@ -117,7 +137,8 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
         body: JSON.stringify({
           facility: label,
           day: boardDay,
-          staffName,
+          staffName: staffMember?.fullName ?? staffName,
+          staffId: staffMember?.id ?? undefined,
           ...payload,
         }),
       });
@@ -128,7 +149,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
       setAddTaskState((current) => ({
         ...current,
         saving: false,
-        success: result.alreadyScheduled ? 'That task is already on today’s list.' : 'Added to today’s active list.',
+        success: result.alreadyScheduled ? 'That task is already on today’s list.' : `Added to ${(staffMember?.fullName ?? staffName) || 'today’s active list'}.`,
       }));
       setAssignedRemainingTasks([]);
       refreshProgress();
@@ -141,16 +162,18 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
     }
   }
 
-  async function addCustomTask() {
+  function prepareCustomTaskAllocation() {
     const title = String(addTaskState.customTitle ?? '').trim();
     if (!title) {
       setAddTaskState((current) => ({ ...current, error: 'Add a task name first.' }));
       return;
     }
-    await addTaskForToday({
+    selectTaskForAllocation({
       customTask: true,
       title,
       notes: String(addTaskState.customNotes ?? '').trim(),
+      label: title,
+      meta: 'Ad hoc task',
     });
   }
 
@@ -324,7 +347,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                       <button
                         className={addTaskState.mode === 'custom' ? 'button secondary slim' : 'button primary slim'}
                         type="button"
-                        onClick={() => setAddTaskState((current) => ({ ...current, mode: current.mode === 'custom' ? 'cards' : 'custom', error: '', success: '' }))}
+                        onClick={() => setAddTaskState((current) => ({ ...current, mode: current.mode === 'custom' ? 'cards' : 'custom', pendingTask: null, error: '', success: '' }))}
                         disabled={addTaskState.saving}
                       >
                         {addTaskState.mode === 'custom' ? 'Task cards' : 'Add ad hoc'}
@@ -334,7 +357,42 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                   </header>
 
                   <section className="card" style={addTaskPanelStyle}>
-                    {addTaskState.mode === 'custom' ? (
+                    {addTaskState.mode === 'allocate' ? (
+                      <div style={allocationPanelStyle}>
+                        <button
+                          className="button secondary slim"
+                          type="button"
+                          onClick={() => setAddTaskState((current) => ({ ...current, mode: current.pendingTask?.customTask ? 'custom' : 'cards', pendingTask: null, error: '', success: '' }))}
+                          disabled={addTaskState.saving}
+                          style={{ justifySelf: 'start' }}
+                        >
+                          Back
+                        </button>
+                        <div className="card" style={selectedTaskSummaryStyle}>
+                          <span className="muted">Selected task</span>
+                          <strong>{addTaskState.pendingTask?.label ?? addTaskState.pendingTask?.title ?? 'Task'}</strong>
+                          {addTaskState.pendingTask?.meta ? <span>{addTaskState.pendingTask.meta}</span> : null}
+                        </div>
+                        <strong>Allocate to staff</strong>
+                        <div style={staffListStyle} aria-label="Allocate task to staff">
+                          {addTaskState.loading ? <div className="muted">Loading staff…</div> : null}
+                          {!addTaskState.loading && addTaskState.staff.length ? addTaskState.staff.map((member) => (
+                            <button
+                              key={member.id}
+                              type="button"
+                              className="button secondary"
+                              style={staffChoiceStyle}
+                              onClick={() => addTaskForToday(addTaskState.pendingTask, member)}
+                              disabled={addTaskState.saving || !addTaskState.pendingTask}
+                            >
+                              <strong>{member.fullName}</strong>
+                              <span>{member.preferredShiftLabel || member.preferredTimeWindow || member.staffCode}</span>
+                            </button>
+                          )) : null}
+                          {!addTaskState.loading && !addTaskState.staff.length ? <div className="muted">No active cleaner staff found.</div> : null}
+                        </div>
+                      </div>
+                    ) : addTaskState.mode === 'custom' ? (
                       <div style={adHocDetailsStyle}>
                         <strong>Ad hoc details</strong>
                         <label className="field-label" style={{ marginTop: 10 }}>
@@ -356,8 +414,8 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                             disabled={addTaskState.saving}
                           />
                         </label>
-                        <button className="button primary" type="button" onClick={addCustomTask} disabled={addTaskState.saving || !String(addTaskState.customTitle ?? '').trim()}>
-                          {addTaskState.saving ? 'Adding…' : 'Add ad hoc task'}
+                        <button className="button primary" type="button" onClick={prepareCustomTaskAllocation} disabled={addTaskState.saving || !String(addTaskState.customTitle ?? '').trim()}>
+                          Choose staff
                         </button>
                       </div>
                     ) : (
@@ -403,7 +461,14 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                                 type="button"
                                 className="button secondary"
                                 style={taskCardChoiceStyle}
-                                onClick={() => addTaskForToday({ templateId: card.templateId, title: card.title, zone: card.zone, taskGroup: card.taskGroup })}
+                                onClick={() => selectTaskForAllocation({
+                                  templateId: card.templateId,
+                                  title: card.title,
+                                  zone: card.zone,
+                                  taskGroup: card.taskGroup,
+                                  label: card.title,
+                                  meta: `${card.taskGroup || 'No group'} · ${card.frequency || 'manual'} · ${card.templateId}`,
+                                })}
                                 disabled={addTaskState.saving}
                               >
                                 <strong>{card.title}</strong>
@@ -549,6 +614,37 @@ const taskCardListStyle = {
 };
 
 const taskCardChoiceStyle = {
+  display: 'grid',
+  justifyItems: 'start',
+  textAlign: 'left',
+  gap: 3,
+  whiteSpace: 'normal',
+};
+
+const allocationPanelStyle = {
+  display: 'grid',
+  gridTemplateRows: 'auto auto auto minmax(0, 1fr)',
+  gap: 10,
+  minHeight: 0,
+  height: '100%',
+};
+
+const selectedTaskSummaryStyle = {
+  display: 'grid',
+  gap: 4,
+};
+
+const staffListStyle = {
+  display: 'grid',
+  gap: 8,
+  minHeight: 0,
+  overflow: 'auto',
+  paddingRight: 4,
+  paddingBottom: 'calc(10mm + env(safe-area-inset-bottom, 0px))',
+  scrollPaddingBottom: 'calc(10mm + env(safe-area-inset-bottom, 0px))',
+};
+
+const staffChoiceStyle = {
   display: 'grid',
   justifyItems: 'start',
   textAlign: 'left',

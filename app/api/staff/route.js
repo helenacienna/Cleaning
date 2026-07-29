@@ -52,6 +52,23 @@ function mapStaff(staff) {
   };
 }
 
+export async function GET() {
+  const prisma = await getPrisma();
+  if (!prisma) {
+    return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+  }
+
+  const staff = await prisma.staff.findMany({
+    where: { active: true },
+    orderBy: [
+      { role: 'asc' },
+      { fullName: 'asc' },
+    ],
+  });
+
+  return NextResponse.json({ ok: true, staff: staff.map(mapStaff) });
+}
+
 export async function POST(request) {
   const prisma = await getPrisma();
   if (!prisma) {

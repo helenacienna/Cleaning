@@ -51,6 +51,7 @@ export async function POST(request) {
   const title = String(body?.title ?? '').trim();
   const zone = String(body?.zone ?? '').trim();
   const taskGroup = String(body?.taskGroup ?? '').trim();
+  const staffId = String(body?.staffId ?? '').trim();
   const staffName = String(body?.staffName ?? '').trim();
   const customTask = Boolean(body?.customTask);
   const boardDay = String(body?.day ?? '').trim();
@@ -130,8 +131,11 @@ export async function POST(request) {
     },
   });
 
-  const requestedStaff = staffName ? await prisma.staff.findFirst({
-    where: { active: true, fullName: staffName },
+  const requestedStaff = staffId || staffName ? await prisma.staff.findFirst({
+    where: {
+      active: true,
+      ...(staffId ? { id: staffId } : { fullName: staffName }),
+    },
     select: { id: true },
   }) : null;
   const assignedStaffId = requestedStaff?.id ?? getTopAssignedStaffId(sameDayFacilityTasks);
