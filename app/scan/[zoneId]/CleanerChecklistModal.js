@@ -480,8 +480,8 @@ const addTaskBackdropStyle = {
 
 const addTaskCardStyle = {
   width: '100vw',
-  height: '100vh',
-  maxHeight: '100vh',
+  height: '100dvh',
+  maxHeight: '100dvh',
   overflow: 'hidden',
   borderRadius: 0,
   boxShadow: 'none',
@@ -501,16 +501,21 @@ const addTaskHeaderStyle = {
 
 const addTaskPanelStyle = {
   display: 'grid',
-  alignContent: 'start',
+  gridTemplateRows: 'auto minmax(0, 1fr)',
+  alignContent: 'stretch',
   gap: 10,
   minHeight: 0,
+  height: '100%',
   overflow: 'hidden',
 };
 
 const zonePickerStackStyle = {
   display: 'grid',
+  gridTemplateRows: 'auto minmax(0, 1fr)',
   gap: 10,
-  alignItems: 'start',
+  alignItems: 'stretch',
+  minHeight: 0,
+  height: '100%',
 };
 
 const zoneListStyle = {
@@ -536,10 +541,11 @@ const zoneChoiceStyle = {
 const taskCardListStyle = {
   display: 'grid',
   gap: 8,
-  maxHeight: 'calc(100vh - 260px)',
+  minHeight: 0,
   overflow: 'auto',
   paddingRight: 4,
-  paddingBottom: '10mm',
+  paddingBottom: 'calc(10mm + env(safe-area-inset-bottom, 0px))',
+  scrollPaddingBottom: 'calc(10mm + env(safe-area-inset-bottom, 0px))',
 };
 
 const taskCardChoiceStyle = {
