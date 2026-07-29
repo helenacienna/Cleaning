@@ -338,14 +338,14 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                           disabled={addTaskState.loading || addTaskState.saving}
                         />
                       </label>
-                      <div style={zonePickerGridStyle}>
+                      <div style={zonePickerStackStyle}>
                         <div style={zoneListStyle} aria-label="Task zones">
                           {addTaskState.loading ? <div className="muted">Loading zones…</div> : null}
                           {!addTaskState.loading && zoneTaskGroups.length ? zoneTaskGroups.map(([zoneName, zoneCards]) => (
                             <button
                               key={zoneName}
                               type="button"
-                              className={`button secondary ${selectedZone === zoneName ? 'primary' : ''}`}
+                              className={selectedZone === zoneName ? 'button primary' : 'button secondary'}
                               style={zoneChoiceStyle}
                               onClick={() => setAddTaskState((current) => ({ ...current, expandedZone: zoneName }))}
                               disabled={addTaskState.saving}
@@ -488,19 +488,19 @@ const addTaskPanelStyle = {
   gap: 8,
 };
 
-const zonePickerGridStyle = {
+const zonePickerStackStyle = {
   display: 'grid',
-  gridTemplateColumns: 'minmax(130px, 0.8fr) minmax(180px, 1.2fr)',
   gap: 10,
   alignItems: 'start',
 };
 
 const zoneListStyle = {
-  display: 'grid',
+  display: 'flex',
   gap: 8,
-  maxHeight: 420,
-  overflow: 'auto',
-  paddingRight: 4,
+  overflowX: 'auto',
+  overflowY: 'hidden',
+  paddingBottom: 8,
+  WebkitOverflowScrolling: 'touch',
 };
 
 const zoneChoiceStyle = {
@@ -509,12 +509,15 @@ const zoneChoiceStyle = {
   textAlign: 'left',
   gap: 2,
   whiteSpace: 'normal',
+  minWidth: 150,
+  maxWidth: 190,
+  flex: '0 0 auto',
 };
 
 const taskCardListStyle = {
   display: 'grid',
   gap: 8,
-  maxHeight: 420,
+  maxHeight: 330,
   overflow: 'auto',
   paddingRight: 4,
 };
