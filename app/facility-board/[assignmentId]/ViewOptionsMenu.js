@@ -14,12 +14,20 @@ export default function ViewOptionsMenu({ queryBase, view }) {
     <details className="facility-board-view-menu" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
       <summary className="button secondary facility-board-view-trigger">View options<span aria-hidden="true">⌄</span></summary>
       <div className="facility-board-view-dropdown">
-        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/">Back to dashboard</Link>
-        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/">Organise from dashboard</Link>
-        <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'tasks' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=tasks`}>Task view</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/">Dashboard</Link>
+        <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'tasks' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=tasks`}>Facility task view</Link>
         <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'order' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=order`}>Task Card Organiser</Link>
-        <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'staff' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=staff`}>Staff view</Link>
-        <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'time' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=time`}>Time view</Link>
+        <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'staff' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=staff`}>Facility staff view</Link>
+        <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'time' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=time`}>Facility time view</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/admin/task-cards">Task Admin</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/admin/staff">Staff roster</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/admin/facilities">Facilities</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/admin/manager">Manager view</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/admin/inbox">Operations inbox</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/admin/settings">Settings</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/cleaner">Staff landing</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/qr-zones">QR zones</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/reports/daily">Daily reports</Link>
       </div>
     </details>
   );
