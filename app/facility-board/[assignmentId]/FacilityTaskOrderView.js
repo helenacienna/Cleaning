@@ -371,8 +371,8 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
     <section className="facility-task-order-shell">
       <div className="card facility-task-order-intro">
         <div>
-          <h2>Task order</h2>
-          <p className="muted">Tick the tasks included in this route, then drag them into the order they should be checked. This lets you build focused routes such as a supervisor walkthrough.</p>
+          <h2>Task Card Organiser</h2>
+          <p className="muted">Tick the task cards included in this route, then drag them into the order they should be checked. This lets you build focused routes such as a supervisor walkthrough.</p>
         </div>
         <div className="facility-task-order-controls">
           <label className="field-label compact-select-label">
@@ -397,7 +397,7 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
 
       <div className="card facility-task-order-search-card">
         <label className="facility-task-order-search-label" htmlFor="facility-task-order-search">
-          <span>Search task order</span>
+          <span>Search task cards</span>
           <input
             id="facility-task-order-search"
             type="search"

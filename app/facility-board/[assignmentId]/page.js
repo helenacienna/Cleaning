@@ -638,7 +638,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
           <FacilityBoardDatePicker boardDay={assignment.boardDay} boardDays={boardDays} view={view} timeZone={timeZone} />
           <div className="facility-board-detail-title-block facility-board-detail-title-block-compact">
             <span className="badge">{source === 'prisma' ? 'Facility board · live' : 'Facility board · demo task content'}</span>
-            <h1>{assignment.location} facility tasks</h1>
+            <h1>{view === 'order' ? `${assignment.location} Task Card Organiser` : `${assignment.location} facility tasks`}</h1>
             <p className="muted">{assignment.stats.staffCount || 0} assigned staff · {totalZones} zones · {facilityResultLabel}</p>
           </div>
           <div className="facility-board-header-actions">

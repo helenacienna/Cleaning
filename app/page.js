@@ -2108,7 +2108,6 @@ export default function HomePage() {
                 <Link className="dashboard-settings-link" href="/cleaner">Open staff landing</Link>
                 <Link className="dashboard-settings-link" href="/admin/manager">Open manager view</Link>
                 <Link className="dashboard-settings-link" href="/admin/inbox">Open operations inbox</Link>
-                <Link className="dashboard-settings-link" href="/admin/task-organisation">Task Organisation</Link>
                 <Link className="dashboard-settings-link" href="/admin/task-cards">Task Admin</Link>
                 <Link className="dashboard-settings-link" href="/admin/facilities">Facilities</Link>
                 <Link className="dashboard-settings-link" href="/admin/staff">Staff</Link>
