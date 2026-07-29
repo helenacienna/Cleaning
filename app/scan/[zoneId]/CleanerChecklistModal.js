@@ -539,6 +539,7 @@ const taskCardListStyle = {
   maxHeight: 'calc(100vh - 260px)',
   overflow: 'auto',
   paddingRight: 4,
+  paddingBottom: '10mm',
 };
 
 const taskCardChoiceStyle = {
