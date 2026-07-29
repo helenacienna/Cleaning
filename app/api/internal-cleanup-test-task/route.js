@@ -36,12 +36,8 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Cleanup target did not match expected test task' }, { status: 400 });
   }
 
-  const updated = await prisma.taskInstance.update({
+  const deleted = await prisma.taskInstance.delete({
     where: { id },
-    data: {
-      status: 'cancelled',
-      exceptionReason: 'Cleaned up approved live allocation test task',
-    },
     select: {
       id: true,
       titleSnapshot: true,
@@ -49,5 +45,5 @@ export async function POST(request) {
     },
   });
 
-  return NextResponse.json({ ok: true, task: updated });
+  return NextResponse.json({ ok: true, deleted });
 }
