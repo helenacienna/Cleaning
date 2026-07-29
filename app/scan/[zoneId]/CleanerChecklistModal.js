@@ -92,7 +92,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
     setAddTaskState((current) => ({ ...ADD_TASK_EMPTY_STATE, open: true, loading: true, cards: current.cards ?? [], staff: current.staff ?? [] }));
     try {
       const [taskResponse, staffResponse] = await Promise.all([
-        fetch('/api/task-library', { cache: 'no-store' }),
+        fetch(`/api/task-library?facility=${encodeURIComponent(label)}&day=${encodeURIComponent(boardDay)}`, { cache: 'no-store' }),
         fetch('/api/staff', { cache: 'no-store' }),
       ]);
       const taskPayload = await taskResponse.json().catch(() => null);
@@ -494,7 +494,10 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                                 })}
                                 disabled={addTaskState.saving}
                               >
-                                <strong>{card.title}</strong>
+                                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%' }}>
+                                  <strong>{card.title}</strong>
+                                  {card.scheduledToday ? <span className="badge">Scheduled</span> : null}
+                                </span>
                               </button>
                             )) : null}
                             {!addTaskState.loading && selectedZone && !selectedZoneTasks.length ? <div className="muted">No task cards in this zone.</div> : null}
