@@ -516,6 +516,7 @@ function buildFacilityAssignmentFromBoard(board, assignmentId, boardDay) {
     .map((card) => ({
       id: card.id,
       title: card.title,
+      taskTemplateUuid: card.taskTemplateUuid,
       templateId: card.templateId,
       status: normalizeTaskStatus(card.status),
       photoRequired: String(card.required || '').toLowerCase().includes('photo'),
