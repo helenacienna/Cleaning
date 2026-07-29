@@ -19,6 +19,25 @@ function getTopAssignedStaffId(tasks = []) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 }
 
+async function resolveFallbackTaskLocation(prisma, facilityName) {
+  const facility = await prisma.facility.findFirst({
+    where: { active: true, name: facilityName },
+    include: {
+      zones: { where: { active: true }, orderBy: { name: 'asc' } },
+      taskGroups: { where: { active: true }, orderBy: { sequence: 'asc' } },
+    },
+  });
+
+  const zone = facility?.zones?.[0] ?? null;
+  const taskGroup = facility?.taskGroups?.find((group) => group.zoneId === zone?.id) ?? facility?.taskGroups?.[0] ?? null;
+
+  if (!facility || !zone || !taskGroup) {
+    return null;
+  }
+
+  return { facility, zone, taskGroup };
+}
+
 export async function POST(request) {
   const prisma = await getPrisma();
 
@@ -32,6 +51,8 @@ export async function POST(request) {
   const title = String(body?.title ?? '').trim();
   const zone = String(body?.zone ?? '').trim();
   const taskGroup = String(body?.taskGroup ?? '').trim();
+  const staffName = String(body?.staffName ?? '').trim();
+  const customTask = Boolean(body?.customTask);
   const boardDay = String(body?.day ?? '').trim();
   const parsedDay = parseExtraTaskBoardDay(boardDay);
 
@@ -39,7 +60,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Missing task, facility, or day' }, { status: 400 });
   }
 
-  const taskTemplate = await prisma.taskTemplate.findFirst({
+  const taskTemplate = !customTask ? await prisma.taskTemplate.findFirst({
     where: {
       active: true,
       facility: { name: facilityName },
@@ -57,15 +78,25 @@ export async function POST(request) {
       zone: true,
       taskGroup: true,
     },
-  });
+  }) : null;
 
-  if (!taskTemplate) {
+  if (!taskTemplate && !customTask) {
     return NextResponse.json({ error: 'Task template not found' }, { status: 404 });
   }
 
+  const fallbackLocation = taskTemplate ? null : await resolveFallbackTaskLocation(prisma, facilityName);
+  if (!taskTemplate && !fallbackLocation) {
+    return NextResponse.json({ error: 'Facility task location unavailable' }, { status: 404 });
+  }
+
+  const taskFacility = taskTemplate?.facility ?? fallbackLocation.facility;
+  const taskZone = taskTemplate?.zone ?? fallbackLocation.zone;
+  const taskGroupRecord = taskTemplate?.taskGroup ?? fallbackLocation.taskGroup;
+
   const existing = await prisma.taskInstance.findFirst({
     where: {
-      taskTemplateId: taskTemplate.id,
+      ...(taskTemplate ? { taskTemplateId: taskTemplate.id } : { taskTemplateId: null, titleSnapshot: title }),
+      plannedFacilityId: taskFacility.id,
       status: { notIn: ['cancelled', 'skipped'] },
       OR: [
         { plannedRunDate: parsedDay.dateOnly },
@@ -86,7 +117,7 @@ export async function POST(request) {
 
   const sameDayFacilityTasks = await prisma.taskInstance.findMany({
     where: {
-      plannedFacilityId: taskTemplate.facilityId,
+      plannedFacilityId: taskFacility.id,
       OR: [
         { plannedRunDate: parsedDay.dateOnly },
         { shiftRun: { is: { runDate: parsedDay.dateOnly } } },
@@ -99,7 +130,11 @@ export async function POST(request) {
     },
   });
 
-  const assignedStaffId = getTopAssignedStaffId(sameDayFacilityTasks);
+  const requestedStaff = staffName ? await prisma.staff.findFirst({
+    where: { active: true, fullName: staffName },
+    select: { id: true },
+  }) : null;
+  const assignedStaffId = requestedStaff?.id ?? getTopAssignedStaffId(sameDayFacilityTasks);
   const shiftRun = assignedStaffId
     ? await prisma.shiftRun.findFirst({
         where: {
@@ -115,17 +150,17 @@ export async function POST(request) {
 
   const created = await prisma.taskInstance.create({
     data: {
-      instanceCode: buildManualInstanceCode(taskTemplate.taskTemplateCode, boardDay),
-      taskTemplateId: taskTemplate.id,
+      instanceCode: buildManualInstanceCode(taskTemplate?.taskTemplateCode ?? 'ADHOC', boardDay),
+      taskTemplateId: taskTemplate?.id ?? null,
       shiftRunId: shiftRun?.id ?? null,
-      facilityId: taskTemplate.facilityId,
-      zoneId: taskTemplate.zoneId,
-      taskGroupId: taskTemplate.taskGroupId,
-      plannedFacilityId: taskTemplate.facilityId,
-      plannedZoneId: taskTemplate.zoneId,
-      plannedTaskGroupId: taskTemplate.taskGroupId,
-      titleSnapshot: taskTemplate.title,
-      descriptionSnapshot: taskTemplate.description,
+      facilityId: taskFacility.id,
+      zoneId: taskZone.id,
+      taskGroupId: taskGroupRecord.id,
+      plannedFacilityId: taskFacility.id,
+      plannedZoneId: taskZone.id,
+      plannedTaskGroupId: taskGroupRecord.id,
+      titleSnapshot: taskTemplate?.title ?? title,
+      descriptionSnapshot: taskTemplate?.description ?? (String(body?.notes ?? '').trim() || null),
       sourceType: 'ad_hoc',
       dueAt: parsedDay.dueAt,
       planningDueAt: calculatePlanningDueAt(parsedDay.dueAt),
@@ -134,13 +169,13 @@ export async function POST(request) {
       plannedRunDate: parsedDay.dateOnly,
       sequence: maxSequence + 1,
       status: 'scheduled',
-      priority: taskTemplate.priority,
-      evidenceRequirement: taskTemplate.evidenceRequirement,
-      commentRequirement: taskTemplate.commentRequirement,
-      estimatedMinutes: taskTemplate.estimatedMinutes,
+      priority: taskTemplate?.priority ?? 'standard',
+      evidenceRequirement: taskTemplate?.evidenceRequirement ?? 'none',
+      commentRequirement: taskTemplate?.commentRequirement ?? 'none',
+      estimatedMinutes: taskTemplate?.estimatedMinutes ?? null,
       manuallyCreated: true,
-      isExceptionTask: false,
-      exceptionReason: 'Added from facility extra tasks',
+      isExceptionTask: customTask,
+      exceptionReason: customTask ? 'Custom ad hoc task added from active checklist' : 'Added from facility extra tasks',
     },
     select: {
       id: true,
@@ -150,9 +185,11 @@ export async function POST(request) {
     },
   });
 
-  await refreshTemplateStatus(prisma, taskTemplate.id).catch((error) => {
-    console.error('refreshTemplateStatus failed after adding extra task', error);
-  });
+  if (taskTemplate?.id) {
+    await refreshTemplateStatus(prisma, taskTemplate.id).catch((error) => {
+      console.error('refreshTemplateStatus failed after adding extra task', error);
+    });
+  }
 
   return NextResponse.json({ ok: true, alreadyScheduled: false, task: created });
 }

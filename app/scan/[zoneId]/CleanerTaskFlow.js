@@ -783,8 +783,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               </div>
 
-              {(task.photoRequired || task.commentRequired) && (
+              {(task.addedToday || task.photoRequired || task.commentRequired) && (
                 <div className="compact-flags">
+                  {task.addedToday && <span className="flag">{task.isExceptionTask ? 'Ad hoc' : 'Added today'}</span>}
                   {task.photoRequired && <span className="flag required-flag">Forced photo</span>}
                   {task.commentRequired && <span className="flag">Comment required</span>}
                 </div>

@@ -7,6 +7,18 @@ import RemainingWorkPanel from './RemainingWorkPanel';
 
 const RESUME_REFRESH_COOLDOWN_MS = 5000;
 
+const ADD_TASK_EMPTY_STATE = {
+  open: false,
+  loading: false,
+  saving: false,
+  error: '',
+  success: '',
+  search: '',
+  cards: [],
+  customTitle: '',
+  customNotes: '',
+};
+
 function readStoredChecklistState(label) {
   if (typeof window === 'undefined') {
     return { isOpen: false, stage: 'daily' };
@@ -35,6 +47,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
   const [assignedRemainingTasks, setAssignedRemainingTasks] = useState([]);
   const [dailyReportUrl, setDailyReportUrl] = useState('');
   const [dailyReportStatus, setDailyReportStatus] = useState('idle');
+  const [addTaskState, setAddTaskState] = useState(ADD_TASK_EMPTY_STATE);
   const [, startTransition] = useTransition();
   const router = useRouter();
   const lastResumeRefreshRef = useRef(0);
@@ -46,8 +59,8 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
     });
   }
 
-  const dailyTasks = tasks.filter((task) => !task.frequency || task.frequency === 'daily');
-  const assignedTasks = tasks.filter((task) => task.frequency && task.frequency !== 'daily');
+  const dailyTasks = tasks.filter((task) => !task.addedToday && (!task.frequency || task.frequency === 'daily'));
+  const assignedTasks = tasks.filter((task) => task.addedToday || (task.frequency && task.frequency !== 'daily'));
   const effectiveStage = stage === 'daily' && !dailyTasks.length ? 'assigned' : stage;
   const activeTasks = effectiveStage === 'assigned' && assignedRemainingTasks.length ? assignedRemainingTasks : assignedTasks;
   const boardDay = tasks.find((task) => task.boardDayKey)?.boardDayKey ?? '';
@@ -68,6 +81,86 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
     dailyReportRequestRef.current = null;
     setIsOpen(true);
   }
+
+  async function openAddTaskPopup() {
+    setAddTaskState((current) => ({ ...ADD_TASK_EMPTY_STATE, open: true, loading: true, cards: current.cards ?? [] }));
+    try {
+      const response = await fetch('/api/task-library', { cache: 'no-store' });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !Array.isArray(payload?.cards)) {
+        throw new Error(payload?.error || 'Unable to load task cards');
+      }
+      setAddTaskState((current) => ({
+        ...current,
+        loading: false,
+        cards: payload.cards.filter((card) => card.active !== false && (!card.facility || card.facility === label)),
+      }));
+    } catch (error) {
+      setAddTaskState((current) => ({ ...current, loading: false, error: error.message || 'Could not load task cards.' }));
+    }
+  }
+
+  function closeAddTaskPopup() {
+    if (addTaskState.saving) return;
+    setAddTaskState(ADD_TASK_EMPTY_STATE);
+  }
+
+  async function addTaskForToday(payload) {
+    if (!boardDay || addTaskState.saving) return;
+    setAddTaskState((current) => ({ ...current, saving: true, error: '', success: '' }));
+    try {
+      const response = await fetch('/api/facility-extra-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          facility: label,
+          day: boardDay,
+          staffName,
+          ...payload,
+        }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result?.ok) {
+        throw new Error(result?.error || 'Unable to add task');
+      }
+      setAddTaskState((current) => ({
+        ...current,
+        saving: false,
+        success: result.alreadyScheduled ? 'That task is already on today’s list.' : 'Added to today’s active list.',
+      }));
+      setAssignedRemainingTasks([]);
+      refreshProgress();
+      setStage('assigned');
+      window.setTimeout(() => {
+        closeAddTaskPopup();
+      }, 900);
+    } catch (error) {
+      setAddTaskState((current) => ({ ...current, saving: false, error: error.message || 'Could not add task.' }));
+    }
+  }
+
+  async function addCustomTask() {
+    const title = String(addTaskState.customTitle ?? '').trim();
+    if (!title) {
+      setAddTaskState((current) => ({ ...current, error: 'Add a task name first.' }));
+      return;
+    }
+    await addTaskForToday({
+      customTask: true,
+      title,
+      notes: String(addTaskState.customNotes ?? '').trim(),
+    });
+  }
+
+  const taskCardMatches = addTaskState.cards.filter((card) => {
+    const query = addTaskState.search.trim().toLowerCase();
+    if (!query) return true;
+    return [card.title, card.zone, card.taskGroup, card.templateId, card.frequency]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(query);
+  });
 
   async function createDailyReport() {
     if (!dailyTasks.length) {
@@ -191,7 +284,10 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${label} active checklist`}>
           <div className="fullscreen-checklist">
             <header className="modal-header compact-modal-header">
-              <div>
+              <div className="workflow-banner-actions" style={{ justifyContent: 'flex-start' }}>
+                <button className="button secondary slim" type="button" onClick={openAddTaskPopup} disabled={!boardDay}>
+                  Add task
+                </button>
                 <strong>{label} {effectiveStage === 'daily' ? 'Daily List' : effectiveStage === 'remaining' ? 'Remaining Work' : 'Assigned Active List'}</strong>
               </div>
               {effectiveStage === 'remaining' ? (
@@ -203,6 +299,82 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                 </div>
               ) : null}
             </header>
+
+            {addTaskState.open ? (
+              <div className="modal-backdrop" role="presentation" style={addTaskBackdropStyle} onClick={closeAddTaskPopup}>
+                <section className="card" role="dialog" aria-modal="true" aria-label="Add task for today" style={addTaskCardStyle} onClick={(event) => event.stopPropagation()}>
+                  <div className="panel-title" style={{ marginBottom: 12 }}>
+                    <div>
+                      <h3>Add task for today</h3>
+                      <p className="muted">Choose an existing task card or add a one-off ad hoc task. It will be added to today’s active assigned list only.</p>
+                    </div>
+                    <button className="button secondary slim" type="button" onClick={closeAddTaskPopup} disabled={addTaskState.saving}>Close</button>
+                  </div>
+
+                  <div style={addTaskGridStyle}>
+                    <section className="card" style={addTaskPanelStyle}>
+                      <strong>Choose task card</strong>
+                      <label className="field-label" style={{ marginTop: 10 }}>
+                        <span>Search task list</span>
+                        <input
+                          type="search"
+                          value={addTaskState.search}
+                          onChange={(event) => setAddTaskState((current) => ({ ...current, search: event.target.value }))}
+                          placeholder="Search by task, zone, group or number…"
+                          disabled={addTaskState.loading || addTaskState.saving}
+                        />
+                      </label>
+                      <div style={taskCardListStyle}>
+                        {addTaskState.loading ? <div className="muted">Loading task cards…</div> : null}
+                        {!addTaskState.loading && taskCardMatches.length ? taskCardMatches.slice(0, 80).map((card) => (
+                          <button
+                            key={card.id}
+                            type="button"
+                            className="button secondary"
+                            style={taskCardChoiceStyle}
+                            onClick={() => addTaskForToday({ templateId: card.templateId, title: card.title, zone: card.zone, taskGroup: card.taskGroup })}
+                            disabled={addTaskState.saving}
+                          >
+                            <strong>{card.title}</strong>
+                            <span>{card.zone || 'No zone'} · {card.taskGroup || 'No group'} · {card.frequency || 'manual'}</span>
+                          </button>
+                        )) : null}
+                        {!addTaskState.loading && !taskCardMatches.length ? <div className="muted">No matching task cards for this facility.</div> : null}
+                      </div>
+                    </section>
+
+                    <section className="card" style={addTaskPanelStyle}>
+                      <strong>Custom ad hoc task</strong>
+                      <label className="field-label" style={{ marginTop: 10 }}>
+                        <span>Task name</span>
+                        <input
+                          value={addTaskState.customTitle}
+                          onChange={(event) => setAddTaskState((current) => ({ ...current, customTitle: event.target.value }))}
+                          placeholder="e.g. Clean spill near lift"
+                          disabled={addTaskState.saving}
+                        />
+                      </label>
+                      <label className="field-label">
+                        <span>Notes</span>
+                        <textarea
+                          value={addTaskState.customNotes}
+                          onChange={(event) => setAddTaskState((current) => ({ ...current, customNotes: event.target.value }))}
+                          placeholder="Optional details"
+                          rows={5}
+                          disabled={addTaskState.saving}
+                        />
+                      </label>
+                      <button className="button primary" type="button" onClick={addCustomTask} disabled={addTaskState.saving || !String(addTaskState.customTitle ?? '').trim()}>
+                        {addTaskState.saving ? 'Adding…' : 'Add ad hoc task'}
+                      </button>
+                    </section>
+                  </div>
+
+                  {addTaskState.error ? <div className="tone-red" style={{ marginTop: 10 }}>{addTaskState.error}</div> : null}
+                  {addTaskState.success ? <div className="tone-green" style={{ marginTop: 10 }}>{addTaskState.success}</div> : null}
+                </section>
+              </div>
+            ) : null}
 
             {effectiveStage === 'daily' ? (
               <CleanerTaskFlow
@@ -253,3 +425,43 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
     </>
   );
 }
+
+const addTaskBackdropStyle = {
+  zIndex: 1200,
+  background: 'rgba(2,6,23,0.72)',
+};
+
+const addTaskCardStyle = {
+  width: 'min(920px, calc(100vw - 24px))',
+  maxHeight: '88vh',
+  overflow: 'auto',
+  boxShadow: '0 24px 80px rgba(0,0,0,0.35)',
+};
+
+const addTaskGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+  gap: 12,
+};
+
+const addTaskPanelStyle = {
+  display: 'grid',
+  alignContent: 'start',
+  gap: 8,
+};
+
+const taskCardListStyle = {
+  display: 'grid',
+  gap: 8,
+  maxHeight: 420,
+  overflow: 'auto',
+  paddingRight: 4,
+};
+
+const taskCardChoiceStyle = {
+  display: 'grid',
+  justifyItems: 'start',
+  textAlign: 'left',
+  gap: 3,
+  whiteSpace: 'normal',
+};
