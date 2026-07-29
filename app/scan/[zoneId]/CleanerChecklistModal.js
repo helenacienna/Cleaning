@@ -14,6 +14,7 @@ const ADD_TASK_EMPTY_STATE = {
   error: '',
   success: '',
   search: '',
+  expandedZone: '',
   cards: [],
   customTitle: '',
   customNotes: '',
@@ -161,6 +162,19 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
       .toLowerCase()
       .includes(query);
   });
+  const taskCardsByZone = taskCardMatches.reduce((zones, card) => {
+    const zoneName = card.zone || 'No zone';
+    if (!zones.has(zoneName)) {
+      zones.set(zoneName, []);
+    }
+    zones.get(zoneName).push(card);
+    return zones;
+  }, new Map());
+  const zoneTaskGroups = [...taskCardsByZone.entries()].sort(([left], [right]) => left.localeCompare(right));
+  const selectedZone = addTaskState.expandedZone && taskCardsByZone.has(addTaskState.expandedZone)
+    ? addTaskState.expandedZone
+    : zoneTaskGroups[0]?.[0] ?? '';
+  const selectedZoneTasks = selectedZone ? taskCardsByZone.get(selectedZone) ?? [] : [];
 
   async function createDailyReport() {
     if (!dailyTasks.length) {
@@ -319,27 +333,51 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                         <input
                           type="search"
                           value={addTaskState.search}
-                          onChange={(event) => setAddTaskState((current) => ({ ...current, search: event.target.value }))}
-                          placeholder="Search by task, zone, group or number…"
+                          onChange={(event) => setAddTaskState((current) => ({ ...current, search: event.target.value, expandedZone: '' }))}
+                          placeholder="Search task, zone, group or number…"
                           disabled={addTaskState.loading || addTaskState.saving}
                         />
                       </label>
-                      <div style={taskCardListStyle}>
-                        {addTaskState.loading ? <div className="muted">Loading task cards…</div> : null}
-                        {!addTaskState.loading && taskCardMatches.length ? taskCardMatches.slice(0, 80).map((card) => (
-                          <button
-                            key={card.id}
-                            type="button"
-                            className="button secondary"
-                            style={taskCardChoiceStyle}
-                            onClick={() => addTaskForToday({ templateId: card.templateId, title: card.title, zone: card.zone, taskGroup: card.taskGroup })}
-                            disabled={addTaskState.saving}
-                          >
-                            <strong>{card.title}</strong>
-                            <span>{card.zone || 'No zone'} · {card.taskGroup || 'No group'} · {card.frequency || 'manual'}</span>
-                          </button>
-                        )) : null}
-                        {!addTaskState.loading && !taskCardMatches.length ? <div className="muted">No matching task cards for this facility.</div> : null}
+                      <div style={zonePickerGridStyle}>
+                        <div style={zoneListStyle} aria-label="Task zones">
+                          {addTaskState.loading ? <div className="muted">Loading zones…</div> : null}
+                          {!addTaskState.loading && zoneTaskGroups.length ? zoneTaskGroups.map(([zoneName, zoneCards]) => (
+                            <button
+                              key={zoneName}
+                              type="button"
+                              className={`button secondary ${selectedZone === zoneName ? 'primary' : ''}`}
+                              style={zoneChoiceStyle}
+                              onClick={() => setAddTaskState((current) => ({ ...current, expandedZone: zoneName }))}
+                              disabled={addTaskState.saving}
+                              aria-expanded={selectedZone === zoneName}
+                            >
+                              <strong>{zoneName}</strong>
+                              <span>{zoneCards.length} tasks</span>
+                            </button>
+                          )) : null}
+                          {!addTaskState.loading && !zoneTaskGroups.length ? <div className="muted">No matching zones for this facility.</div> : null}
+                        </div>
+                        <div style={taskCardListStyle} aria-label={selectedZone ? `${selectedZone} tasks` : 'Zone tasks'}>
+                          {selectedZone ? (
+                            <div className="muted" style={{ marginBottom: 4 }}>
+                              {selectedZone} · {selectedZoneTasks.length} matching tasks
+                            </div>
+                          ) : null}
+                          {!addTaskState.loading && selectedZoneTasks.length ? selectedZoneTasks.map((card) => (
+                            <button
+                              key={card.id}
+                              type="button"
+                              className="button secondary"
+                              style={taskCardChoiceStyle}
+                              onClick={() => addTaskForToday({ templateId: card.templateId, title: card.title, zone: card.zone, taskGroup: card.taskGroup })}
+                              disabled={addTaskState.saving}
+                            >
+                              <strong>{card.title}</strong>
+                              <span>{card.taskGroup || 'No group'} · {card.frequency || 'manual'} · {card.templateId}</span>
+                            </button>
+                          )) : null}
+                          {!addTaskState.loading && selectedZone && !selectedZoneTasks.length ? <div className="muted">No task cards in this zone.</div> : null}
+                        </div>
                       </div>
                     </section>
 
@@ -448,6 +486,29 @@ const addTaskPanelStyle = {
   display: 'grid',
   alignContent: 'start',
   gap: 8,
+};
+
+const zonePickerGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'minmax(130px, 0.8fr) minmax(180px, 1.2fr)',
+  gap: 10,
+  alignItems: 'start',
+};
+
+const zoneListStyle = {
+  display: 'grid',
+  gap: 8,
+  maxHeight: 420,
+  overflow: 'auto',
+  paddingRight: 4,
+};
+
+const zoneChoiceStyle = {
+  display: 'grid',
+  justifyItems: 'start',
+  textAlign: 'left',
+  gap: 2,
+  whiteSpace: 'normal',
 };
 
 const taskCardListStyle = {
