@@ -15,6 +15,7 @@ const ADD_TASK_EMPTY_STATE = {
   success: '',
   search: '',
   expandedZone: '',
+  mode: 'cards',
   cards: [],
   customTitle: '',
   customNotes: '',
@@ -316,97 +317,105 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
 
             {addTaskState.open ? (
               <div className="modal-backdrop" role="presentation" style={addTaskBackdropStyle} onClick={closeAddTaskPopup}>
-                <section className="card" role="dialog" aria-modal="true" aria-label="Add task for today" style={addTaskCardStyle} onClick={(event) => event.stopPropagation()}>
-                  <div className="panel-title" style={{ marginBottom: 12 }}>
-                    <div>
-                      <h3>Add task for today</h3>
-                      <p className="muted">Choose an existing task card or add a one-off ad hoc task. It will be added to today’s active assigned list only.</p>
-                    </div>
-                    <button className="button secondary slim" type="button" onClick={closeAddTaskPopup} disabled={addTaskState.saving}>Close</button>
-                  </div>
-
-                  <div style={addTaskGridStyle}>
-                    <section className="card" style={addTaskPanelStyle}>
-                      <strong>Choose task card</strong>
-                      <label className="field-label" style={{ marginTop: 10 }}>
-                        <span>Search task list</span>
-                        <input
-                          type="search"
-                          value={addTaskState.search}
-                          onChange={(event) => setAddTaskState((current) => ({ ...current, search: event.target.value, expandedZone: '' }))}
-                          placeholder="Search task, zone, group or number…"
-                          disabled={addTaskState.loading || addTaskState.saving}
-                        />
-                      </label>
-                      <div style={zonePickerStackStyle}>
-                        <div style={zoneListStyle} aria-label="Task zones">
-                          {addTaskState.loading ? <div className="muted">Loading zones…</div> : null}
-                          {!addTaskState.loading && zoneTaskGroups.length ? zoneTaskGroups.map(([zoneName, zoneCards]) => (
-                            <button
-                              key={zoneName}
-                              type="button"
-                              className={selectedZone === zoneName ? 'button primary' : 'button secondary'}
-                              style={zoneChoiceStyle}
-                              onClick={() => setAddTaskState((current) => ({ ...current, expandedZone: zoneName }))}
-                              disabled={addTaskState.saving}
-                              aria-expanded={selectedZone === zoneName}
-                            >
-                              <strong>{zoneName}</strong>
-                              <span>{zoneCards.length} tasks</span>
-                            </button>
-                          )) : null}
-                          {!addTaskState.loading && !zoneTaskGroups.length ? <div className="muted">No matching zones for this facility.</div> : null}
-                        </div>
-                        <div style={taskCardListStyle} aria-label={selectedZone ? `${selectedZone} tasks` : 'Zone tasks'}>
-                          {selectedZone ? (
-                            <div className="muted" style={{ marginBottom: 4 }}>
-                              {selectedZone} · {selectedZoneTasks.length} matching tasks
-                            </div>
-                          ) : null}
-                          {!addTaskState.loading && selectedZoneTasks.length ? selectedZoneTasks.map((card) => (
-                            <button
-                              key={card.id}
-                              type="button"
-                              className="button secondary"
-                              style={taskCardChoiceStyle}
-                              onClick={() => addTaskForToday({ templateId: card.templateId, title: card.title, zone: card.zone, taskGroup: card.taskGroup })}
-                              disabled={addTaskState.saving}
-                            >
-                              <strong>{card.title}</strong>
-                              <span>{card.taskGroup || 'No group'} · {card.frequency || 'manual'} · {card.templateId}</span>
-                            </button>
-                          )) : null}
-                          {!addTaskState.loading && selectedZone && !selectedZoneTasks.length ? <div className="muted">No task cards in this zone.</div> : null}
-                        </div>
-                      </div>
-                    </section>
-
-                    <section className="card" style={addTaskPanelStyle}>
-                      <strong>Custom ad hoc task</strong>
-                      <label className="field-label" style={{ marginTop: 10 }}>
-                        <span>Task name</span>
-                        <input
-                          value={addTaskState.customTitle}
-                          onChange={(event) => setAddTaskState((current) => ({ ...current, customTitle: event.target.value }))}
-                          placeholder="e.g. Clean spill near lift"
-                          disabled={addTaskState.saving}
-                        />
-                      </label>
-                      <label className="field-label">
-                        <span>Notes</span>
-                        <textarea
-                          value={addTaskState.customNotes}
-                          onChange={(event) => setAddTaskState((current) => ({ ...current, customNotes: event.target.value }))}
-                          placeholder="Optional details"
-                          rows={5}
-                          disabled={addTaskState.saving}
-                        />
-                      </label>
-                      <button className="button primary" type="button" onClick={addCustomTask} disabled={addTaskState.saving || !String(addTaskState.customTitle ?? '').trim()}>
-                        {addTaskState.saving ? 'Adding…' : 'Add ad hoc task'}
+                <section className="card" role="dialog" aria-modal="true" aria-label="Add task" style={addTaskCardStyle} onClick={(event) => event.stopPropagation()}>
+                  <header style={addTaskHeaderStyle}>
+                    <h3 style={{ margin: 0 }}>Add task</h3>
+                    <div className="workflow-banner-actions">
+                      <button
+                        className={addTaskState.mode === 'custom' ? 'button secondary slim' : 'button primary slim'}
+                        type="button"
+                        onClick={() => setAddTaskState((current) => ({ ...current, mode: current.mode === 'custom' ? 'cards' : 'custom', error: '', success: '' }))}
+                        disabled={addTaskState.saving}
+                      >
+                        {addTaskState.mode === 'custom' ? 'Task cards' : 'Add ad hoc'}
                       </button>
-                    </section>
-                  </div>
+                      <button className="button secondary slim" type="button" onClick={closeAddTaskPopup} disabled={addTaskState.saving}>Close</button>
+                    </div>
+                  </header>
+
+                  <section className="card" style={addTaskPanelStyle}>
+                    {addTaskState.mode === 'custom' ? (
+                      <div style={adHocDetailsStyle}>
+                        <strong>Ad hoc details</strong>
+                        <label className="field-label" style={{ marginTop: 10 }}>
+                          <span>Task name</span>
+                          <input
+                            value={addTaskState.customTitle}
+                            onChange={(event) => setAddTaskState((current) => ({ ...current, customTitle: event.target.value }))}
+                            placeholder="e.g. Clean spill near lift"
+                            disabled={addTaskState.saving}
+                          />
+                        </label>
+                        <label className="field-label">
+                          <span>Notes</span>
+                          <textarea
+                            value={addTaskState.customNotes}
+                            onChange={(event) => setAddTaskState((current) => ({ ...current, customNotes: event.target.value }))}
+                            placeholder="Optional details"
+                            rows={8}
+                            disabled={addTaskState.saving}
+                          />
+                        </label>
+                        <button className="button primary" type="button" onClick={addCustomTask} disabled={addTaskState.saving || !String(addTaskState.customTitle ?? '').trim()}>
+                          {addTaskState.saving ? 'Adding…' : 'Add ad hoc task'}
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <label className="field-label">
+                          <span>Search task list</span>
+                          <input
+                            type="search"
+                            value={addTaskState.search}
+                            onChange={(event) => setAddTaskState((current) => ({ ...current, search: event.target.value, expandedZone: '' }))}
+                            placeholder="Search task, zone, group or number…"
+                            disabled={addTaskState.loading || addTaskState.saving}
+                          />
+                        </label>
+                        <div style={zonePickerStackStyle}>
+                          <div style={zoneListStyle} aria-label="Task zones">
+                            {addTaskState.loading ? <div className="muted">Loading zones…</div> : null}
+                            {!addTaskState.loading && zoneTaskGroups.length ? zoneTaskGroups.map(([zoneName, zoneCards]) => (
+                              <button
+                                key={zoneName}
+                                type="button"
+                                className={selectedZone === zoneName ? 'button primary' : 'button secondary'}
+                                style={zoneChoiceStyle}
+                                onClick={() => setAddTaskState((current) => ({ ...current, expandedZone: zoneName }))}
+                                disabled={addTaskState.saving}
+                                aria-expanded={selectedZone === zoneName}
+                              >
+                                <strong>{zoneName}</strong>
+                                <span>{zoneCards.length} tasks</span>
+                              </button>
+                            )) : null}
+                            {!addTaskState.loading && !zoneTaskGroups.length ? <div className="muted">No matching zones for this facility.</div> : null}
+                          </div>
+                          <div style={taskCardListStyle} aria-label={selectedZone ? `${selectedZone} tasks` : 'Zone tasks'}>
+                            {selectedZone ? (
+                              <div className="muted" style={{ marginBottom: 4 }}>
+                                {selectedZone} · {selectedZoneTasks.length} matching tasks
+                              </div>
+                            ) : null}
+                            {!addTaskState.loading && selectedZoneTasks.length ? selectedZoneTasks.map((card) => (
+                              <button
+                                key={card.id}
+                                type="button"
+                                className="button secondary"
+                                style={taskCardChoiceStyle}
+                                onClick={() => addTaskForToday({ templateId: card.templateId, title: card.title, zone: card.zone, taskGroup: card.taskGroup })}
+                                disabled={addTaskState.saving}
+                              >
+                                <strong>{card.title}</strong>
+                                <span>{card.taskGroup || 'No group'} · {card.frequency || 'manual'} · {card.templateId}</span>
+                              </button>
+                            )) : null}
+                            {!addTaskState.loading && selectedZone && !selectedZoneTasks.length ? <div className="muted">No task cards in this zone.</div> : null}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </section>
 
                   {addTaskState.error ? <div className="tone-red" style={{ marginTop: 10 }}>{addTaskState.error}</div> : null}
                   {addTaskState.success ? <div className="tone-green" style={{ marginTop: 10 }}>{addTaskState.success}</div> : null}
@@ -470,22 +479,32 @@ const addTaskBackdropStyle = {
 };
 
 const addTaskCardStyle = {
-  width: 'min(920px, calc(100vw - 24px))',
-  maxHeight: '88vh',
-  overflow: 'auto',
-  boxShadow: '0 24px 80px rgba(0,0,0,0.35)',
+  width: '100vw',
+  height: '100vh',
+  maxHeight: '100vh',
+  overflow: 'hidden',
+  borderRadius: 0,
+  boxShadow: 'none',
+  display: 'grid',
+  gridTemplateRows: 'auto minmax(0, 1fr) auto',
+  gap: 12,
 };
 
-const addTaskGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+const addTaskHeaderStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
   gap: 12,
+  paddingBottom: 10,
+  borderBottom: '1px solid rgba(148,163,184,0.28)',
 };
 
 const addTaskPanelStyle = {
   display: 'grid',
   alignContent: 'start',
-  gap: 8,
+  gap: 10,
+  minHeight: 0,
+  overflow: 'hidden',
 };
 
 const zonePickerStackStyle = {
@@ -517,7 +536,7 @@ const zoneChoiceStyle = {
 const taskCardListStyle = {
   display: 'grid',
   gap: 8,
-  maxHeight: 330,
+  maxHeight: 'calc(100vh - 260px)',
   overflow: 'auto',
   paddingRight: 4,
 };
@@ -528,4 +547,11 @@ const taskCardChoiceStyle = {
   textAlign: 'left',
   gap: 3,
   whiteSpace: 'normal',
+};
+
+const adHocDetailsStyle = {
+  display: 'grid',
+  gap: 10,
+  alignContent: 'start',
+  maxWidth: 720,
 };
