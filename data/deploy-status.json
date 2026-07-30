@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-30T03:47:42.572Z",
-  "version": "dcd05f3+local",
-  "summary": "Allow per-staff add task allocation"
+  "deployedAt": "2026-07-30T04:17:05.147Z",
+  "version": "dd8b81b+local",
+  "summary": "Attach allocation notes to scheduled tasks"
 }

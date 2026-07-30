@@ -9,6 +9,25 @@ function buildManualInstanceCode(templateCode, day) {
   return `${templateCode}-ADD-${stamp}-${suffix}`;
 }
 
+function formatAllocationNote(note) {
+  const cleanNote = String(note ?? '').trim();
+  return cleanNote ? `[allocation-note] ${cleanNote}` : '';
+}
+
+function upsertAllocationNote(existingReason, note) {
+  const allocationNote = formatAllocationNote(note);
+  if (!allocationNote) {
+    return existingReason ?? null;
+  }
+
+  const currentReason = String(existingReason ?? '').trim();
+  const withoutPreviousAllocation = currentReason
+    .replace(/\[allocation-note\]\s*[^\n]+\s*/ig, '')
+    .trim();
+
+  return [withoutPreviousAllocation, allocationNote].filter(Boolean).join('\n');
+}
+
 function getTopAssignedStaffId(tasks = []) {
   const counts = new Map();
   tasks.forEach((task) => {
@@ -120,11 +139,27 @@ export async function POST(request) {
       titleSnapshot: true,
       status: true,
       assignedStaffId: true,
+      exceptionReason: true,
     },
   });
 
   if (existing) {
-    return NextResponse.json({ ok: true, alreadyScheduled: true, task: existing });
+    const task = cleanerNote
+      ? await prisma.taskInstance.update({
+          where: { id: existing.id },
+          data: {
+            exceptionReason: upsertAllocationNote(existing.exceptionReason, cleanerNote),
+          },
+          select: {
+            id: true,
+            titleSnapshot: true,
+            status: true,
+            assignedStaffId: true,
+            exceptionReason: true,
+          },
+        })
+      : existing;
+    return NextResponse.json({ ok: true, alreadyScheduled: true, noteAttached: Boolean(cleanerNote), task });
   }
 
   const sameDayFacilityTasks = await prisma.taskInstance.findMany({
@@ -183,7 +218,7 @@ export async function POST(request) {
       estimatedMinutes: taskTemplate?.estimatedMinutes ?? null,
       manuallyCreated: true,
       isExceptionTask: customTask,
-      exceptionReason: cleanerNote || (customTask ? 'Custom ad hoc task added from active checklist' : 'Added from facility extra tasks'),
+      exceptionReason: cleanerNote ? formatAllocationNote(cleanerNote) : (customTask ? 'Custom ad hoc task added from active checklist' : 'Added from facility extra tasks'),
     },
     select: {
       id: true,

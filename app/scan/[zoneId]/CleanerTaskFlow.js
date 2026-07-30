@@ -611,7 +611,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const currentPhotoCount = currentLocalState.photoCount ?? 0;
   const currentPhotoLength = currentLocalState.photos?.length ?? 0;
   const currentSelectedGrade = currentTask ? (currentLocalState.grade ?? currentTask.score) : null;
-  const allocatedNoticeTasks = tasks.filter((task) => task.addedToday);
+  const allocatedNoticeTasks = tasks.filter((task) => task.addedToday || task.allocationNote);
   const allocatedNoticeKey = allocatedNoticeTasks.map((task) => task.id).join('|');
   const showAllocatedTaskNotice = Boolean(allocatedNoticeKey && dismissedAllocatedNoticeKey !== allocatedNoticeKey);
   const showGradeReference = Boolean(
