@@ -158,7 +158,6 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
       }));
       setAssignedRemainingTasks([]);
       refreshProgress();
-      setStage('assigned');
       window.setTimeout(() => {
         closeAddTaskPopup();
       }, 900);
