@@ -355,7 +355,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                         onClick={() => setAddTaskState((current) => ({ ...current, mode: current.mode === 'custom' ? 'cards' : 'custom', pendingTask: null, selectedStaff: null, cleanerNote: '', error: '', success: '' }))}
                         disabled={addTaskState.saving}
                       >
-                        {addTaskState.mode === 'custom' ? 'Task cards' : 'Add ad hoc'}
+                        {addTaskState.mode === 'custom' ? 'Task cards' : 'Add Task'}
                       </button>
                       <button className="button secondary slim" type="button" onClick={closeAddTaskPopup} disabled={addTaskState.saving}>Close</button>
                     </div>
@@ -444,12 +444,12 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                     ) : (
                       <>
                         <label className="field-label">
-                          <span>Search task list</span>
                           <input
                             type="search"
                             value={addTaskState.search}
                             onChange={(event) => setAddTaskState((current) => ({ ...current, search: event.target.value, expandedZone: '' }))}
                             placeholder="Search task…"
+                            aria-label="Search task list"
                             disabled={addTaskState.loading || addTaskState.saving}
                           />
                         </label>
@@ -640,9 +640,11 @@ const taskCardListStyle = {
 
 const taskCardChoiceStyle = {
   display: 'grid',
-  justifyItems: 'start',
+  alignItems: 'center',
+  justifyItems: 'stretch',
   textAlign: 'left',
   gap: 3,
+  minHeight: 52,
   whiteSpace: 'normal',
 };
 
