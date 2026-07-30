@@ -95,10 +95,19 @@ export async function POST(request) {
   const taskZone = taskTemplate?.zone ?? fallbackLocation.zone;
   const taskGroupRecord = taskTemplate?.taskGroup ?? fallbackLocation.taskGroup;
 
+  const requestedStaff = staffId || staffName ? await prisma.staff.findFirst({
+    where: {
+      active: true,
+      ...(staffId ? { id: staffId } : { fullName: staffName }),
+    },
+    select: { id: true },
+  }) : null;
+
   const existing = await prisma.taskInstance.findFirst({
     where: {
       ...(taskTemplate ? { taskTemplateId: taskTemplate.id } : { taskTemplateId: null, titleSnapshot: title }),
       plannedFacilityId: taskFacility.id,
+      ...(requestedStaff?.id ? { assignedStaffId: requestedStaff.id } : {}),
       status: { notIn: ['cancelled', 'skipped'] },
       OR: [
         { plannedRunDate: parsedDay.dateOnly },
@@ -110,6 +119,7 @@ export async function POST(request) {
       id: true,
       titleSnapshot: true,
       status: true,
+      assignedStaffId: true,
     },
   });
 
@@ -132,13 +142,6 @@ export async function POST(request) {
     },
   });
 
-  const requestedStaff = staffId || staffName ? await prisma.staff.findFirst({
-    where: {
-      active: true,
-      ...(staffId ? { id: staffId } : { fullName: staffName }),
-    },
-    select: { id: true },
-  }) : null;
   const assignedStaffId = requestedStaff?.id ?? getTopAssignedStaffId(sameDayFacilityTasks);
   const shiftRun = assignedStaffId
     ? await prisma.shiftRun.findFirst({
