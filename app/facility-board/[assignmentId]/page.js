@@ -457,7 +457,7 @@ function renderAddedTaskCard(task) {
           <div className="task-inline-main"><span className="facility-board-task-bullet" aria-hidden="true">•</span><strong>{task.title}</strong></div>
           <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
             <TaskPhotoIndicator task={task} />
-            <span className="flag">Added today</span>
+            <span className={`button slim staff-tag ${task.staff === 'Unallocated' ? 'secondary' : 'primary'} ${task.staff !== 'Unallocated' ? `staff-theme-${slugifyValue(task.staff)}` : ''}`}>{task.staff || 'Unallocated'}</span>
             {showStatus ? <span className={`${statusClass(task.status)} task-inline-status task-inline-status-info`}>{formatTaskLabel(task.status)}</span> : null}
             <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
           </div>
