@@ -2404,7 +2404,7 @@ code {
 .flow-position {
   position: sticky;
   top: 6px;
-  z-index: 2;
+  z-index: 40;
   display: grid;
   grid-template-columns: minmax(118px, 1.15fr) repeat(3, minmax(72px, 0.85fr));
   gap: 6px;
@@ -2668,15 +2668,38 @@ code {
 }
 
 .offline-checklist-sync-panel {
+  grid-column: 1 / -1;
   border: 1px solid rgba(34,197,94,0.35);
   border-radius: 14px;
   background: rgba(240,253,244,0.96);
   color: #14532d;
   display: grid;
-  gap: 3px;
-  margin: 0 0 10px;
+  gap: 6px;
+  margin: 0;
   padding: 10px 12px;
   font-size: 13px;
+  line-height: 1.25;
+  pointer-events: auto;
+  text-align: left;
+}
+
+.offline-checklist-sync-panel .button {
+  justify-self: start;
+  width: auto;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.offline-checklist-sync-details summary {
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.offline-checklist-sync-details ul {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding-left: 18px;
 }
 
 .offline-checklist-sync-panel-pending {

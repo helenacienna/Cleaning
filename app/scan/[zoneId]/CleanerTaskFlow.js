@@ -1017,9 +1017,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
             ))}
           </div>
         ) : null}
-      </div>
 
-      {(syncStatusMessage || pendingOfflineCount > 0 || !isOnline) ? (
+        {(syncStatusMessage || pendingOfflineCount > 0 || !isOnline) ? (
         <div className={`offline-checklist-sync-panel ${pendingOfflineCount > 0 || !isOnline ? 'offline-checklist-sync-panel-pending' : ''}`} role="status">
           <strong>{pendingOfflineCount > 0 ? `${pendingOfflineCount} change${pendingOfflineCount === 1 ? '' : 's'} waiting to sync` : isOnline ? 'Checklist online' : 'Checklist offline'}</strong>
           <span>{syncStatusMessage || (isOnline ? 'Saved changes will sync to the server.' : 'You can keep grading. Saves and photos will queue on this device.')}</span>
@@ -1046,6 +1045,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
           {pendingOfflineCount > 0 ? <span>Do not clear browser data before this reaches 0.</span> : null}
         </div>
       ) : null}
+      </div>
+
 
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
         <section className="active-checklist-instructions" aria-label="Active checklist instructions">
