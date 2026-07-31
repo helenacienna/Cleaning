@@ -66,6 +66,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
   }
 
   const dailyTasks = tasks.filter((task) => !task.addedToday && (!task.frequency || task.frequency === 'daily'));
+  const addedTasks = tasks.filter((task) => task.addedToday);
   const assignedTasks = tasks.filter((task) => task.addedToday || (task.frequency && task.frequency !== 'daily'));
   const effectiveStage = stage === 'daily' && !dailyTasks.length ? 'assigned' : stage;
   const activeTasks = effectiveStage === 'assigned' && assignedRemainingTasks.length ? assignedRemainingTasks : assignedTasks;
@@ -224,7 +225,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        taskIds: dailyTasks.map((task) => task.id),
+        taskIds: [...dailyTasks, ...addedTasks].map((task) => task.id),
         facility: label,
         staffName,
         day: boardDay,
@@ -326,7 +327,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${label} active checklist`}>
           <div className="fullscreen-checklist">
             <header className="modal-header compact-modal-header">
-              <div className="workflow-banner-actions" style={{ justifyContent: 'flex-start' }}>
+              <div className="workflow-banner-actions checklist-header-primary-actions" style={{ justifyContent: 'flex-start' }}>
                 <button className="button secondary slim" type="button" onClick={openAddTaskPopup} disabled={!boardDay}>
                   Add task
                 </button>

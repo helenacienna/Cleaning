@@ -70,6 +70,7 @@ function buildPdf(report = {}) {
       doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(10).text(`${String(index + 1).padStart(2, '0')}. ${safeText(task.title, 'Task')}`);
       doc.font('Helvetica').fontSize(9).fillColor('#334155');
       doc.text(`${safeText(task.zone)} · ${safeText(task.group)} · Grade: ${safeText(task.grade, 'Not graded')} · Photos: ${task.photoCount ?? 0}`);
+      if (task.addedToday) doc.fillColor('#0369a1').text('Added task');
       if (task.resolvedIssue) doc.fillColor('#047857').text('Resolved issue');
       if (task.issueNote) doc.fillColor('#7c2d12').text(`Note: ${task.issueNote}`);
       if (task.resolutionNote) doc.fillColor('#047857').text(`Resolution: ${task.resolutionNote}`);

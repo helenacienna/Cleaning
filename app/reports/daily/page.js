@@ -55,6 +55,10 @@ function hasNumericGrade(grade) {
   return grade !== null && grade !== undefined && grade !== '' && Number.isFinite(Number(grade));
 }
 
+function isAddedReportTask(task) {
+  return task?.sourceType === 'ad_hoc' || Boolean(task?.manuallyCreated);
+}
+
 function reportSortGrade(entry) {
   if (!hasNumericGrade(entry.grade)) return 99;
   return Number(entry.grade);
@@ -383,10 +387,12 @@ export default async function DailyReportPage({ searchParams }) {
       issueNote: parseIssueNote(task),
       resolutionNote: parseResolutionNote(task),
       photoCount: taskPhotoCount(task),
+      addedToday: isAddedReportTask(task),
     })),
   };
   const resolvedIssues = sortReportEntries(scored.filter(({ resolvedIssue }) => resolvedIssue));
   const followUps = sortReportEntries(scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2));
+  const addedTaskEntries = sortReportEntries(scored.filter(({ task }) => isAddedReportTask(task)));
   const scoreSections = buildReportScoreSections(scored);
 
   return (
@@ -470,6 +476,32 @@ export default async function DailyReportPage({ searchParams }) {
                 <div className="daily-report-task-list">
                     {followUps.map(({ task, grade }) => (
                     <article className="daily-report-task-row report-attention" key={`followup-${task.id}`}>
+                      <div>
+                        <strong>{task.titleSnapshot}</strong>
+                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                        {parseIssueNote(task) ? <p>{parseIssueNote(task)}</p> : null}
+                        <PhotoEvidence task={task} />
+                      </div>
+                      <div className="daily-report-task-meta">
+                        <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {addedTaskEntries.length ? (
+              <section className="card daily-report-card daily-report-added-tasks">
+                <div className="panel-title">
+                  <div>
+                    <h2>Added tasks</h2>
+                    <p className="muted">Extra work manually added to this facility day.</p>
+                  </div>
+                </div>
+                <div className="daily-report-task-list">
+                  {addedTaskEntries.map(({ task, grade }) => (
+                    <article className="daily-report-task-row report-added" key={`added-${task.id}`}>
                       <div>
                         <strong>{task.titleSnapshot}</strong>
                         <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>

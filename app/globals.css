@@ -2703,6 +2703,12 @@ code {
   text-align: center;
 }
 
+.compact-modal-header .checklist-header-primary-actions {
+  justify-self: start;
+  margin-right: auto;
+  text-align: left;
+}
+
 .compact-modal-header strong {
   display: block;
   margin-top: 6px;
@@ -4377,7 +4383,10 @@ button.button {
 .facility-board-day-chip-row .button{white-space:nowrap}
 .facility-board-task-columns{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:12px;display:grid}
 .facility-board-task-column{align-self:start;gap:8px;padding:12px;display:grid}
+.facility-board-added-tasks-section{gap:10px;margin-bottom:12px;padding:12px;display:grid}
+.facility-board-added-task-groups{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 .facility-board-task-column-header{min-height:38px;padding:0 108px;display:block;position:relative}
+.facility-board-added-tasks-header{padding-left:0}
 .facility-board-task-column-header>div:first-child{text-align:center;min-width:0}
 .facility-board-task-column-header-actions{pointer-events:none;position:absolute;inset:0}
 .facility-board-task-column-header-actions .badge,.facility-board-task-column-header-actions .facility-board-expand-button{pointer-events:auto}

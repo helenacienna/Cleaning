@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import ViewOptionsMenu from './ViewOptionsMenu';
 import ExtraTaskScheduleCard from './ExtraTaskScheduleCard';
+import FacilityAddTaskButton from './FacilityAddTaskButton';
 import ExpandAllZonesButton from './ExpandAllZonesButton';
 import FacilityTaskOrderView from './FacilityTaskOrderView';
 import { taskCardTemplates as demoTaskCardTemplates } from '../../../data/demo-data';
@@ -446,6 +447,38 @@ function TaskPhotoGallery({ task }) {
   );
 }
 
+function renderAddedTaskCard(task) {
+  const showStatus = String(task.status || '').toLowerCase() !== 'scheduled';
+
+  return (
+    <details className="task-disclosure task-disclosure-compact" key={task.id}>
+      <summary className="task-row task-row-disclosure task-row-disclosure-compact task-row-disclosure-daily-tight">
+        <div className="task-inline-top-row">
+          <div className="task-inline-main"><span className="facility-board-task-bullet" aria-hidden="true">•</span><strong>{task.title}</strong></div>
+          <div className="task-disclosure-summary-right task-disclosure-summary-right-compact">
+            <TaskPhotoIndicator task={task} />
+            <span className="flag">Added today</span>
+            {showStatus ? <span className={`${statusClass(task.status)} task-inline-status task-inline-status-info`}>{formatTaskLabel(task.status)}</span> : null}
+            <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+          </div>
+        </div>
+      </summary>
+      <div className="task-disclosure-body">
+        <div className="task-detail-grid">
+          <div><span className="muted">Task #</span><strong>{String(task.displayOrder).padStart(3, '0')}</strong></div>
+          <div><span className="muted">Group</span><strong>{task.taskGroup}</strong></div>
+          <div><span className="muted">Zone</span><strong>{task.zone}</strong></div>
+          <div><span className="muted">Status</span><strong>{formatTaskLabel(task.status)}</strong></div>
+          <div><span className="muted">Assigned</span><strong>{task.staff || 'Unallocated'}</strong></div>
+          <div><span className="muted">Photos</span><strong>{task.photoCount ?? taskPhotos(task).length}</strong></div>
+        </div>
+        {task.notes ? <p>{task.notes}</p> : null}
+        <TaskPhotoGallery task={task} />
+      </div>
+    </details>
+  );
+}
+
 function groupTasksByStaff(tasks = [], staffMeta = {}) {
   const staffMap = new Map();
 
@@ -588,9 +621,11 @@ export default async function FacilityBoardPage({ params, searchParams }) {
     notFound();
   }
 
-  const dailyTasks = assignment.tasks.filter((task) => !task.frequency || String(task.frequency).toLowerCase() === 'daily');
-  const periodicTasks = assignment.tasks.filter((task) => task.frequency && String(task.frequency).toLowerCase() !== 'daily');
+  const addedTasks = assignment.tasks.filter((task) => task.addedToday);
+  const dailyTasks = assignment.tasks.filter((task) => !task.addedToday && (!task.frequency || String(task.frequency).toLowerCase() === 'daily'));
+  const periodicTasks = assignment.tasks.filter((task) => !task.addedToday && task.frequency && String(task.frequency).toLowerCase() !== 'daily');
   const extraTasks = getExtraFacilityTasks(assignment, { baseDate: parseBoardDayDate(assignment.boardDay) });
+  const addedGroups = groupAssignmentTasks(addedTasks);
   const dailyGroups = groupAssignmentTasks(dailyTasks);
   const periodicGroups = groupAssignmentTasks(periodicTasks);
   const grouped = groupAssignmentTasks(assignment.tasks);
@@ -643,6 +678,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             <p className="muted">{assignment.stats.staffCount || 0} assigned staff · {totalZones} zones · {facilityResultLabel}</p>
           </div>
           <div className="facility-board-header-actions">
+            {view === 'tasks' ? <FacilityAddTaskButton facility={assignment.location} day={assignment.boardDay} /> : null}
             <Link className="button secondary facility-board-report-button" href={reportHref}>Report</Link>
             <ViewOptionsMenu queryBase={queryBase} view={view} />
           </div>
@@ -676,8 +712,42 @@ export default async function FacilityBoardPage({ params, searchParams }) {
       {view === 'order' ? (
         <FacilityTaskOrderView tasks={assignment.tasks} taskTemplates={board?.taskTemplates ?? []} facility={assignment.location} />
       ) : view === 'tasks' ? (
-        <section className="facility-board-task-columns">
-          {[{
+        <>
+          <section className="card facility-board-added-tasks-section">
+            <div className="facility-board-task-column-header facility-board-added-tasks-header">
+              <div>
+                <h2>Added tasks</h2>
+                <p className="muted">Manually added work for this facility day.</p>
+              </div>
+              <div className="facility-board-task-column-header-actions">
+                <div className="badge">{getOutcomeCompletedCount(addedTasks)}/{addedTasks.length} complete</div>
+              </div>
+            </div>
+            {addedTasks.length ? renderOutcomeProgress(addedTasks) : null}
+            <div className="facility-board-task-column-groups facility-board-added-task-groups">
+              {addedGroups.length ? addedGroups.map((group) => (
+                <details className="task-disclosure facility-board-zone-card facility-board-zone-card-daily" key={`${assignment.id}-added-${group.zone}-${group.taskGroup}`} open>
+                  <summary className="task-row task-row-disclosure zone-summary-row zone-summary-row-compact">
+                    <div className="zone-summary-left zone-summary-left-compact">
+                      <div className="zone-summary-top-row">
+                        <strong className="zone-summary-title-with-photo">{group.zone}<ZonePhotoIndicator tasks={group.tasks} /></strong>
+                        <span className="task-group-progress-label zone-summary-progress-label-compact">{group.completed}/{group.total} complete</span>
+                      </div>
+                      <div className="task-group-progress-stack">{renderOutcomeProgress(group.tasks, 'task-group-progress')}</div>
+                    </div>
+                  </summary>
+                  <div className="task-group-body">
+                    {group.tasks.map((task) => renderAddedTaskCard(task))}
+                  </div>
+                </details>
+              )) : (
+                <div className="task-row unscheduled-task-empty"><div><strong>No added tasks yet</strong><div className="muted">Use Add task on this facility view when extra work needs to be assigned.</div></div></div>
+              )}
+            </div>
+          </section>
+
+          <section className="facility-board-task-columns">
+            {[{
             key: 'daily',
             title: 'Daily tasks',
             subtitle: 'Routine work for this board day',
@@ -704,7 +774,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             groups: [],
             tasks: extraTasks,
             summary: { count: extraTasks.length },
-          }].map((section) => (
+            }].map((section) => (
             <article className={`card facility-board-task-column facility-board-task-column-${section.key}`} key={`${assignment.id}-${section.key}`}>
               <div className="facility-board-task-column-header">
                 <div>
@@ -840,8 +910,9 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                 </div>
               )}
             </article>
-          ))}
-        </section>
+            ))}
+          </section>
+        </>
       ) : view === 'staff' ? (
         <section className="facility-board-staff-grid">
           {groupedByStaff.map((staffGroup) => (
