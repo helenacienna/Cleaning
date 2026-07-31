@@ -35,7 +35,7 @@ export default function ServiceWorkerRegistration() {
 
   return (
     <div className="offline-status-banner" role="status">
-      Offline mode — opened pages may keep working, but saves and photo uploads need connection.
+      Offline mode — opened checklists can keep working. Saves/photos will sync when this device is back online.
     </div>
   );
 }

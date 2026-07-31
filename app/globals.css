@@ -2667,6 +2667,24 @@ code {
   text-align: center;
 }
 
+.offline-checklist-sync-panel {
+  border: 1px solid rgba(34,197,94,0.35);
+  border-radius: 14px;
+  background: rgba(240,253,244,0.96);
+  color: #14532d;
+  display: grid;
+  gap: 3px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.offline-checklist-sync-panel-pending {
+  border-color: rgba(245,158,11,0.45);
+  background: rgba(255,251,235,0.96);
+  color: #78350f;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

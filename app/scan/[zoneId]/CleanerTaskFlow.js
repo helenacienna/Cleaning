@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createOfflinePhotoPreview, enqueueJsonRequest, enqueuePhotoUpload, flushOfflineQueue, getPendingOfflineCount, subscribeOfflineQueue } from './offlineQueue';
 
 const REFRESH_DEBOUNCE_MS = 2000;
 const MOBILE_TASK_ALIGNMENT_QUERY = '(max-width: 768px)';
@@ -15,6 +16,10 @@ const GRADE_REFERENCE = [
   ['Grade 5', 'Perfect', 'grade-reference-5'],
 ];
 import CleanerPhotoLightbox from './CleanerPhotoLightbox';
+
+function checklistStateCacheKey(tasks = []) {
+  return `cleanerChecklistTaskState:${tasks.map((task) => task.id).join('|')}`;
+}
 
 function isTaskCompleted(task) {
   return Number(task?.score) >= 3 || task?.status === 'completed';
@@ -41,6 +46,15 @@ function formatStatusLabel(task) {
 }
 
 function createInitialTaskState(tasks) {
+  let cachedState = {};
+  if (typeof window !== 'undefined') {
+    try {
+      cachedState = JSON.parse(window.localStorage.getItem(checklistStateCacheKey(tasks)) || '{}') || {};
+    } catch {
+      cachedState = {};
+    }
+  }
+
   return Object.fromEntries(tasks.map((task) => {
     const completed = isTaskCompleted(task);
     const hasGrade = Number(task?.score) > 0;
@@ -60,6 +74,7 @@ function createInitialTaskState(tasks) {
       resolvedIssue: Boolean(task.resolvedIssue),
       statusMessage: hasGrade ? (completed ? 'Completed earlier' : 'Saved earlier for follow-up') : '',
       statusTone: completed ? 'tone-green' : hasGrade ? 'tone-amber' : 'muted',
+      ...(cachedState[task.id] ?? {}),
     }];
   }));
 }
@@ -67,6 +82,9 @@ function createInitialTaskState(tasks) {
 export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefreshProgress, onClose, onAllTasksCompleted, onOpenReport, reportUrl = '', reportStatus = 'idle', completionMode = 'completed', completeLabel = 'Submit and go back', completeTitle = 'All tasks submitted', completeDescription = 'Everything on this active list has been graded. Submit to go back.' }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine !== false));
+  const [pendingOfflineCount, setPendingOfflineCount] = useState(0);
+  const [syncStatusMessage, setSyncStatusMessage] = useState('');
   const [gradeReferenceHiddenByScroll, setGradeReferenceHiddenByScroll] = useState(false);
   const [dismissedAllocatedNoticeKey, setDismissedAllocatedNoticeKey] = useState('');
   const cardRefs = useRef([]);
@@ -187,6 +205,51 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     }));
   }
 
+  async function refreshPendingOfflineCount() {
+    const count = await getPendingOfflineCount().catch(() => 0);
+    setPendingOfflineCount(count);
+    return count;
+  }
+
+  async function tryFlushOfflineQueue(reason = 'manual') {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setSyncStatusMessage('Offline — changes will sync when connection returns.');
+      return;
+    }
+
+    const beforeCount = await refreshPendingOfflineCount();
+    if (!beforeCount) {
+      if (reason === 'manual') {
+        setSyncStatusMessage('Everything is synced.');
+      }
+      return;
+    }
+
+    setSyncStatusMessage('Syncing saved offline changes…');
+    const result = await flushOfflineQueue().catch((error) => ({ ok: false, error: error?.message || 'Sync failed' }));
+    const afterCount = await refreshPendingOfflineCount();
+    if (result.ok && afterCount === 0) {
+      setSyncStatusMessage('Offline changes synced.');
+      queueRefresh();
+      return;
+    }
+    setSyncStatusMessage(afterCount ? `${afterCount} change${afterCount === 1 ? '' : 's'} still pending sync.` : 'Sync finished.');
+  }
+
+  async function queueJsonSave(taskId, payload, successUpdates) {
+    await enqueueJsonRequest({ url: '/api/cleaner-tasks', body: payload, label: 'Checklist save' });
+    await refreshPendingOfflineCount();
+    updateTask(taskId, {
+      ...successUpdates,
+      saving: false,
+      saved: true,
+      offlinePending: true,
+      statusMessage: 'Saved offline — pending sync',
+      statusTone: 'tone-amber',
+    });
+    setSyncStatusMessage('Offline save queued. Keep this app open when back online to sync.');
+  }
+
   async function gradeTask(taskId, grade, index) {
     const current = taskState[taskId] || {};
     const originalIssueLocked = (current.photos ?? []).some((photo) => photo.photoType === 'exception')
@@ -227,21 +290,23 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       statusTone: 'tone-amber',
     });
 
+    const payload = {
+      taskInstanceId: taskId,
+      grade,
+      note: current.note || '',
+    };
+
     try {
       const response = await fetch('/api/cleaner-tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          taskInstanceId: taskId,
-          grade,
-          note: current.note || '',
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error('Unable to save cleaner task');
+        throw Object.assign(new Error('Unable to save cleaner task'), { queueOffline: false });
       }
 
       const result = await response.json();
@@ -272,16 +337,33 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       if (grade <= 3 || index >= tasks.length - 1) {
         queueRefresh();
       }
-    } catch {
-      updateTask(taskId, {
-        grade: current.grade ?? null,
-        saving: false,
-        saved: false,
-        statusMessage: 'Save failed — tap a grade to retry',
-        statusTone: 'tone-red',
+    } catch (error) {
+      if (error?.queueOffline === false) {
+        updateTask(taskId, {
+          grade: current.grade ?? null,
+          saving: false,
+          saved: false,
+          statusMessage: 'Save failed — tap a grade to retry',
+          statusTone: 'tone-red',
+        });
+        window.setTimeout(() => {
+          focusJob(index);
+        }, 20);
+        return;
+      }
+      await queueJsonSave(taskId, payload, {
+        grade,
+        issueGrade: current.issueGrade ?? null,
+        issueStage: null,
+        finalGrade: null,
+        resolvedIssue: false,
       });
       window.setTimeout(() => {
-        focusJob(index);
+        if (index >= tasks.length - 1) {
+          endCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          focusJob(Math.min(index + 1, tasks.length - 1));
+        }
       }, 20);
     }
   }
@@ -300,21 +382,23 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       statusTone: 'tone-amber',
     });
 
+    const payload = {
+      taskInstanceId: taskId,
+      grade: issueGrade,
+      note: current.note || '',
+    };
+
     try {
       const response = await fetch('/api/cleaner-tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          taskInstanceId: taskId,
-          grade: issueGrade,
-          note: current.note || '',
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error('Unable to record issue');
+        throw Object.assign(new Error('Unable to record issue'), { queueOffline: false });
       }
 
       updateTask(taskId, {
@@ -329,13 +413,23 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       });
       focusTaskActions(index);
       queueRefresh();
-    } catch {
-      updateTask(taskId, {
-        saving: false,
-        saved: false,
-        issueStage: 'needs_issue_photo',
-        statusMessage: 'Issue save failed — add/check photo and try again',
-        statusTone: 'tone-red',
+    } catch (error) {
+      if (error?.queueOffline === false) {
+        updateTask(taskId, {
+          saving: false,
+          saved: false,
+          issueStage: 'needs_issue_photo',
+          statusMessage: 'Issue save failed — add/check photo and try again',
+          statusTone: 'tone-red',
+        });
+        return;
+      }
+      await queueJsonSave(taskId, payload, {
+        grade: issueGrade,
+        saved: true,
+        issueGrade,
+        resolvedIssue: false,
+        issueStage: 'needs_correction',
       });
     }
   }
@@ -425,23 +519,25 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       statusTone: 'tone-amber',
     });
 
+    const payload = {
+      taskInstanceId: taskId,
+      grade: finalGrade,
+      note: current.note || '',
+      resolvedFromGrade: issueGrade,
+      resolutionNote: current.note || '',
+    };
+
     try {
       const response = await fetch('/api/cleaner-tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          taskInstanceId: taskId,
-          grade: finalGrade,
-          note: current.note || '',
-          resolvedFromGrade: issueGrade,
-          resolutionNote: current.note || '',
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error('Unable to save resolved issue');
+        throw Object.assign(new Error('Unable to save resolved issue'), { queueOffline: false });
       }
 
       const result = await response.json();
@@ -473,14 +569,31 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         }, 20);
       }
       queueRefresh();
-    } catch {
-      updateTask(taskId, {
-        saving: false,
-        statusMessage: 'Resolved issue save failed — try again',
-        statusTone: 'tone-red',
+    } catch (error) {
+      if (error?.queueOffline === false) {
+        updateTask(taskId, {
+          saving: false,
+          statusMessage: 'Resolved issue save failed — try again',
+          statusTone: 'tone-red',
+        });
+        window.setTimeout(() => {
+          focusJob(index);
+        }, 20);
+        return;
+      }
+      await queueJsonSave(taskId, payload, {
+        grade: finalGrade,
+        issueGrade,
+        finalGrade,
+        issueStage: 'resolved',
+        resolvedIssue: true,
       });
       window.setTimeout(() => {
-        focusJob(index);
+        if (index >= tasks.length - 1) {
+          endCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          focusJob(Math.min(index + 1, tasks.length - 1));
+        }
       }, 20);
     }
   }
@@ -507,7 +620,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       });
 
       if (!response.ok) {
-        throw new Error('Unable to upload photo');
+        throw Object.assign(new Error('Unable to upload photo'), { queueOffline: false });
       }
 
       const result = await response.json();
@@ -532,12 +645,32 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       });
       focusTaskActions(index, 120);
       queueRefresh();
-    } catch {
+    } catch (error) {
+      if (error?.queueOffline === false) {
+        updateTask(taskId, {
+          saving: false,
+          statusMessage: 'Photo upload failed — try again',
+          statusTone: 'tone-red',
+        });
+        return;
+      }
+      const offlinePhoto = createOfflinePhotoPreview(file, photoType);
+      await enqueuePhotoUpload({ taskInstanceId: taskId, photoType, file, label: photoType === 'exception' ? 'Before photo upload' : 'After photo upload' });
+      const nextPhotos = [...(current.photos ?? []), offlinePhoto];
+      await refreshPendingOfflineCount();
       updateTask(taskId, {
+        photoCount: (current.photoCount ?? 0) + 1,
+        photos: nextPhotos,
         saving: false,
-        statusMessage: 'Photo upload failed — try again',
-        statusTone: 'tone-red',
+        saved: true,
+        lastPhotoType: photoType,
+        askAnotherPhoto: true,
+        offlinePending: true,
+        statusMessage: photoType === 'exception' ? 'Before photo saved offline — pending sync' : 'After photo saved offline — pending sync',
+        statusTone: 'tone-amber',
       });
+      setSyncStatusMessage('Photo saved offline. Keep this app open when back online to sync.');
+      focusTaskActions(index, 120);
     }
   }
 
@@ -546,6 +679,63 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       window.clearTimeout(refreshTimerRef.current);
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    try {
+      window.localStorage.setItem(checklistStateCacheKey(tasks), JSON.stringify(taskState));
+    } catch {
+      // Local checklist cache is best-effort. IndexedDB remains the source for pending sync work.
+    }
+
+    return undefined;
+  }, [tasks, taskState]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    let cancelled = false;
+    const refresh = () => {
+      void refreshPendingOfflineCount();
+    };
+    const unsubscribe = subscribeOfflineQueue(refresh);
+
+    function updateOnlineState() {
+      const online = navigator.onLine !== false;
+      setIsOnline(online);
+      if (online) {
+        void tryFlushOfflineQueue('online');
+      } else {
+        setSyncStatusMessage('Offline — changes will sync when connection returns.');
+      }
+    }
+
+    function warnIfPending(event) {
+      if (pendingOfflineCount <= 0) return;
+      event.preventDefault();
+      event.returnValue = 'There are checklist changes still waiting to sync.';
+      return event.returnValue;
+    }
+
+    window.addEventListener('online', updateOnlineState);
+    window.addEventListener('offline', updateOnlineState);
+    window.addEventListener('beforeunload', warnIfPending);
+
+    void refreshPendingOfflineCount().then((count) => {
+      if (!cancelled && count > 0 && navigator.onLine !== false) {
+        void tryFlushOfflineQueue('open');
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+      window.removeEventListener('online', updateOnlineState);
+      window.removeEventListener('offline', updateOnlineState);
+      window.removeEventListener('beforeunload', warnIfPending);
+    };
+  }, [pendingOfflineCount]);
 
   function trackManualScroll() {
     const list = listRef.current;
@@ -691,6 +881,13 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       ) : null}
       <div className="flow-position" aria-label="Checklist controls">
         <span className="badge flow-current-job-chip">Current job {Math.min(currentIndex + 1, tasks.length)} of {tasks.length}</span>
+        <span className={`badge ${isOnline ? 'tone-green' : 'tone-amber'}`}>{isOnline ? 'Online' : 'Offline'}</span>
+        {pendingOfflineCount > 0 ? <span className="badge tone-amber">{pendingOfflineCount} pending sync</span> : null}
+        {pendingOfflineCount > 0 && isOnline ? (
+          <button className="button secondary flow-nav-button" type="button" onClick={() => { void tryFlushOfflineQueue('manual'); }}>
+            Sync now
+          </button>
+        ) : null}
         <button
           className="button secondary flow-nav-button"
           type="button"
@@ -733,6 +930,14 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
           </div>
         ) : null}
       </div>
+
+      {(syncStatusMessage || pendingOfflineCount > 0 || !isOnline) ? (
+        <div className={`offline-checklist-sync-panel ${pendingOfflineCount > 0 || !isOnline ? 'offline-checklist-sync-panel-pending' : ''}`} role="status">
+          <strong>{pendingOfflineCount > 0 ? `${pendingOfflineCount} change${pendingOfflineCount === 1 ? '' : 's'} waiting to sync` : isOnline ? 'Checklist online' : 'Checklist offline'}</strong>
+          <span>{syncStatusMessage || (isOnline ? 'Saved changes will sync to the server.' : 'You can keep grading. Saves and photos will queue on this device.')}</span>
+          {pendingOfflineCount > 0 ? <span>Do not clear browser data before this reaches 0.</span> : null}
+        </div>
+      ) : null}
 
       <div className="compact-task-list" ref={listRef} onScroll={trackManualScroll}>
         <section className="active-checklist-instructions" aria-label="Active checklist instructions">
