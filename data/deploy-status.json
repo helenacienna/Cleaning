@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-07-30T04:17:05.147Z",
-  "version": "dd8b81b+local",
-  "summary": "Attach allocation notes to scheduled tasks"
+  "deployedAt": "2026-07-31T22:09:13.692Z",
+  "version": "2ae2aad+local",
+  "summary": "Improve offline sync diagnostics and caching"
 }

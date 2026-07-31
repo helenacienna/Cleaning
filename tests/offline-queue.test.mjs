@@ -223,5 +223,29 @@ test('offline queue marks HTTP 409 flushes as conflicts and keeps the entry pend
 
   const [entry] = await queue.listPendingOfflineRequests();
   assert.equal(entry.conflict, true);
+  assert.equal(entry.blocked, true);
   assert.match(entry.lastError, /Task changed/);
+
+  const [summary] = await queue.getPendingOfflineSummary();
+  assert.equal(summary.blocked, true);
+  assert.equal(summary.conflict, true);
+  assert.equal(summary.taskInstanceId, 'task-1');
+});
+
+test('offline queue can clear blocked requests after user review', async () => {
+  installBrowserHarness({ online: true });
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: 'Bad queued payload' }), {
+    status: 400,
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  const queue = await importFreshOfflineQueue();
+  await queue.enqueueJsonRequest({ url: '/api/cleaner-tasks', body: { taskInstanceId: 'task-2', grade: 5 } });
+
+  const result = await queue.flushOfflineQueue();
+  assert.equal(result.remaining, 1);
+
+  const cleared = await queue.clearBlockedOfflineRequests();
+  assert.deepEqual(cleared, { cleared: 1, remaining: 0 });
+  assert.equal(await queue.getPendingOfflineCount(), 0);
 });

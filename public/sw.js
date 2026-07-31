@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'cienna-cleaning-offline-v5';
+const CACHE_VERSION = 'cienna-cleaning-offline-v6';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const PRECACHE_URLS = [
   '/',
@@ -72,6 +72,16 @@ async function cacheFirst(request) {
   return cacheResponse(request, response);
 }
 
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const cached = await cache.match(request);
+  const fetchPromise = fetch(request)
+    .then((response) => cacheResponse(request, response))
+    .catch(() => cached || null);
+
+  return cached || fetchPromise;
+}
+
 function offlineJson(message, status = 503) {
   return new Response(JSON.stringify({
     error: message,
@@ -103,7 +113,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.pathname.startsWith('/_next/static/')) {
-    event.respondWith(networkFirst(request));
+    // Next static assets are content-hashed, so cached copies are safe and much faster on phones.
+    event.respondWith(staleWhileRevalidate(request));
     return;
   }
 

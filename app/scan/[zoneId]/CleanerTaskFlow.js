@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { createOfflinePhotoPreview, enqueueJsonRequest, enqueuePhotoUpload, flushOfflineQueue, getPendingOfflineCount, subscribeOfflineQueue } from './offlineQueue';
+import { clearBlockedOfflineRequests, createOfflinePhotoPreview, enqueueJsonRequest, enqueuePhotoUpload, flushOfflineQueue, getPendingOfflineCount, getPendingOfflineSummary, subscribeOfflineQueue } from './offlineQueue';
 
 const REFRESH_DEBOUNCE_MS = 2000;
 const MOBILE_TASK_ALIGNMENT_QUERY = '(max-width: 768px)';
@@ -95,6 +95,8 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine !== false));
   const [pendingOfflineCount, setPendingOfflineCount] = useState(0);
   const [syncStatusMessage, setSyncStatusMessage] = useState('');
+  const [pendingOfflineSummary, setPendingOfflineSummary] = useState([]);
+  const [hasBlockedSync, setHasBlockedSync] = useState(false);
   const [gradeReferenceHiddenByScroll, setGradeReferenceHiddenByScroll] = useState(false);
   const [dismissedAllocatedNoticeKey, setDismissedAllocatedNoticeKey] = useState('');
   const cardRefs = useRef([]);
@@ -216,9 +218,40 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   }
 
   async function refreshPendingOfflineCount() {
-    const count = await getPendingOfflineCount().catch(() => 0);
+    const [count, summary] = await Promise.all([
+      getPendingOfflineCount().catch(() => 0),
+      getPendingOfflineSummary().catch(() => []),
+    ]);
     setPendingOfflineCount(count);
+    setPendingOfflineSummary(summary);
+    setHasBlockedSync(summary.some((entry) => entry.blocked || entry.conflict));
     return count;
+  }
+
+  async function refreshPendingOfflineState() {
+    const [count, summary] = await Promise.all([
+      getPendingOfflineCount().catch(() => 0),
+      getPendingOfflineSummary().catch(() => []),
+    ]);
+    setPendingOfflineCount(count);
+    setPendingOfflineSummary(summary);
+    setHasBlockedSync(summary.some((entry) => entry.blocked || entry.conflict));
+    return { count, summary };
+  }
+
+  async function clearBlockedSyncItems() {
+    const result = await clearBlockedOfflineRequests().catch((error) => ({ error: error?.message || 'Unable to clear stuck sync item' }));
+    const remaining = await refreshPendingOfflineCount();
+    if (result.error) {
+      setSyncStatusMessage(result.error);
+      return;
+    }
+    setSyncStatusMessage(result.cleared
+      ? `${result.cleared} stuck sync item${result.cleared === 1 ? '' : 's'} cleared. Refreshing checklist…`
+      : 'No stuck sync items found.');
+    if (remaining === 0) {
+      queueRefresh();
+    }
   }
 
   async function tryFlushOfflineQueue(reason = 'manual') {
@@ -237,9 +270,9 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
 
     setSyncStatusMessage('Syncing saved offline changes…');
     const result = await flushOfflineQueue().catch((error) => ({ ok: false, error: error?.message || 'Sync failed' }));
-    const afterCount = await refreshPendingOfflineCount();
+    const { count: afterCount, summary: afterSummary } = await refreshPendingOfflineState();
     if (result.conflict) {
-      setSyncStatusMessage('Conflict detected — refresh the checklist before continuing on the pending task.');
+      setSyncStatusMessage('One saved offline change is blocked because the task changed on the server. Check the details below, then clear the stuck item if the checklist already looks saved.');
       return;
     }
     if (result.ok && afterCount === 0) {
@@ -247,7 +280,12 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       queueRefresh();
       return;
     }
-    setSyncStatusMessage(afterCount ? `${afterCount} change${afterCount === 1 ? '' : 's'} still pending sync.` : 'Sync finished.');
+    const blocked = afterSummary.some((entry) => entry.blocked || entry.conflict) || Boolean(result.conflict);
+    setSyncStatusMessage(afterCount
+      ? blocked
+        ? `${afterCount} change${afterCount === 1 ? '' : 's'} still pending sync. One appears stuck and needs attention.`
+        : `${afterCount} change${afterCount === 1 ? '' : 's'} still pending sync.`
+      : 'Sync finished.');
   }
 
   async function queueJsonSave(taskId, payload, successUpdates) {
@@ -985,6 +1023,26 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         <div className={`offline-checklist-sync-panel ${pendingOfflineCount > 0 || !isOnline ? 'offline-checklist-sync-panel-pending' : ''}`} role="status">
           <strong>{pendingOfflineCount > 0 ? `${pendingOfflineCount} change${pendingOfflineCount === 1 ? '' : 's'} waiting to sync` : isOnline ? 'Checklist online' : 'Checklist offline'}</strong>
           <span>{syncStatusMessage || (isOnline ? 'Saved changes will sync to the server.' : 'You can keep grading. Saves and photos will queue on this device.')}</span>
+          {pendingOfflineSummary.length > 0 ? (
+            <details className="offline-checklist-sync-details">
+              <summary>Sync details</summary>
+              <ul>
+                {pendingOfflineSummary.map((entry) => (
+                  <li key={entry.id}>
+                    <strong>{entry.label}</strong>
+                    {entry.type === 'photo' ? ` · ${entry.photoType || 'photo'}` : null}
+                    {entry.attempts ? ` · tried ${entry.attempts} time${entry.attempts === 1 ? '' : 's'}` : ''}
+                    {entry.lastError ? ` · ${entry.lastError}` : ''}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+          {hasBlockedSync ? (
+            <button className="button secondary flow-nav-button" type="button" onClick={() => { void clearBlockedSyncItems(); }}>
+              Clear stuck sync item
+            </button>
+          ) : null}
           {pendingOfflineCount > 0 ? <span>Do not clear browser data before this reaches 0.</span> : null}
         </div>
       ) : null}

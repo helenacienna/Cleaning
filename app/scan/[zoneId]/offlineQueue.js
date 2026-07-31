@@ -117,6 +117,23 @@ export async function listPendingOfflineRequests() {
   });
 }
 
+export async function getPendingOfflineSummary() {
+  const entries = await listPendingOfflineRequests();
+  return entries.map((entry) => ({
+    id: entry.id,
+    type: entry.type,
+    label: entry.label || (entry.type === 'photo' ? 'Photo upload' : 'Checklist save'),
+    createdAt: entry.createdAt,
+    attempts: entry.attempts || 0,
+    lastAttemptAt: entry.lastAttemptAt || null,
+    lastError: entry.lastError || '',
+    conflict: Boolean(entry.conflict),
+    blocked: Boolean(entry.blocked || entry.conflict),
+    taskInstanceId: entry.body?.taskInstanceId || entry.photo?.taskInstanceId || '',
+    photoType: entry.photo?.photoType || '',
+  }));
+}
+
 export async function enqueueJsonRequest({ url, method = 'POST', body, label = 'Checklist save' }) {
   const entry = {
     id: createId('json'),
@@ -174,6 +191,15 @@ async function updateEntry(entry) {
   emitQueueChange();
 }
 
+export async function clearBlockedOfflineRequests() {
+  const entries = await listPendingOfflineRequests();
+  const blockedEntries = entries.filter((entry) => entry.blocked || entry.conflict);
+  for (const entry of blockedEntries) {
+    await deleteEntry(entry.id);
+  }
+  return { cleared: blockedEntries.length, remaining: await getPendingOfflineCount() };
+}
+
 async function sendEntry(entry) {
   if (entry.type === 'json') {
     return fetch(entry.url, {
@@ -220,6 +246,7 @@ export async function flushOfflineQueue() {
           entry.lastError = responsePayload?.error || `HTTP ${response.status}`;
           entry.lastAttemptAt = new Date().toISOString();
           entry.conflict = Boolean(responsePayload?.conflict || response.status === 409);
+          entry.blocked = response.status >= 400 && response.status < 500;
           conflict = entry.conflict;
           await updateEntry(entry);
           if (response.status >= 400 && response.status < 500) {
