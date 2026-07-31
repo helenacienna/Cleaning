@@ -2657,6 +2657,11 @@ code {
   margin: 12px 0 6px;
 }
 
+.checklist-launch-primary-actions {
+  display: grid;
+  gap: 8px;
+}
+
 .launch-checklist-button {
   min-width: 210px;
   text-align: center;

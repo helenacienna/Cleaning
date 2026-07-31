@@ -313,9 +313,14 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
   return (
     <>
       <section className="card checklist-launch-card">
-        <button className="button primary launch-checklist-button" type="button" onClick={handleOpen}>
-          Open active checklist
-        </button>
+        <div className="checklist-launch-primary-actions">
+          <button className="button primary launch-checklist-button" type="button" onClick={handleOpen}>
+            Open active checklist
+          </button>
+          <button className="button secondary launch-checklist-button" type="button" onClick={openAddTaskPopup} disabled={!boardDay}>
+            Add task
+          </button>
+        </div>
         {reportHref ? (
           <a className="button secondary launch-checklist-button" href={reportHref}>
             Open report
