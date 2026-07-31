@@ -564,6 +564,9 @@ function buildFacilityAssignmentFromBoard(board, assignmentId, boardDay) {
       staff: card.staff || 'Unallocated',
       displayOrder: card.jobOrder,
       frequency: card.frequency,
+      sourceType: card.sourceType,
+      manuallyCreated: Boolean(card.manuallyCreated),
+      addedToday: Boolean(card.addedToday),
       estimatedMinutes: card.estimatedMinutes,
       issueNote: card.issueNote,
     }));
