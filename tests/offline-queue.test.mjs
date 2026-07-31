@@ -151,7 +151,7 @@ test('offline queue stores and flushes JSON checklist saves in order', async () 
   assert.equal(await queue.getPendingOfflineCount(), 2);
 
   const result = await queue.flushOfflineQueue();
-  assert.deepEqual(result, { ok: true, synced: 2, remaining: 0 });
+  assert.deepEqual(result, { ok: true, synced: 2, remaining: 0, conflict: false });
   assert.equal(await queue.getPendingOfflineCount(), 0);
   assert.equal(sent.length, 2);
   assert.deepEqual(JSON.parse(sent[0].options.body), { taskInstanceId: 'task-1', grade: 4 });
@@ -199,4 +199,29 @@ test('offline queue stores photo uploads as files and replays multipart form dat
   assert.equal(sent[0].options.body.get('taskInstanceId'), 'task-1');
   assert.equal(sent[0].options.body.get('photoType'), 'exception');
   assert.equal(sent[0].options.body.get('file').name, 'issue.jpg');
+});
+
+test('offline queue marks HTTP 409 flushes as conflicts and keeps the entry pending', async () => {
+  installBrowserHarness({ online: true });
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    error: 'Task changed on another device. Refresh this checklist before saving this item.',
+    conflict: true,
+    currentTaskUpdatedAt: '2026-07-31T00:00:00.000Z',
+  }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+
+  const queue = await importFreshOfflineQueue();
+  await queue.enqueueJsonRequest({
+    url: '/api/cleaner-tasks',
+    body: { taskInstanceId: 'task-1', grade: 4, expectedTaskUpdatedAt: '2026-07-30T00:00:00.000Z' },
+  });
+
+  const result = await queue.flushOfflineQueue();
+  assert.equal(result.ok, true);
+  assert.equal(result.synced, 0);
+  assert.equal(result.remaining, 1);
+  assert.equal(result.conflict, true);
+
+  const [entry] = await queue.listPendingOfflineRequests();
+  assert.equal(entry.conflict, true);
+  assert.match(entry.lastError, /Task changed/);
 });

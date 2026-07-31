@@ -26,6 +26,7 @@ export async function POST(request) {
   const grade = Number(body?.grade);
   const note = typeof body?.note === 'string' ? body.note : '';
   const resolutionNote = typeof body?.resolutionNote === 'string' ? body.resolutionNote : '';
+  const expectedTaskUpdatedAt = typeof body?.expectedTaskUpdatedAt === 'string' ? body.expectedTaskUpdatedAt : '';
   const resolvedFromGrade = Number(body?.resolvedFromGrade);
   const isResolution = Number.isInteger(resolvedFromGrade) && resolvedFromGrade >= 1 && resolvedFromGrade <= 2 && grade >= 3;
 
@@ -49,6 +50,21 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Task instance not found' }, { status: 404 });
   }
 
+  if (expectedTaskUpdatedAt) {
+    const expectedDate = new Date(expectedTaskUpdatedAt);
+    if (Number.isNaN(expectedDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid task version token' }, { status: 400 });
+    }
+
+    if (taskInstance.updatedAt.getTime() > expectedDate.getTime()) {
+      return NextResponse.json({
+        error: 'Task changed on another device. Refresh this checklist before saving this item.',
+        conflict: true,
+        currentTaskUpdatedAt: taskInstance.updatedAt.toISOString(),
+      }, { status: 409 });
+    }
+  }
+
   const hasEvidence = note.trim().length > 0 || (taskInstance.execution?.photos?.length ?? 0) > 0;
 
   if (grade <= 2 && !hasEvidence) {
@@ -68,9 +84,10 @@ export async function POST(request) {
   const taskStatus = grade >= 3 ? 'completed' : 'in_progress';
 
   const startedAt = Date.now();
+  let updatedTaskInstance = null;
 
   try {
-    await prisma.taskInstance.update({
+    updatedTaskInstance = await prisma.taskInstance.update({
       where: { id: taskInstanceId },
       data: {
         status: taskStatus,
@@ -135,5 +152,6 @@ export async function POST(request) {
           resolved: true,
         }
       : null,
+    taskVersion: updatedTaskInstance?.updatedAt?.toISOString?.() ?? null,
   });
 }

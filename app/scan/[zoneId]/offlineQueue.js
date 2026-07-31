@@ -208,15 +208,19 @@ export async function flushOfflineQueue() {
 
   flushPromise = (async () => {
     let synced = 0;
+    let conflict = false;
     const entries = await listPendingOfflineRequests();
 
     for (const entry of entries) {
       try {
         const response = await sendEntry(entry);
         if (!response.ok) {
+          const responsePayload = await response.clone().json().catch(() => null);
           entry.attempts = (entry.attempts || 0) + 1;
-          entry.lastError = `HTTP ${response.status}`;
+          entry.lastError = responsePayload?.error || `HTTP ${response.status}`;
           entry.lastAttemptAt = new Date().toISOString();
+          entry.conflict = Boolean(responsePayload?.conflict || response.status === 409);
+          conflict = entry.conflict;
           await updateEntry(entry);
           if (response.status >= 400 && response.status < 500) {
             break;
@@ -234,7 +238,7 @@ export async function flushOfflineQueue() {
       }
     }
 
-    return { ok: true, synced, remaining: await getPendingOfflineCount() };
+    return { ok: true, synced, remaining: await getPendingOfflineCount(), conflict };
   })().finally(() => {
     flushPromise = null;
   });

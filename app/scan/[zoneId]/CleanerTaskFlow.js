@@ -72,11 +72,21 @@ function createInitialTaskState(tasks) {
       lastPhotoType: null,
       askAnotherPhoto: false,
       resolvedIssue: Boolean(task.resolvedIssue),
+      syncVersion: task.syncVersion ?? null,
       statusMessage: hasGrade ? (completed ? 'Completed earlier' : 'Saved earlier for follow-up') : '',
       statusTone: completed ? 'tone-green' : hasGrade ? 'tone-amber' : 'muted',
       ...(cachedState[task.id] ?? {}),
     }];
   }));
+}
+
+async function buildCleanerSaveError(response, fallbackMessage) {
+  const payload = await response.json().catch(() => null);
+  const error = new Error(payload?.error || fallbackMessage);
+  error.queueOffline = false;
+  error.conflict = Boolean(payload?.conflict || response.status === 409);
+  error.currentTaskUpdatedAt = payload?.currentTaskUpdatedAt ?? null;
+  return error;
 }
 
 export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefreshProgress, onClose, onAllTasksCompleted, onOpenReport, reportUrl = '', reportStatus = 'idle', completionMode = 'completed', completeLabel = 'Submit and go back', completeTitle = 'All tasks submitted', completeDescription = 'Everything on this active list has been graded. Submit to go back.' }) {
@@ -228,6 +238,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     setSyncStatusMessage('Syncing saved offline changes…');
     const result = await flushOfflineQueue().catch((error) => ({ ok: false, error: error?.message || 'Sync failed' }));
     const afterCount = await refreshPendingOfflineCount();
+    if (result.conflict) {
+      setSyncStatusMessage('Conflict detected — refresh the checklist before continuing on the pending task.');
+      return;
+    }
     if (result.ok && afterCount === 0) {
       setSyncStatusMessage('Offline changes synced.');
       queueRefresh();
@@ -243,11 +257,24 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       ...successUpdates,
       saving: false,
       saved: true,
+      syncVersion: successUpdates.syncVersion ?? payload.expectedTaskUpdatedAt ?? null,
       offlinePending: true,
       statusMessage: 'Saved offline — pending sync',
       statusTone: 'tone-amber',
     });
     setSyncStatusMessage('Offline save queued. Keep this app open when back online to sync.');
+  }
+
+  function handleSaveConflict(taskId, error) {
+    updateTask(taskId, {
+      saving: false,
+      saved: false,
+      conflict: true,
+      syncVersion: error?.currentTaskUpdatedAt ?? null,
+      statusMessage: error?.message || 'Task changed on another device. Refresh before saving this item.',
+      statusTone: 'tone-red',
+    });
+    setSyncStatusMessage('Conflict detected — refresh the checklist before continuing on that task.');
   }
 
   async function gradeTask(taskId, grade, index) {
@@ -294,6 +321,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       taskInstanceId: taskId,
       grade,
       note: current.note || '',
+      expectedTaskUpdatedAt: current.syncVersion ?? tasks[index]?.syncVersion ?? null,
     };
 
     try {
@@ -306,7 +334,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       });
 
       if (!response.ok) {
-        throw Object.assign(new Error('Unable to save cleaner task'), { queueOffline: false });
+        throw await buildCleanerSaveError(response, 'Unable to save cleaner task');
       }
 
       const result = await response.json();
@@ -320,6 +348,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         issueStage: null,
         finalGrade: null,
         resolvedIssue: false,
+        syncVersion: result.taskVersion ?? current.syncVersion ?? null,
       });
       if (index >= tasks.length - 1) {
         window.setTimeout(() => {
@@ -339,6 +368,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       }
     } catch (error) {
       if (error?.queueOffline === false) {
+        if (error.conflict) {
+          handleSaveConflict(taskId, error);
+          return;
+        }
         updateTask(taskId, {
           grade: current.grade ?? null,
           saving: false,
@@ -357,6 +390,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         issueStage: null,
         finalGrade: null,
         resolvedIssue: false,
+        syncVersion: current.syncVersion ?? tasks[index]?.syncVersion ?? null,
       });
       window.setTimeout(() => {
         if (index >= tasks.length - 1) {
@@ -386,6 +420,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       taskInstanceId: taskId,
       grade: issueGrade,
       note: current.note || '',
+      expectedTaskUpdatedAt: current.syncVersion ?? tasks[index]?.syncVersion ?? null,
     };
 
     try {
@@ -398,8 +433,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       });
 
       if (!response.ok) {
-        throw Object.assign(new Error('Unable to record issue'), { queueOffline: false });
+        throw await buildCleanerSaveError(response, 'Unable to record issue');
       }
+
+      const result = await response.json();
 
       updateTask(taskId, {
         grade: issueGrade,
@@ -408,6 +445,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         issueGrade,
         issueStage: 'needs_correction',
         resolvedIssue: false,
+        syncVersion: result.taskVersion ?? current.syncVersion ?? null,
         statusMessage: 'Issue recorded — add correction note and corrected score',
         statusTone: 'tone-amber',
       });
@@ -415,6 +453,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       queueRefresh();
     } catch (error) {
       if (error?.queueOffline === false) {
+        if (error.conflict) {
+          handleSaveConflict(taskId, error);
+          return;
+        }
         updateTask(taskId, {
           saving: false,
           saved: false,
@@ -430,6 +472,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         issueGrade,
         resolvedIssue: false,
         issueStage: 'needs_correction',
+        syncVersion: current.syncVersion ?? tasks[index]?.syncVersion ?? null,
       });
     }
   }
@@ -525,6 +568,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       note: current.note || '',
       resolvedFromGrade: issueGrade,
       resolutionNote: current.note || '',
+      expectedTaskUpdatedAt: current.syncVersion ?? tasks[index]?.syncVersion ?? null,
     };
 
     try {
@@ -537,7 +581,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       });
 
       if (!response.ok) {
-        throw Object.assign(new Error('Unable to save resolved issue'), { queueOffline: false });
+        throw await buildCleanerSaveError(response, 'Unable to save resolved issue');
       }
 
       const result = await response.json();
@@ -553,6 +597,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
           ? `Issue record saved — original ${result.issueRecord.originalScore}/5, corrected ${result.issueRecord.correctedScore}/5`
           : result.message || `Resolved from ${issueGrade}/5 to ${finalGrade}/5`,
         statusTone: 'tone-green',
+        syncVersion: result.taskVersion ?? current.syncVersion ?? null,
       });
 
       if (index >= tasks.length - 1) {
@@ -571,6 +616,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
       queueRefresh();
     } catch (error) {
       if (error?.queueOffline === false) {
+        if (error.conflict) {
+          handleSaveConflict(taskId, error);
+          return;
+        }
         updateTask(taskId, {
           saving: false,
           statusMessage: 'Resolved issue save failed — try again',
@@ -587,6 +636,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         finalGrade,
         issueStage: 'resolved',
         resolvedIssue: true,
+        syncVersion: current.syncVersion ?? tasks[index]?.syncVersion ?? null,
       });
       window.setTimeout(() => {
         if (index >= tasks.length - 1) {
