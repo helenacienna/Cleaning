@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import ForceTodayRedirect from '../ForceTodayRedirect';
+import DeviceFastModePanel from './DeviceFastModePanel';
 import CleanerChecklistModal from '../../scan/[zoneId]/CleanerChecklistModal';
 import { getCleanerStaffList } from '../../../lib/cleaner-data';
 import { formatBoardDayKeyForTimeZone } from '../../../lib/app-timezone.js';
@@ -269,6 +270,10 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
           <span className="flag">{list.stats.commentRequired} comment checks</span>
         </div>
       </section>
+
+      {isTodayBoard ? (
+        <DeviceFastModePanel staffName={list.staff} staffHref={buildDayHref(staffSlug, activeBoardDay)} />
+      ) : null}
 
       <div className="assignment-grid">
         {list.sections.map((section) => {

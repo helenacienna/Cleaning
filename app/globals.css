@@ -2662,6 +2662,50 @@ code {
   gap: 8px;
 }
 
+.device-fast-mode-card {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  border-color: rgba(34,197,94,0.24);
+  background: linear-gradient(135deg, rgba(240,253,244,0.96), rgba(240,249,255,0.94));
+}
+
+.device-fast-mode-title {
+  align-items: center;
+  gap: 12px;
+}
+
+.device-fast-mode-title h3 {
+  margin: 5px 0 2px;
+}
+
+.device-fast-mode-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.device-fast-mode-status span {
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.66);
+  padding: 5px 8px;
+}
+
+.device-fast-mode-message {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.device-fast-mode-help {
+  margin: 0;
+  font-size: 12px;
+}
+
 .launch-checklist-button {
   min-width: 210px;
   text-align: center;
