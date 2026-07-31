@@ -2665,7 +2665,7 @@ code {
 .device-fast-mode-card {
   display: grid;
   gap: 10px;
-  margin-bottom: 16px;
+  margin: 16px 0 96px;
   border-color: rgba(34,197,94,0.24);
   background: linear-gradient(135deg, rgba(240,253,244,0.96), rgba(240,249,255,0.94));
 }

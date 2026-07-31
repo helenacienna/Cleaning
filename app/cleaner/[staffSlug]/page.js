@@ -271,10 +271,6 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
         </div>
       </section>
 
-      {isTodayBoard ? (
-        <DeviceFastModePanel staffName={list.staff} staffHref={buildDayHref(staffSlug, activeBoardDay)} />
-      ) : null}
-
       <div className="assignment-grid">
         {list.sections.map((section) => {
           const taskGroups = groupFacilityTasks(section.tasks);
@@ -401,6 +397,10 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
           );
         })}
       </div>
+
+      {isTodayBoard ? (
+        <DeviceFastModePanel staffName={list.staff} staffHref={buildDayHref(staffSlug, activeBoardDay)} />
+      ) : null}
 
       <div className="sticky-board-action-bar sticky-board-action-bar-staff">
         <div className="sticky-board-nav-row">
