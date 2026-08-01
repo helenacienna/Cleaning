@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-08-01T01:26:52.531Z",
-  "version": "50fa21c+local",
-  "summary": "Add manager setup checklist"
+  "deployedAt": "2026-08-01T02:04:01.811Z",
+  "version": "86f7019+local",
+  "summary": "Add configurable login and role protection"
 }

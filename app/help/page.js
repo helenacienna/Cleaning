@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import AuthStatus from '../AuthStatus';
 
 export const metadata = {
   title: 'Help & setup · Cienna Cleaning',
@@ -33,6 +34,7 @@ export default function HelpPage() {
         <span className="badge tone-green">Help & setup</span>
         <h1>Cienna Cleaning quick start</h1>
         <p className="muted">A short guide for staff, managers, and device setup. Keep this page simple enough for a new user to follow without training.</p>
+        <AuthStatus />
         <div className="workflow-banner-actions">
           <Link className="button primary" href="/admin/setup">Open setup checklist</Link>
           <Link className="button primary" href="/cleaner">Open staff landing</Link>
