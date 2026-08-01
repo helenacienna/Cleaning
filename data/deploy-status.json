@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-08-01T02:04:01.811Z",
-  "version": "86f7019+local",
-  "summary": "Add configurable login and role protection"
+  "deployedAt": "2026-08-01T03:03:35.284Z",
+  "version": "38d4ce6+local",
+  "summary": "Refine checklist layout and individual auth users"
 }

@@ -661,7 +661,11 @@ a { color: inherit; text-decoration: none; }
 
 .facility-card-title-button {
   min-width: 240px;
+  width: min(100%, 360px);
+  display: flex;
+  align-items: center;
   justify-content: center;
+  text-align: center;
   font-size: 28px;
   font-weight: 800;
   padding: 12px 20px;
@@ -2873,8 +2877,8 @@ code {
 }
 
 .checklist-launch-card {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   align-items: center;
 }
@@ -2884,8 +2888,7 @@ code {
 }
 
 .checklist-launch-primary-actions {
-  display: grid;
-  gap: 8px;
+  display: contents;
 }
 
 .device-fast-mode-card {
@@ -2933,8 +2936,13 @@ code {
 }
 
 .launch-checklist-button {
-  min-width: 210px;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  display: grid;
+  place-items: center;
   text-align: center;
+  font-size: 14px;
 }
 
 .offline-checklist-sync-panel {
@@ -3007,16 +3015,11 @@ code {
 
 .modal-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(110px, 1fr) minmax(0, auto) minmax(110px, 1fr);
   align-items: center;
   gap: 10px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(15,23,42,0.08);
-}
-
-.compact-modal-header > div:first-child {
-  justify-self: center;
-  text-align: center;
 }
 
 .compact-modal-header .checklist-header-primary-actions {
@@ -3025,9 +3028,16 @@ code {
   text-align: left;
 }
 
+.compact-modal-header .checklist-header-secondary-actions {
+  justify-self: end;
+  justify-content: flex-end;
+}
+
 .compact-modal-header strong {
   display: block;
-  margin-top: 6px;
+  margin: 0;
+  justify-self: center;
+  text-align: center;
   font-size: 19px;
 }
 

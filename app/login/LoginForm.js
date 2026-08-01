@@ -11,6 +11,7 @@ function safeNext(value) {
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const next = safeNext(searchParams.get('next') || '/');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
@@ -24,7 +25,7 @@ export default function LoginForm() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, next }),
+        body: JSON.stringify({ username, password, next }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok || !result?.ok) {
@@ -41,7 +42,17 @@ export default function LoginForm() {
     <form className="card login-card" onSubmit={handleSubmit}>
       <span className="badge tone-green">Secure access</span>
       <h1>Cienna Cleaning login</h1>
-      <p className="muted">Enter the admin or staff password for this site.</p>
+      <p className="muted">Enter your username and password for this site. Shared admin/staff passwords can still be used during transition.</p>
+      <label className="login-field">
+        <span>Username</span>
+        <input
+          type="text"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          autoComplete="username"
+          autoFocus
+        />
+      </label>
       <label className="login-field">
         <span>Password</span>
         <input
@@ -49,7 +60,6 @@ export default function LoginForm() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           autoComplete="current-password"
-          autoFocus
         />
       </label>
       {error ? <p className="form-error">{error}</p> : null}

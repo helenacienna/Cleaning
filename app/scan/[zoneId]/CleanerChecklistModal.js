@@ -336,16 +336,16 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                 <button className="button secondary slim" type="button" onClick={openAddTaskPopup} disabled={!boardDay}>
                   Add task
                 </button>
-                <strong>{label} {effectiveStage === 'daily' ? 'Daily List' : effectiveStage === 'remaining' ? 'Remaining Work' : 'Assigned Active List'}</strong>
               </div>
-              {effectiveStage === 'remaining' ? (
-                <div className="workflow-banner-actions">
+              <strong>{label} {effectiveStage === 'daily' ? 'Daily List' : effectiveStage === 'remaining' ? 'Remaining Work' : 'Assigned Active List'}</strong>
+              <div className="workflow-banner-actions checklist-header-secondary-actions">
+                {effectiveStage === 'remaining' ? (
                   <button className="button secondary" type="button" onClick={refreshProgress}>
                     Refresh progress
                   </button>
-                  <button className="button secondary close-modal-button" type="button" onClick={closeChecklist}>Close</button>
-                </div>
-              ) : null}
+                ) : null}
+                <button className="button secondary close-modal-button" type="button" onClick={closeChecklist}>Close</button>
+              </div>
             </header>
 
             {addTaskState.open ? (

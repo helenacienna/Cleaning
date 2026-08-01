@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { AUTH_COOKIE_NAME, getRoleForPassword, signAuthSession } from '../../../../lib/auth-cookie';
+import { AUTH_COOKIE_NAME, getUserForCredentials, signAuthSession } from '../../../../lib/auth-cookie';
 
 const ONE_WEEK_SECONDS = 60 * 60 * 24 * 7;
 
@@ -12,18 +12,19 @@ function safeNextPath(value) {
 
 export async function POST(request) {
   const body = await request.json().catch(() => null);
+  const username = typeof body?.username === 'string' ? body.username : '';
   const password = typeof body?.password === 'string' ? body.password : '';
   const nextPath = safeNextPath(body?.next);
-  const role = getRoleForPassword(password);
+  const user = getUserForCredentials({ username, password });
 
-  if (!role) {
-    return NextResponse.json({ error: 'Incorrect password' }, { status: 401 });
+  if (!user) {
+    return NextResponse.json({ error: 'Incorrect username or password' }, { status: 401 });
   }
 
-  const response = NextResponse.json({ ok: true, role, next: nextPath });
+  const response = NextResponse.json({ ok: true, role: user.role, name: user.name, next: nextPath });
   response.cookies.set({
     name: AUTH_COOKIE_NAME,
-    value: signAuthSession({ role, name: role === 'admin' ? 'Admin' : 'Staff' }),
+    value: signAuthSession(user),
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
