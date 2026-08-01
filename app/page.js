@@ -2107,6 +2107,7 @@ export default function HomePage() {
                 <Link className="dashboard-settings-link" href="/admin/settings">Open settings</Link>
                 <Link className="dashboard-settings-link" href="/cleaner">Open staff landing</Link>
                 <Link className="dashboard-settings-link" href="/help">Help & setup</Link>
+                <Link className="dashboard-settings-link" href="/admin/setup">Setup checklist</Link>
                 <Link className="dashboard-settings-link" href="/admin/manager">Open manager view</Link>
                 <Link className="dashboard-settings-link" href="/admin/inbox">Open operations inbox</Link>
                 <Link className="dashboard-settings-link" href="/admin/task-cards">Task Admin</Link>
