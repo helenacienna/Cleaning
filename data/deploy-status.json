@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-08-02T08:17:42.014Z",
-  "version": "e45d7f9",
-  "summary": "Preload task photos in background"
+  "deployedAt": "2026-08-02T08:21:50.359Z",
+  "version": "b39bec7",
+  "summary": "Guard cleaner photo preloader"
 }

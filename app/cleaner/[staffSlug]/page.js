@@ -231,7 +231,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
   const nextBoardDay = activeBoardDayIndex >= 0 && activeBoardDayIndex < boardDays.length - 1 ? boardDays[activeBoardDayIndex + 1] : null;
   const todayBoardDay = formatBoardDayKeyForTimeZone(new Date(), timeZone);
   const todayHref = boardDays.includes(todayBoardDay) ? buildDayHref(staffSlug, todayBoardDay) : null;
-  const backgroundPhotoUrls = list.tasks.flatMap((task) => (task.photos ?? []).map((photo) => photo.photoUrl).filter(Boolean));
+  const backgroundPhotoUrls = (list.tasks ?? []).flatMap((task) => (task.photos ?? []).map((photo) => photo.photoUrl).filter(Boolean));
   const isTodayBoard = activeBoardDay === todayBoardDay;
 
   if (todayHref && activeBoardDay !== todayBoardDay && (!selectedDay || !allowHistoricView)) {
