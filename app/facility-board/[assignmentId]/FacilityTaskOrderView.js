@@ -20,7 +20,23 @@ const REQUIREMENT_OPTIONS = [
   'Standard',
   'Random photo eligible',
   'Comment on exception',
+  'Comment on exception only',
+  'Comment always',
   'Forced photo',
+  'Multi photo',
+];
+
+const SERVICE_TYPE_OPTIONS = [
+  { value: 'routine', label: 'Routine' },
+  { value: 'periodic', label: 'Periodic' },
+  { value: 'ad_hoc', label: 'Ad hoc' },
+];
+
+const MISSED_TASK_POLICY_OPTIONS = [
+  { value: 'carry_forward', label: 'Carry forward' },
+  { value: 'stay_overdue', label: 'Stay overdue' },
+  { value: 'skip_and_regenerate', label: 'Skip and regenerate' },
+  { value: 'manager_review', label: 'Manager review' },
 ];
 
 function buildTaskDraft(task) {
@@ -29,8 +45,12 @@ function buildTaskDraft(task) {
     templateId: task.templateId ?? '',
     jobOrderNumber: String(task.jobOrderNumber ?? task.displayOrder ?? ''),
     taskGroup: task.taskGroup ?? '',
+    taskGroupId: task.taskGroupId ?? '',
     zone: task.zone ?? '',
+    zoneId: task.zoneId ?? '',
     facility: task.facility ?? '',
+    facilityId: task.facilityId ?? '',
+    serviceType: task.serviceType ?? 'routine',
     frequency: String(task.frequency ?? 'none').toLowerCase(),
     frequencyType: task.frequencyType === 'Suggestive' ? 'Standard' : (task.frequencyType ?? 'Standard'),
     cadenceMode: task.cadenceMode ?? '—',
@@ -40,8 +60,26 @@ function buildTaskDraft(task) {
     lastCompleted: task.lastCompleted ?? '—',
     suggestedDue: task.suggestedDue ?? '—',
     notes: task.notes ?? '',
+    passCriteria: task.passCriteria ?? '',
+    safetyNotes: task.safetyNotes ?? '',
+    autoGenerateInstances: task.autoGenerateInstances !== false,
+    requiresPlanning: task.requiresPlanning !== false,
+    canBeSplit: Boolean(task.canBeSplit),
+    canBeMovedBetweenStaff: task.canBeMovedBetweenStaff !== false,
+    requiresManagerApprovalToSkip: Boolean(task.requiresManagerApprovalToSkip),
+    missedTaskPolicy: task.missedTaskPolicy ?? 'carry_forward',
+    rescheduleWindowDays: String(task.rescheduleWindowDays ?? ''),
     active: task.active !== false,
   };
+}
+
+function uniqueOptions(items, getKey, getLabel, filter = () => true) {
+  const seen = new Set();
+  return items
+    .filter(filter)
+    .map((item) => ({ value: getKey(item), label: getLabel(item) }))
+    .filter((option) => option.value && !seen.has(option.value) && seen.add(option.value))
+    .sort((left, right) => String(left.label).localeCompare(String(right.label)));
 }
 
 function getTaskOrder(task) {
@@ -160,6 +198,20 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
   const visibleTasks = useMemo(() => filterTasks(orderedTasks, searchQuery), [orderedTasks, searchQuery]);
   const isSearching = searchQuery.trim().length > 0;
   const selectedVisibleCount = visibleTasks.filter((task) => selectedTemplateIds.has(task.taskTemplateUuid)).length;
+  const allEditableTemplates = useMemo(() => (Array.isArray(taskTemplates) && taskTemplates.length ? taskTemplates : orderedTasks), [taskTemplates, orderedTasks]);
+  const facilityOptions = useMemo(() => uniqueOptions(allEditableTemplates, (task) => task.facilityId, (task) => task.facility), [allEditableTemplates]);
+  const zoneOptions = useMemo(() => uniqueOptions(
+    allEditableTemplates,
+    (task) => task.zoneId,
+    (task) => task.zone,
+    (task) => !editDraft?.facilityId || task.facilityId === editDraft.facilityId,
+  ), [allEditableTemplates, editDraft?.facilityId]);
+  const taskGroupOptions = useMemo(() => uniqueOptions(
+    allEditableTemplates,
+    (task) => task.taskGroupId,
+    (task) => task.taskGroup,
+    (task) => (!editDraft?.facilityId || task.facilityId === editDraft.facilityId) && (!editDraft?.zoneId || task.zoneId === editDraft.zoneId),
+  ), [allEditableTemplates, editDraft?.facilityId, editDraft?.zoneId]);
 
   const zoneSections = useMemo(() => groupByZone(visibleTasks), [visibleTasks]);
 
@@ -435,7 +487,39 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
   }
 
   function updateEditDraft(field, value) {
-    setEditDraft((current) => ({ ...current, [field]: value }));
+    setEditDraft((current) => {
+      if (!current) return current;
+      if (field === 'facilityId') {
+        const selectedFacility = facilityOptions.find((option) => option.value === value);
+        const firstZone = uniqueOptions(allEditableTemplates, (task) => task.zoneId, (task) => task.zone, (task) => task.facilityId === value)[0] ?? null;
+        const firstGroup = uniqueOptions(allEditableTemplates, (task) => task.taskGroupId, (task) => task.taskGroup, (task) => task.facilityId === value)[0] ?? null;
+        return {
+          ...current,
+          facilityId: value,
+          facility: selectedFacility?.label ?? current.facility,
+          zoneId: firstZone?.value ?? '',
+          zone: firstZone?.label ?? '',
+          taskGroupId: firstGroup?.value ?? '',
+          taskGroup: firstGroup?.label ?? '',
+        };
+      }
+      if (field === 'zoneId') {
+        const selectedZone = zoneOptions.find((option) => option.value === value);
+        const firstGroup = uniqueOptions(allEditableTemplates, (task) => task.taskGroupId, (task) => task.taskGroup, (task) => task.zoneId === value)[0] ?? null;
+        return {
+          ...current,
+          zoneId: value,
+          zone: selectedZone?.label ?? current.zone,
+          taskGroupId: firstGroup?.value ?? '',
+          taskGroup: firstGroup?.label ?? '',
+        };
+      }
+      if (field === 'taskGroupId') {
+        const selectedGroup = taskGroupOptions.find((option) => option.value === value);
+        return { ...current, taskGroupId: value, taskGroup: selectedGroup?.label ?? current.taskGroup };
+      }
+      return { ...current, [field]: value };
+    });
   }
 
   async function saveEditedTask() {
@@ -601,7 +685,7 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
             <div className="panel-title" style={{ marginBottom: 12 }}>
               <div>
                 <h3 id="task-card-popup-title">Edit task card</h3>
-                <p className="muted">Quick edit for this task card without leaving Task Card Organiser.</p>
+                <p className="muted">Full task-card editor without leaving Task Card Organiser.</p>
               </div>
               <button className="button secondary slim" type="button" onClick={closeEditPopup} disabled={isSaving}>Close</button>
             </div>
@@ -610,6 +694,34 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
               <label className="field-label">
                 <span>Task name</span>
                 <input value={editDraft.title} onChange={(event) => updateEditDraft('title', event.target.value)} disabled={isSaving} />
+              </label>
+              <label className="field-label">
+                <span>Template code</span>
+                <input value={editDraft.templateId} disabled />
+              </label>
+              <label className="field-label">
+                <span>Facility</span>
+                <select value={editDraft.facilityId} onChange={(event) => updateEditDraft('facilityId', event.target.value)} disabled={isSaving || !facilityOptions.length}>
+                  {facilityOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              <label className="field-label">
+                <span>Zone</span>
+                <select value={editDraft.zoneId} onChange={(event) => updateEditDraft('zoneId', event.target.value)} disabled={isSaving || !zoneOptions.length}>
+                  {zoneOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              <label className="field-label">
+                <span>Task group</span>
+                <select value={editDraft.taskGroupId} onChange={(event) => updateEditDraft('taskGroupId', event.target.value)} disabled={isSaving || !taskGroupOptions.length}>
+                  {taskGroupOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              <label className="field-label">
+                <span>Service type</span>
+                <select value={editDraft.serviceType} onChange={(event) => updateEditDraft('serviceType', event.target.value)} disabled={isSaving}>
+                  {SERVICE_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
               </label>
               <label className="field-label">
                 <span>Order number</span>
@@ -635,11 +747,36 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
               </label>
               <label className="field-label">
                 <span>Estimated minutes</span>
-                <input value={editDraft.estimatedMinutes} onChange={(event) => updateEditDraft('estimatedMinutes', event.target.value)} disabled={isSaving} />
+                <input type="number" min="0" step="1" value={editDraft.estimatedMinutes} onChange={(event) => updateEditDraft('estimatedMinutes', event.target.value)} disabled={isSaving} />
+              </label>
+              <label className="field-label">
+                <span>Weekly cadence</span>
+                <select value={editDraft.cadenceMode} onChange={(event) => updateEditDraft('cadenceMode', event.target.value)} disabled={isSaving || editDraft.frequency !== 'weekly'}>
+                  <option>Anchored</option>
+                  <option>Suggested</option>
+                </select>
               </label>
               <label className="field-label">
                 <span>Designated day</span>
-                <input value={editDraft.designatedDay} onChange={(event) => updateEditDraft('designatedDay', event.target.value)} disabled={isSaving || editDraft.frequency !== 'weekly'} />
+                <select value={editDraft.designatedDay} onChange={(event) => updateEditDraft('designatedDay', event.target.value)} disabled={isSaving || editDraft.frequency !== 'weekly'}>
+                  <option>MON</option>
+                  <option>TUE</option>
+                  <option>WED</option>
+                  <option>THU</option>
+                  <option>FRI</option>
+                  <option>SAT</option>
+                  <option>SUN</option>
+                </select>
+              </label>
+              <label className="field-label">
+                <span>Missed task policy</span>
+                <select value={editDraft.missedTaskPolicy} onChange={(event) => updateEditDraft('missedTaskPolicy', event.target.value)} disabled={isSaving}>
+                  {MISSED_TASK_POLICY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              <label className="field-label">
+                <span>Reschedule window days</span>
+                <input type="number" min="0" step="1" value={editDraft.rescheduleWindowDays} onChange={(event) => updateEditDraft('rescheduleWindowDays', event.target.value)} disabled={isSaving} placeholder="Blank if none" />
               </label>
               <label className="field-label">
                 <span>Status</span>
@@ -651,15 +788,24 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
             </div>
 
             <label className="field-label" style={{ marginTop: 10 }}>
-              <span>Notes</span>
+              <span>Notes / description</span>
               <textarea value={editDraft.notes} onChange={(event) => updateEditDraft('notes', event.target.value)} disabled={isSaving} rows={4} />
             </label>
+            <label className="field-label" style={{ marginTop: 10 }}>
+              <span>Pass criteria</span>
+              <textarea value={editDraft.passCriteria} onChange={(event) => updateEditDraft('passCriteria', event.target.value)} disabled={isSaving} rows={3} />
+            </label>
+            <label className="field-label" style={{ marginTop: 10 }}>
+              <span>Safety notes</span>
+              <textarea value={editDraft.safetyNotes} onChange={(event) => updateEditDraft('safetyNotes', event.target.value)} disabled={isSaving} rows={3} />
+            </label>
 
-            <div style={readOnlyMetaStyle}>
-              <span>Facility: <strong>{editDraft.facility || '—'}</strong></span>
-              <span>Zone: <strong>{editDraft.zone || '—'}</strong></span>
-              <span>Group: <strong>{editDraft.taskGroup || '—'}</strong></span>
-              <span>Template: <strong>{editDraft.templateId || '—'}</strong></span>
+            <div className="task-card-advanced-flags" style={{ marginTop: 10 }}>
+              <label className="checkbox-row"><input type="checkbox" checked={editDraft.autoGenerateInstances} onChange={(event) => updateEditDraft('autoGenerateInstances', event.target.checked)} disabled={isSaving} /><span>Auto-generate instances</span></label>
+              <label className="checkbox-row"><input type="checkbox" checked={editDraft.requiresPlanning} onChange={(event) => updateEditDraft('requiresPlanning', event.target.checked)} disabled={isSaving} /><span>Requires planning</span></label>
+              <label className="checkbox-row"><input type="checkbox" checked={editDraft.canBeSplit} onChange={(event) => updateEditDraft('canBeSplit', event.target.checked)} disabled={isSaving} /><span>Can be split</span></label>
+              <label className="checkbox-row"><input type="checkbox" checked={editDraft.canBeMovedBetweenStaff} onChange={(event) => updateEditDraft('canBeMovedBetweenStaff', event.target.checked)} disabled={isSaving} /><span>Can be moved between staff</span></label>
+              <label className="checkbox-row"><input type="checkbox" checked={editDraft.requiresManagerApprovalToSkip} onChange={(event) => updateEditDraft('requiresManagerApprovalToSkip', event.target.checked)} disabled={isSaving} /><span>Manager approval required to skip</span></label>
             </div>
 
             <div className="cta-row" style={{ marginTop: 12 }}>

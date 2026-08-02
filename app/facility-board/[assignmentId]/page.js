@@ -635,7 +635,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
   const addedTasks = assignment.tasks.filter((task) => task.addedToday);
   const dailyTasks = assignment.tasks.filter((task) => !task.addedToday && (!task.frequency || String(task.frequency).toLowerCase() === 'daily'));
   const periodicTasks = assignment.tasks.filter((task) => !task.addedToday && task.frequency && String(task.frequency).toLowerCase() !== 'daily');
-  const extraTasks = getExtraFacilityTasks(assignment, { baseDate: parseBoardDayDate(assignment.boardDay) });
+  const extraTasks = getExtraFacilityTasks(assignment, { baseDate: parseBoardDayDate(assignment.boardDay), taskTemplates: board?.taskTemplates ?? [] });
   const addedGroups = groupAssignmentTasks(addedTasks);
   const dailyGroups = groupAssignmentTasks(dailyTasks);
   const periodicGroups = groupAssignmentTasks(periodicTasks);

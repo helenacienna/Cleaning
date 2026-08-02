@@ -4145,6 +4145,12 @@ button.button {
   flex-wrap: wrap;
 }
 
+.task-card-advanced-flags {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
 .facility-task-order-edit-button {
   white-space: nowrap;
 }

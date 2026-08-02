@@ -19,12 +19,57 @@ function parseRequirement(value) {
         evidenceRequirement: 'none',
         commentRequirement: 'always',
       };
+    case 'multi photo':
+      return {
+        evidenceRequirement: 'multi_photo',
+        commentRequirement: 'none',
+      };
+    case 'comment always':
+      return {
+        evidenceRequirement: 'none',
+        commentRequirement: 'always',
+      };
+    case 'comment on exception only':
+      return {
+        evidenceRequirement: 'none',
+        commentRequirement: 'on_exception',
+      };
     default:
       return {
         evidenceRequirement: 'none',
         commentRequirement: 'none',
       };
   }
+}
+
+function parseServiceType(value) {
+  switch (String(value ?? '').toLowerCase()) {
+    case 'periodic':
+      return 'periodic';
+    case 'ad_hoc':
+    case 'ad hoc':
+      return 'ad_hoc';
+    default:
+      return 'routine';
+  }
+}
+
+function parseMissedTaskPolicy(value) {
+  switch (String(value ?? '').toLowerCase()) {
+    case 'stay_overdue':
+      return 'stay_overdue';
+    case 'skip_and_regenerate':
+      return 'skip_and_regenerate';
+    case 'manager_review':
+      return 'manager_review';
+    default:
+      return 'carry_forward';
+  }
+}
+
+function optionalText(value) {
+  const text = String(value ?? '').trim();
+  return text || null;
 }
 
 function parsePriority(value) {
@@ -83,20 +128,45 @@ export async function PATCH(request, { params }) {
   const recurrenceBasis = parseRecurrenceBasis(body.cadenceMode);
   const estimatedMinutes = Number.parseInt(String(body.estimatedMinutes ?? '').trim(), 10);
   const defaultSequence = Number.parseInt(String(body.jobOrderNumber ?? '').trim(), 10);
+  const rescheduleWindowDays = Number.parseInt(String(body.rescheduleWindowDays ?? '').trim(), 10);
 
   const existing = await prisma.taskTemplate.findUnique({
     where: { id: templateId },
+    include: { facility: true, zone: true, taskGroup: true },
   });
 
   if (!existing) {
     return NextResponse.json({ error: 'Task template not found' }, { status: 404 });
   }
 
+  const facilityId = String(body.facilityId ?? existing.facilityId).trim();
+  const zoneId = String(body.zoneId ?? existing.zoneId).trim();
+  const taskGroupId = String(body.taskGroupId ?? existing.taskGroupId).trim();
+  const [facility, zone, taskGroup] = await Promise.all([
+    prisma.facility.findUnique({ where: { id: facilityId }, select: { id: true } }),
+    prisma.zone.findUnique({ where: { id: zoneId }, select: { id: true, facilityId: true } }),
+    prisma.taskGroup.findUnique({ where: { id: taskGroupId }, select: { id: true, facilityId: true, zoneId: true } }),
+  ]);
+
+  if (!facility) {
+    return NextResponse.json({ error: 'Selected facility was not found' }, { status: 400 });
+  }
+  if (!zone || zone.facilityId !== facilityId) {
+    return NextResponse.json({ error: 'Selected zone does not belong to the selected facility' }, { status: 400 });
+  }
+  if (!taskGroup || taskGroup.facilityId !== facilityId || taskGroup.zoneId !== zoneId) {
+    return NextResponse.json({ error: 'Selected task group does not belong to the selected zone' }, { status: 400 });
+  }
+
   const updated = await prisma.taskTemplate.update({
     where: { id: templateId },
     data: {
       title: String(body.title ?? '').trim() || existing.title,
-      description: String(body.notes ?? '').trim() || null,
+      description: optionalText(body.notes),
+      facilityId,
+      zoneId,
+      taskGroupId,
+      serviceType: parseServiceType(body.serviceType),
       recurrenceType,
       recurrenceRule: recurrenceType === 'weekly'
         ? {
@@ -112,6 +182,15 @@ export async function PATCH(request, { params }) {
       priority,
       evidenceRequirement: requirement.evidenceRequirement,
       commentRequirement: requirement.commentRequirement,
+      passCriteria: optionalText(body.passCriteria),
+      safetyNotes: optionalText(body.safetyNotes),
+      autoGenerateInstances: Boolean(body.autoGenerateInstances),
+      requiresPlanning: Boolean(body.requiresPlanning),
+      canBeSplit: Boolean(body.canBeSplit),
+      canBeMovedBetweenStaff: Boolean(body.canBeMovedBetweenStaff),
+      requiresManagerApprovalToSkip: Boolean(body.requiresManagerApprovalToSkip),
+      missedTaskPolicy: parseMissedTaskPolicy(body.missedTaskPolicy),
+      rescheduleWindowDays: Number.isFinite(rescheduleWindowDays) ? rescheduleWindowDays : null,
       active: Boolean(body.active),
       version: { increment: 1 },
     },
