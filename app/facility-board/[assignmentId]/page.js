@@ -751,16 +751,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
 
           <section className="facility-board-task-columns">
             {[{
-            key: 'daily',
-            title: 'Daily tasks',
-            subtitle: 'Routine work for this board day',
-            groups: dailyGroups,
-            summary: {
-              completed: getOutcomeCompletedCount(dailyTasks),
-              total: dailyTasks.length,
-              progress: dailyTasks.length ? Math.round((getOutcomeCompletedCount(dailyTasks) / dailyTasks.length) * 100) : 0,
-            },
-          }, {
             key: 'periodic',
             title: 'Periodic tasks',
             subtitle: '',
@@ -769,6 +759,16 @@ export default async function FacilityBoardPage({ params, searchParams }) {
               completed: getOutcomeCompletedCount(periodicTasks),
               total: periodicTasks.length,
               progress: periodicTasks.length ? Math.round((getOutcomeCompletedCount(periodicTasks) / periodicTasks.length) * 100) : 0,
+            },
+          }, {
+            key: 'daily',
+            title: 'Daily tasks',
+            subtitle: 'Routine work for this board day',
+            groups: dailyGroups,
+            summary: {
+              completed: getOutcomeCompletedCount(dailyTasks),
+              total: dailyTasks.length,
+              progress: dailyTasks.length ? Math.round((getOutcomeCompletedCount(dailyTasks) / dailyTasks.length) * 100) : 0,
             },
           }, {
             key: 'extra',
@@ -785,11 +785,11 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                   {section.subtitle ? <p className="muted">{section.subtitle}</p> : null}
                 </div>
                 <div className="facility-board-task-column-header-actions">
-                  {section.key === 'daily' ? <ExpandAllZonesButton /> : null}
                   {section.key === 'extra' ? <div className="badge">{section.summary.count} tasks</div> : <div className="badge">{section.summary.completed}/{section.summary.total} complete</div>}
                 </div>
               </div>
               {section.key !== 'extra' ? renderOutcomeProgress(section.groups.flatMap((group) => group.tasks)) : null}
+              {section.key === 'daily' ? <ExpandAllZonesButton /> : null}
 
               {section.key === 'extra' ? (
                 <div className="facility-board-extra-list">
