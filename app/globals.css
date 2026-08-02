@@ -4710,7 +4710,7 @@ button.button {
 .facility-board-header-control-row{display:block;min-height:58px;position:relative;width:100%}
 .facility-board-header-control-row>.facility-board-detail-title-block{left:50%;max-width:min(440px,36vw);position:absolute;top:50%;transform:translate(-50%,-50%);width:max-content;z-index:1}
 .facility-board-header-actions{align-items:center;display:flex;gap:8px;justify-content:flex-end;position:absolute;right:0;top:50%;transform:translateY(-50%);z-index:2}
-.facility-board-report-button{min-height:42px;padding:9px 13px}
+.facility-board-report-button{align-items:center;display:inline-flex;justify-content:center;min-height:42px;padding:9px 13px;text-align:center}
 .facility-board-date-picker-menu{position:relative;min-width:190px}
 .facility-board-date-picker-menu summary{list-style:none}
 .facility-board-date-picker-menu summary::-webkit-details-marker{display:none}
@@ -4750,6 +4750,9 @@ button.button {
 .facility-board-extra-expand[open] .facility-board-extra-expand-button span{transform:rotate(180deg)}
 .facility-board-extra-list-expanded{padding-top:2px}
 .facility-board-task-column .progress{margin-top:-2px}
+.facility-board-task-column-daily:not(.facility-board-daily-list-expanded) > .progress,
+.facility-board-task-column-daily:not(.facility-board-daily-list-expanded) > .facility-board-task-column-groups{display:none}
+.facility-board-task-column-daily:not(.facility-board-daily-list-expanded){gap:0}
 .facility-board-task-column .task-disclosure,.facility-board-task-column .task-row{background:#ffffffeb}
 .zone-summary-row-compact{gap:3px;padding:4px}
 .zone-summary-row-compact strong{font-size:16px;line-height:1.1}

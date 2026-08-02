@@ -10,6 +10,7 @@ export default function ExpandAllZonesButton() {
     const zones = Array.from(column?.querySelectorAll('details.facility-board-zone-card-daily') ?? []);
     const nextExpanded = !expanded;
 
+    column?.classList.toggle('facility-board-daily-list-expanded', nextExpanded);
     zones.forEach((zone) => {
       zone.open = nextExpanded;
     });
@@ -19,7 +20,7 @@ export default function ExpandAllZonesButton() {
 
   return (
     <button className="button secondary slim facility-board-expand-button" type="button" onClick={toggleZones}>
-      {expanded ? 'Collapse all zones' : 'Expand all zones'}
+      {expanded ? 'Collapse daily list' : 'Show daily list'}
     </button>
   );
 }

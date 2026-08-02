@@ -1004,9 +1004,6 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
             Refresh
           </button>
         )}
-        <button className="button secondary flow-nav-button close-modal-button" type="button" onClick={onClose}>
-          Close
-        </button>
         {showGradeReference ? (
           <div className="floating-grade-reference" aria-label="Grade score reference">
             {GRADE_REFERENCE.map(([grade, description, toneClass]) => (
