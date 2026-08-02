@@ -26,7 +26,7 @@ const STAFF_API_PREFIXES = [
 ];
 
 function authEnabled() {
-  return Boolean(process.env.CLEANING_AUTH_SECRET && (process.env.CLEANING_ADMIN_PASSWORD || process.env.CLEANING_STAFF_PASSWORD));
+  return Boolean(process.env.CLEANING_AUTH_SECRET && (process.env.CLEANING_ADMIN_PASSWORD || process.env.CLEANING_STAFF_PASSWORD || process.env.CLEANING_AUTH_USERS));
 }
 
 function pathStartsWith(pathname, prefixes) {
@@ -81,10 +81,28 @@ async function getSession(request) {
   }
 }
 
+function safeLandingPath(value) {
+  if (!value || typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return '/';
+  return value;
+}
+
+function getDefaultLandingPath(session) {
+  const configuredLandingPath = safeLandingPath(session?.landingPath);
+  if (configuredLandingPath !== '/') return configuredLandingPath;
+  if (session?.role === 'staff') {
+    return session.staffSlug ? `/cleaner/${encodeURIComponent(session.staffSlug)}` : '/cleaner';
+  }
+  return '/';
+}
+
 function redirectToLogin(request) {
   const loginUrl = new URL('/login', request.url);
   loginUrl.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
   return NextResponse.redirect(loginUrl);
+}
+
+function redirectToLanding(request, session) {
+  return NextResponse.redirect(new URL(getDefaultLandingPath(session), request.url));
 }
 
 function forbiddenJson() {
@@ -117,7 +135,7 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  return isApi ? forbiddenJson() : redirectToLogin(request);
+  return isApi ? forbiddenJson() : redirectToLanding(request, session);
 }
 
 export const config = {

@@ -40,9 +40,13 @@ export default function LoginForm() {
 
   return (
     <form className="card login-card" onSubmit={handleSubmit}>
-      <span className="badge tone-green">Secure access</span>
+      <span className="badge tone-green">One login for everyone</span>
       <h1>Cienna Cleaning login</h1>
-      <p className="muted">Enter your username and password for this site. Shared admin/staff passwords can still be used during transition.</p>
+      <p className="muted">Sign in once and the system will send you to the right workspace for your role and permissions.</p>
+      <div className="login-route-preview" aria-label="Login routing summary">
+        <div><strong>Cleaners</strong><span>Your personal work list</span></div>
+        <div><strong>Managers</strong><span>Admin dashboard and setup tools</span></div>
+      </div>
       <label className="login-field">
         <span>Username</span>
         <input
@@ -64,7 +68,7 @@ export default function LoginForm() {
       </label>
       {error ? <p className="form-error">{error}</p> : null}
       <button className="button primary" type="submit" disabled={status === 'loading'}>
-        {status === 'loading' ? 'Signing in…' : 'Sign in'}
+        {status === 'loading' ? 'Checking access…' : 'Sign in and continue'}
       </button>
     </form>
   );

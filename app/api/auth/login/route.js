@@ -1,14 +1,8 @@
 import { NextResponse } from 'next/server';
 import { AUTH_COOKIE_NAME, getUserForCredentials, signAuthSession } from '../../../../lib/auth-cookie';
+import { getDefaultLandingPathForUser, getPostLoginPath, safeNextPath } from '../../../../lib/auth-redirects';
 
 const ONE_WEEK_SECONDS = 60 * 60 * 24 * 7;
-
-function safeNextPath(value) {
-  if (!value || typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) {
-    return '/';
-  }
-  return value;
-}
 
 export async function POST(request) {
   const body = await request.json().catch(() => null);
@@ -21,7 +15,9 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Incorrect username or password' }, { status: 401 });
   }
 
-  const response = NextResponse.json({ ok: true, role: user.role, name: user.name, next: nextPath });
+  const landingPath = getDefaultLandingPathForUser(user);
+  const postLoginPath = getPostLoginPath(user, nextPath);
+  const response = NextResponse.json({ ok: true, role: user.role, name: user.name, landingPath, next: postLoginPath });
   response.cookies.set({
     name: AUTH_COOKIE_NAME,
     value: signAuthSession(user),

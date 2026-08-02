@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-08-01T03:03:35.284Z",
-  "version": "38d4ce6+local",
-  "summary": "Refine checklist layout and individual auth users"
+  "deployedAt": "2026-08-02T01:14:34.925Z",
+  "version": "d63d2f5",
+  "summary": "Add role-based login landing redirects"
 }

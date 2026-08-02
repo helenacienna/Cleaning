@@ -275,6 +275,28 @@ a { color: inherit; text-decoration: none; }
   margin: 0;
 }
 
+.login-route-preview {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(34,197,94,0.18);
+  background: rgba(240,253,244,0.76);
+}
+
+.login-route-preview div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.login-route-preview span {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: right;
+}
+
 .login-field {
   display: grid;
   gap: 6px;

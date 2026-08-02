@@ -5,6 +5,10 @@ async function importFreshAuthCookie() {
   return import(`../lib/auth-cookie.js?test=${Date.now()}-${Math.random()}`);
 }
 
+async function importFreshAuthRedirects() {
+  return import(`../lib/auth-redirects.js?test=${Date.now()}-${Math.random()}`);
+}
+
 test('auth cookie signs and verifies admin sessions', async () => {
   process.env.CLEANING_AUTH_SECRET = 'test-secret';
   const auth = await importFreshAuthCookie();
@@ -54,4 +58,23 @@ test('auth resolves individual configured users', async () => {
   assert.equal(staff.role, 'staff');
   assert.equal(staff.staffSlug, 'tony');
   assert.equal(auth.getUserForCredentials({ username: 'tony', password: 'wrong' }), null);
+});
+
+test('post-login redirect sends staff to their own landing when requested page is not allowed', async () => {
+  const redirects = await importFreshAuthRedirects();
+  const staff = { role: 'staff', name: 'Tony', staffSlug: 'tony' };
+
+  assert.equal(redirects.getDefaultLandingPathForUser(staff), '/cleaner/tony');
+  assert.equal(redirects.getPostLoginPath(staff, '/'), '/cleaner/tony');
+  assert.equal(redirects.getPostLoginPath(staff, '/admin/staff'), '/cleaner/tony');
+  assert.equal(redirects.getPostLoginPath(staff, '/cleaner/tony?day=2026-08-02'), '/cleaner/tony?day=2026-08-02');
+});
+
+test('post-login redirect preserves allowed admin next path', async () => {
+  const redirects = await importFreshAuthRedirects();
+  const admin = { role: 'admin', name: 'Chris' };
+
+  assert.equal(redirects.getDefaultLandingPathForUser(admin), '/');
+  assert.equal(redirects.getPostLoginPath(admin, '/admin/staff'), '/admin/staff');
+  assert.equal(redirects.getPostLoginPath(admin, '//unsafe.example'), '/');
 });
