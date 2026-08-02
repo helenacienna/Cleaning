@@ -4136,8 +4136,16 @@ button.button {
   gap: 4px;
 }
 
-.facility-task-order-edit-button {
+.facility-task-order-card-actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.facility-task-order-edit-button {
   white-space: nowrap;
 }
 
@@ -4557,6 +4565,16 @@ button.button {
 }
 
 @media (max-width: 720px) {
+  .facility-task-order-card-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: stretch;
+  }
+
+  .facility-task-order-card-actions .button {
+    flex: 1;
+  }
+
   .page { padding: 8px 6px 18px; }
   .dashboard-page { padding-bottom: 190px; }
   .topbar { flex-direction: column; align-items: flex-start; }

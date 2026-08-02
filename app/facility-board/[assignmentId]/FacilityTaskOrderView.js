@@ -569,18 +569,19 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
                     <span className="muted">{task.taskGroup} · {task.staff || 'Unallocated'} · {task.frequency || 'Daily'}</span>
                   </div>
                   {task.taskTemplateUuid ? (
-                    <button
-                      className="button secondary slim facility-task-order-edit-button"
-                      type="button"
-                      draggable={false}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        openEditPopup(task);
-                      }}
-                      disabled={isSaving}
-                    >
-                      Edit
-                    </button>
+                    <div className="facility-task-order-card-actions" onClick={(event) => event.stopPropagation()}>
+                      <a className="button secondary slim" draggable={false} href={`/reports/task/${task.taskTemplateUuid}?period=weekly`}>Weekly report</a>
+                      <a className="button secondary slim" draggable={false} href={`/reports/task/${task.taskTemplateUuid}?period=monthly`}>Monthly report</a>
+                      <button
+                        className="button secondary slim facility-task-order-edit-button"
+                        type="button"
+                        draggable={false}
+                        onClick={() => openEditPopup(task)}
+                        disabled={isSaving}
+                      >
+                        Edit
+                      </button>
+                    </div>
                   ) : null}
                 </div>
               ))}
@@ -665,6 +666,12 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
               <button className="button primary" type="button" onClick={saveEditedTask} disabled={isSaving || !String(editDraft.title ?? '').trim()}>
                 {isSaving ? 'Saving…' : 'Save task card'}
               </button>
+              {editingTask.taskTemplateUuid ? (
+                <>
+                  <a className="button secondary" href={`/reports/task/${editingTask.taskTemplateUuid}?period=weekly`}>Weekly report</a>
+                  <a className="button secondary" href={`/reports/task/${editingTask.taskTemplateUuid}?period=monthly`}>Monthly report</a>
+                </>
+              ) : null}
               <button className="button secondary" type="button" onClick={closeEditPopup} disabled={isSaving}>Cancel</button>
             </div>
           </section>
