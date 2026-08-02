@@ -10,6 +10,7 @@ import {
   scoreLabel,
   parseIssueNote,
   parseResolutionNote,
+  serviceLevelLabel,
 } from '../../lib/report-summary';
 
 function formatDayLabel(day) {
@@ -32,6 +33,9 @@ function SummaryMetrics({ totals }) {
       <div className="daily-report-metric"><span>Unresolved</span><strong className={totals.unresolvedIssues ? 'tone-red' : 'tone-green'}>{totals.unresolvedIssues}</strong></div>
       <div className="daily-report-metric"><span>Photos</span><strong>{totals.photoCount}</strong></div>
       <div className="daily-report-metric"><span>Notes</span><strong>{totals.noteCount}</strong></div>
+      <div className="daily-report-metric"><span>Check</span><strong>{totals.serviceLevels?.check ?? 0}</strong></div>
+      <div className="daily-report-metric"><span>Clean</span><strong>{totals.serviceLevels?.clean ?? 0}</strong></div>
+      <div className="daily-report-metric"><span>Detailed clean</span><strong>{totals.serviceLevels?.detailed_clean ?? 0}</strong></div>
     </section>
   );
 }
@@ -77,11 +81,11 @@ function IssueList({ entries }) {
         </div>
       </div>
       <div className="daily-report-task-list">
-        {entries.map(({ task, grade, resolvedIssue, day, facility, staff }) => (
+        {entries.map(({ task, grade, resolvedIssue, day, facility, staff, serviceLevel }) => (
           <article className={`daily-report-task-row ${resolvedIssue ? 'report-resolved' : 'report-attention'}`} key={task.id}>
             <div>
               <strong>{task.titleSnapshot}</strong>
-              <div className="muted">{formatDayLabel(day)} · {facility} · {task.plannedZone?.name ?? task.zone?.name ?? 'Unknown zone'} · {staff}</div>
+              <div className="muted">{formatDayLabel(day)} · {facility} · {task.plannedZone?.name ?? task.zone?.name ?? 'Unknown zone'} · {staff} · {serviceLevelLabel(serviceLevel)}</div>
               {parseIssueNote(task) ? <p>{parseIssueNote(task)}</p> : null}
               {parseResolutionNote(task) ? <p><strong>Correction:</strong> {parseResolutionNote(task)}</p> : null}
             </div>

@@ -55,6 +55,9 @@ function buildPdf(report = {}) {
     addKeyValue(doc, 'Unresolved issues', totals.unresolvedIssues ?? 0);
     addKeyValue(doc, 'Photos', totals.photoCount ?? 0);
     addKeyValue(doc, 'Notes', totals.noteCount ?? 0);
+    if (totals.serviceLevels) {
+      addKeyValue(doc, 'Service levels', `Check ${totals.serviceLevels.check ?? 0}, Clean ${totals.serviceLevels.clean ?? 0}, Detailed clean ${totals.serviceLevels.detailed_clean ?? 0}`);
+    }
     doc.moveDown();
 
     const tasks = Array.isArray(report.tasks) ? report.tasks : [];
@@ -69,7 +72,7 @@ function buildPdf(report = {}) {
       if (doc.y > 735) doc.addPage();
       doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(10).text(`${String(index + 1).padStart(2, '0')}. ${safeText(task.title, 'Task')}`);
       doc.font('Helvetica').fontSize(9).fillColor('#334155');
-      doc.text(`${safeText(task.zone)} · ${safeText(task.group)} · Grade: ${safeText(task.grade, 'Not graded')} · Photos: ${task.photoCount ?? 0}`);
+      doc.text(`${safeText(task.zone)} · ${safeText(task.group)} · ${safeText(task.serviceLevel, 'Clean')} · Grade: ${safeText(task.grade, 'Not graded')} · Photos: ${task.photoCount ?? 0}`);
       if (task.addedToday) doc.fillColor('#0369a1').text('Added task');
       if (task.resolvedIssue) doc.fillColor('#047857').text('Resolved issue');
       if (task.issueNote) doc.fillColor('#7c2d12').text(`Note: ${task.issueNote}`);

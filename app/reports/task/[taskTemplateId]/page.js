@@ -13,6 +13,7 @@ import {
   periodParamForHref,
   previousPeriodHref,
   scoreLabel,
+  serviceLevelLabel,
   loadTaskPeriodReport,
 } from '../../../../lib/report-summary';
 import { taskPhotoUrl } from '../../../../lib/task-photo-urls';
@@ -64,6 +65,9 @@ function SummaryMetrics({ totals }) {
       <div className="daily-report-metric"><span>Unresolved</span><strong className={totals.unresolvedIssues ? 'tone-red' : 'tone-green'}>{totals.unresolvedIssues}</strong></div>
       <div className="daily-report-metric"><span>Photos</span><strong>{totals.photoCount}</strong></div>
       <div className="daily-report-metric"><span>Notes</span><strong>{totals.noteCount}</strong></div>
+      <div className="daily-report-metric"><span>Check</span><strong>{totals.serviceLevels?.check ?? 0}</strong></div>
+      <div className="daily-report-metric"><span>Clean</span><strong>{totals.serviceLevels?.clean ?? 0}</strong></div>
+      <div className="daily-report-metric"><span>Detailed clean</span><strong>{totals.serviceLevels?.detailed_clean ?? 0}</strong></div>
     </section>
   );
 }
@@ -109,13 +113,13 @@ function TaskRunList({ scored, title = 'Task history', description = 'Every run 
         </div>
       </div>
       <div className="daily-report-task-list">
-        {scored.map(({ task, grade, resolvedIssue, day, staff }) => {
+        {scored.map(({ task, grade, resolvedIssue, day, staff, serviceLevel }) => {
           const photos = task.execution?.photos ?? [];
           return (
             <article className={`daily-report-task-row ${!resolvedIssue && Number(grade) <= 2 ? 'report-attention' : ''}`} key={task.id}>
               <div>
                 <strong>{formatDayLabel(day)}</strong>
-                <div className="muted">{task.plannedFacility?.name ?? task.facility?.name ?? 'Unknown facility'} · {task.plannedZone?.name ?? task.zone?.name ?? 'Unknown zone'} · {staff}</div>
+                <div className="muted">{task.plannedFacility?.name ?? task.facility?.name ?? 'Unknown facility'} · {task.plannedZone?.name ?? task.zone?.name ?? 'Unknown zone'} · {staff} · {serviceLevelLabel(serviceLevel)}</div>
                 {parseIssueNote(task) ? <p>{parseIssueNote(task)}</p> : null}
                 {parseResolutionNote(task) ? <p><strong>Correction:</strong> {parseResolutionNote(task)}</p> : null}
                 {photos.length ? (
@@ -165,7 +169,7 @@ export default async function TaskReportPage({ params, searchParams }) {
             <h1>{template?.title ?? 'Task report'}</h1>
             <p>{period.label}</p>
             {template ? (
-              <p className="muted">{template.facility?.name ?? 'Unknown facility'} · {template.zone?.name ?? 'Unknown zone'} · {template.taskGroup?.name ?? 'Unknown group'} · {template.taskTemplateCode}</p>
+              <p className="muted">{template.facility?.name ?? 'Unknown facility'} · {template.zone?.name ?? 'Unknown zone'} · {template.taskGroup?.name ?? 'Unknown group'} · {serviceLevelLabel(template.serviceLevel)} · {template.taskTemplateCode}</p>
             ) : null}
             <div className="workflow-banner-actions" style={{ marginTop: 14 }}>
               <Link className="button secondary" href={previousTaskPeriodHref(period, route)}>Previous</Link>

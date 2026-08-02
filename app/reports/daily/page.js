@@ -53,6 +53,16 @@ function hasMeaningfulNote(task) {
   return Boolean(parseIssueNote(task) || parseResolutionNote(task));
 }
 
+function serviceLevelLabel(serviceLevel = 'clean') {
+  if (serviceLevel === 'check') return 'Check';
+  if (serviceLevel === 'detailed_clean') return 'Detailed clean';
+  return 'Clean';
+}
+
+function taskServiceLevel(task) {
+  return task?.serviceLevel ?? task?.taskTemplate?.serviceLevel ?? 'clean';
+}
+
 function hasNumericGrade(grade) {
   return grade !== null && grade !== undefined && grade !== '' && Number.isFinite(Number(grade));
 }
@@ -392,6 +402,11 @@ export default async function DailyReportPage({ searchParams }) {
     unresolvedIssues: scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2).length,
     photoCount: tasks.reduce((sum, task) => sum + (task.execution?.photos?.length ?? 0), 0),
     noteCount: tasks.filter(hasMeaningfulNote).length,
+    serviceLevels: {
+      check: tasks.filter((task) => taskServiceLevel(task) === 'check').length,
+      clean: tasks.filter((task) => taskServiceLevel(task) !== 'check' && taskServiceLevel(task) !== 'detailed_clean').length,
+      detailed_clean: tasks.filter((task) => taskServiceLevel(task) === 'detailed_clean').length,
+    },
   };
   const completionPercent = percent(totals.completed, totals.total);
   const reportPath = `/reports/daily?facility=${encodeURIComponent(facility)}&staff=${encodeURIComponent(staffName)}&day=${encodeURIComponent(day)}${ids.length ? `&ids=${encodeURIComponent(ids.join(','))}` : ''}`;
@@ -412,6 +427,7 @@ export default async function DailyReportPage({ searchParams }) {
       zone: task.plannedZone?.name ?? task.zone?.name,
       group: task.plannedTaskGroup?.name ?? task.taskGroup?.name,
       grade: scoreLabel(grade, task),
+      serviceLevel: serviceLevelLabel(taskServiceLevel(task)),
       initialGrade,
       resolvedIssue,
       issueNote: parseIssueNote(task),
@@ -486,6 +502,9 @@ export default async function DailyReportPage({ searchParams }) {
               <div className="daily-report-metric"><span>Unresolved</span><strong className={totals.unresolvedIssues ? 'tone-red' : 'tone-green'}>{totals.unresolvedIssues}</strong></div>
               <div className="daily-report-metric"><span>Photos</span><strong>{totals.photoCount}</strong></div>
               <div className="daily-report-metric"><span>Notes</span><strong>{totals.noteCount}</strong></div>
+              <div className="daily-report-metric"><span>Check</span><strong>{totals.serviceLevels.check}</strong></div>
+              <div className="daily-report-metric"><span>Clean</span><strong>{totals.serviceLevels.clean}</strong></div>
+              <div className="daily-report-metric"><span>Detailed clean</span><strong>{totals.serviceLevels.detailed_clean}</strong></div>
             </section>
 
             <section className="card daily-report-card">
@@ -516,7 +535,7 @@ export default async function DailyReportPage({ searchParams }) {
                     <article className="daily-report-task-row report-attention" key={`followup-${task.id}`}>
                       <div>
                         <strong>{task.titleSnapshot}</strong>
-                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name} · {serviceLevelLabel(taskServiceLevel(task))}</div>
                         {parseIssueNote(task) ? <p>{parseIssueNote(task)}</p> : null}
                         <PhotoEvidence task={task} />
                       </div>
@@ -542,7 +561,7 @@ export default async function DailyReportPage({ searchParams }) {
                     <article className="daily-report-task-row report-added" key={`added-${task.id}`}>
                       <div>
                         <strong>{task.titleSnapshot}</strong>
-                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name} · {serviceLevelLabel(taskServiceLevel(task))}</div>
                         {parseIssueNote(task) ? <p>{parseIssueNote(task)}</p> : null}
                         <PhotoEvidence task={task} />
                       </div>
@@ -568,7 +587,7 @@ export default async function DailyReportPage({ searchParams }) {
                     <article className="daily-report-task-row report-resolved" key={`resolved-${task.id}`}>
                       <div>
                         <strong>{task.titleSnapshot}</strong>
-                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                        <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name} · {serviceLevelLabel(taskServiceLevel(task))}</div>
                         {parseIssueNote(task) ? <p><strong>Initial issue:</strong> {parseIssueNote(task)}</p> : null}
                         {parseResolutionNote(task) ? <p><strong>Correction:</strong> {parseResolutionNote(task)}</p> : null}
                         <ResolvedIssueEvidence task={task} grade={grade} initialGrade={initialGrade} />
@@ -603,7 +622,7 @@ export default async function DailyReportPage({ searchParams }) {
                             <div className="daily-report-task-main">
                               <div>
                                 <strong>{task.titleSnapshot}</strong>
-                                <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                                <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name} · {serviceLevelLabel(taskServiceLevel(task))}</div>
                               </div>
                             </div>
                             <div className="daily-report-task-meta">
@@ -622,7 +641,7 @@ export default async function DailyReportPage({ searchParams }) {
                           <article className="daily-report-task-row daily-report-task-row-compact" key={task.id}>
                             <div className="daily-report-task-main">
                               <strong>{task.titleSnapshot}</strong>
-                              <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name}</div>
+                              <div className="muted">{task.plannedZone?.name ?? task.zone.name} · {task.plannedTaskGroup?.name ?? task.taskGroup.name} · {serviceLevelLabel(taskServiceLevel(task))}</div>
                             </div>
                             <div className="daily-report-task-meta">
                               <span className={`badge tone-${scoreTone(grade, task)}`}>{scoreLabel(grade, task)}</span>
