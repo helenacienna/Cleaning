@@ -1125,7 +1125,7 @@ const FacilityBoardCard = memo(function FacilityBoardCard({ assignment, activeBo
       <div className="task-disclosure-footer">
         <Link
           className="button secondary slim task-disclosure-edit-button"
-          href={`/admin/task-cards?templateId=${encodeURIComponent(task.templateId)}`}
+          href={`/facility-board/${slugifyThemeKey(task.facility || assignment.location)}?view=order`}
         >
           Edit
         </Link>
@@ -2110,7 +2110,7 @@ export default function HomePage() {
                 <Link className="dashboard-settings-link" href="/admin/setup">Setup checklist</Link>
                 <Link className="dashboard-settings-link" href="/admin/manager">Open manager view</Link>
                 <Link className="dashboard-settings-link" href="/admin/inbox">Open operations inbox</Link>
-                <Link className="dashboard-settings-link" href="/admin/task-cards">Task Admin</Link>
+                <Link className="dashboard-settings-link" href="/facility-board/cienna?view=order">Task Card Organiser</Link>
                 <Link className="dashboard-settings-link" href="/admin/facilities">Facilities</Link>
                 <Link className="dashboard-settings-link" href="/admin/staff">Staff</Link>
               </div>
@@ -2211,9 +2211,9 @@ export default function HomePage() {
                 {activeTaskCard.templateId && (
                   <Link
                     className="button secondary"
-                    href={`/admin/task-cards?templateId=${encodeURIComponent(activeTaskCard.templateId)}`}
+                    href={`/facility-board/${slugifyThemeKey(activeTaskCard.facility || 'cienna')}?view=order`}
                   >
-                    Edit template
+                    Open organiser
                   </Link>
                 )}
                 <button type="button" className="button secondary close-modal-button" onClick={() => setActiveTaskCard(null)}>Close</button>

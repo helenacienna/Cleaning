@@ -16,7 +16,7 @@ const staffSteps = [
 const managerSteps = [
   'Use the main dashboard to review today’s facility work and completion progress.',
   'Use Staff admin for roster and staff setup changes.',
-  'Use Task Admin for task cards, requirements, and order changes.',
+  'Use Task Card Organiser for task cards, requirements, routes, and order changes.',
   'Use reports to review checklist outcomes, issue photos, and resolved corrections.',
 ];
 

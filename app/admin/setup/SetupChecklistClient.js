@@ -31,8 +31,8 @@ const SETUP_SECTIONS = [
     title: '3. Tasks, routes, and requirements',
     description: 'Check the work list is complete and in a sensible field order.',
     items: [
-      { id: 'task-cards', label: 'Task cards are named clearly and duplicates cleaned up', href: '/admin/task-cards' },
-      { id: 'photo-comment-rules', label: 'Photo/comment requirements are set for critical tasks', href: '/admin/task-cards' },
+      { id: 'task-cards', label: 'Task cards are named clearly and duplicates cleaned up', href: '/facility-board/cienna?view=order' },
+      { id: 'photo-comment-rules', label: 'Photo/comment requirements are set for critical tasks', href: '/facility-board/cienna?view=order' },
       { id: 'routes', label: 'Route/order view matches how cleaners walk the site', href: '/facility-board/cienna?view=order' },
     ],
   },

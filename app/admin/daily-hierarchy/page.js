@@ -27,7 +27,7 @@ export default async function DailyHierarchyPage() {
         </div>
         <div className="workflow-banner-actions">
           <Link className="button secondary" href="/admin/inbox">Operations inbox</Link>
-          <Link className="button secondary" href="/admin/task-cards">Task card library</Link>
+          <Link className="button secondary" href="/facility-board/cienna?view=order">Task Card Organiser</Link>
           <Link className="button secondary" href="/">Open main dashboard</Link>
         </div>
       </section>

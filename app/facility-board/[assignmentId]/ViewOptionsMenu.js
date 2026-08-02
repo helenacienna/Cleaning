@@ -19,7 +19,6 @@ export default function ViewOptionsMenu({ queryBase, view }) {
         <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'order' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=order`}>Task Card Organiser</Link>
         <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'staff' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=staff`}>Facility staff view</Link>
         <Link onClick={closeMenu} className={`facility-board-view-link ${view === 'time' ? 'facility-board-view-link-active' : 'facility-board-view-link-view'}`} href={`${queryBase}&view=time`}>Facility time view</Link>
-        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/admin/task-cards">Task Admin</Link>
         <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/admin/staff">Staff roster</Link>
         <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/admin/facilities">Facilities</Link>
         <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/admin/manager">Manager view</Link>
