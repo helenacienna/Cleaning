@@ -29,6 +29,12 @@ function isTaskGraded(task) {
   return Number(task?.score) >= 1;
 }
 
+function formatServiceLevelLabel(serviceLevel = 'clean') {
+  if (serviceLevel === 'check') return 'Check';
+  if (serviceLevel === 'detailed_clean') return 'Detailed clean';
+  return 'Clean';
+}
+
 function formatStatusLabel(task) {
   if (Number(task?.score) >= 3) {
     return `Completed · Grade ${task.score}/5`;
@@ -959,6 +965,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
               {allocatedNoticeTasks.map((task) => (
                 <div className="card" key={task.id} style={{ padding: 10 }}>
                   <strong>{task.title}</strong>
+                  <div className="muted" style={{ marginTop: 4 }}>{formatServiceLevelLabel(task.serviceLevel)}</div>
                   {task.instructionNote ? <p style={{ margin: '6px 0 0' }}>{task.instructionNote}</p> : null}
                 </div>
               ))}
@@ -1081,6 +1088,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 <div className="compact-task-copy">
                   {task.zone ? <div className="compact-task-zone">{task.zone}</div> : null}
                   <div className="compact-task-title">{task.title}</div>
+                  <div className="muted" style={{ marginTop: 4 }}>{formatServiceLevelLabel(task.serviceLevel)}</div>
                   {task.instructionNote ? <div className="muted" style={{ marginTop: 6 }}>{task.instructionNote}</div> : null}
                 </div>
               </div>

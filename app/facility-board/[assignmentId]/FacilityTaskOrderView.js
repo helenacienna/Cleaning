@@ -32,6 +32,16 @@ const SERVICE_TYPE_OPTIONS = [
   { value: 'ad_hoc', label: 'Ad hoc' },
 ];
 
+const SERVICE_LEVEL_OPTIONS = [
+  { value: 'check', label: 'Check' },
+  { value: 'clean', label: 'Clean' },
+  { value: 'detailed_clean', label: 'Detailed clean' },
+];
+
+function getServiceLevelLabel(value) {
+  return SERVICE_LEVEL_OPTIONS.find((option) => option.value === value)?.label ?? 'Clean';
+}
+
 const MISSED_TASK_POLICY_OPTIONS = [
   { value: 'carry_forward', label: 'Carry forward' },
   { value: 'stay_overdue', label: 'Stay overdue' },
@@ -51,6 +61,7 @@ function buildTaskDraft(task) {
     facility: task.facility ?? '',
     facilityId: task.facilityId ?? '',
     serviceType: task.serviceType ?? 'routine',
+    serviceLevel: task.serviceLevel ?? 'clean',
     frequency: String(task.frequency ?? 'none').toLowerCase(),
     frequencyType: task.frequencyType === 'Suggestive' ? 'Standard' : (task.frequencyType ?? 'Standard'),
     cadenceMode: task.cadenceMode ?? '—',
@@ -116,6 +127,7 @@ function mapRouteItemToTask(item, index) {
     taskTemplateUuid: item.taskTemplateId,
     templateId: item.taskTemplateCode,
     title: item.title,
+    serviceLevel: item.serviceLevel ?? 'clean',
     zone: item.zone,
     taskGroup: item.taskGroup,
     staff: 'Route template',
@@ -161,6 +173,7 @@ function getTaskSearchText(task = {}) {
     task.taskGroup,
     task.staff,
     task.frequency,
+    getServiceLevelLabel(task.serviceLevel),
     task.templateId,
     task.taskTemplateUuid,
     task.instanceCode,
@@ -650,7 +663,7 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
                   <strong className="facility-task-order-number">#{String(getTaskOrder(task)).padStart(3, '0')}</strong>
                   <div className="facility-task-order-main">
                     <strong>{task.title}</strong>
-                    <span className="muted">{task.taskGroup} · {task.staff || 'Unallocated'} · {task.frequency || 'Daily'}</span>
+                    <span className="muted">{task.taskGroup} · {task.staff || 'Unallocated'} · {task.frequency || 'Daily'} · {getServiceLevelLabel(task.serviceLevel)}</span>
                   </div>
                   {task.taskTemplateUuid ? (
                     <div className="facility-task-order-card-actions" onClick={(event) => event.stopPropagation()}>
@@ -721,6 +734,12 @@ export default function FacilityTaskOrderView({ tasks = [], taskTemplates = [], 
                 <span>Service type</span>
                 <select value={editDraft.serviceType} onChange={(event) => updateEditDraft('serviceType', event.target.value)} disabled={isSaving}>
                   {SERVICE_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              <label className="field-label">
+                <span>Service level</span>
+                <select value={editDraft.serviceLevel} onChange={(event) => updateEditDraft('serviceLevel', event.target.value)} disabled={isSaving}>
+                  {SERVICE_LEVEL_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </label>
               <label className="field-label">

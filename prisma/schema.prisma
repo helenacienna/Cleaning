@@ -19,6 +19,12 @@ enum ServiceType {
   ad_hoc
 }
 
+enum ServiceLevel {
+  check
+  clean
+  detailed_clean
+}
+
 enum RecurrenceType {
   none
   daily
@@ -308,6 +314,7 @@ model TaskTemplate {
   title                         String
   description                   String?
   serviceType                   ServiceType         @map("service_type")
+  serviceLevel                  ServiceLevel        @default(clean) @map("service_level")
   recurrenceType                RecurrenceType      @default(none) @map("recurrence_type")
   recurrenceRule                Json?               @map("recurrence_rule")
   targetDays                    Json?               @map("target_days")
@@ -404,6 +411,7 @@ model TaskInstance {
   sequence                     Int?
   status                       TaskInstanceStatus
   priority                     TaskPriority
+  serviceLevel                 ServiceLevel        @default(clean) @map("service_level")
   evidenceRequirement          EvidenceRequirement @map("evidence_requirement")
   commentRequirement           CommentRequirement  @map("comment_requirement")
   estimatedMinutes             Int?                @map("estimated_minutes")

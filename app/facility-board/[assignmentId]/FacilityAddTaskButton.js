@@ -21,6 +21,12 @@ const ADD_TASK_EMPTY_STATE = {
   selectedStaff: null,
 };
 
+function serviceLevelLabel(value) {
+  if (value === 'check') return 'Check';
+  if (value === 'detailed_clean') return 'Detailed clean';
+  return 'Clean';
+}
+
 export default function FacilityAddTaskButton({ facility, day }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -287,7 +293,7 @@ export default function FacilityAddTaskButton({ facility, day }) {
                             zone: card.zone,
                             taskGroup: card.taskGroup,
                             label: card.title,
-                            meta: card.frequency ? `${card.frequency}` : '',
+                            meta: [card.frequency, serviceLevelLabel(card.serviceLevel)].filter(Boolean).join(' · '),
                           })}
                           disabled={addTaskState.saving}
                         >
@@ -295,6 +301,7 @@ export default function FacilityAddTaskButton({ facility, day }) {
                             <strong>{card.title}</strong>
                             {card.scheduledToday ? <span className="badge">Scheduled</span> : null}
                           </span>
+                          <span className="muted">{serviceLevelLabel(card.serviceLevel)}</span>
                         </button>
                       )) : null}
                       {!addTaskState.loading && selectedZone && !selectedZoneTasks.length ? <div className="muted">No task cards in this zone.</div> : null}

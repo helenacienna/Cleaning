@@ -213,6 +213,7 @@ export async function POST(request) {
       sequence: maxSequence + 1,
       status: 'scheduled',
       priority: taskTemplate?.priority ?? 'standard',
+      serviceLevel: taskTemplate?.serviceLevel ?? 'clean',
       evidenceRequirement: taskTemplate?.evidenceRequirement ?? 'none',
       commentRequirement: taskTemplate?.commentRequirement ?? 'none',
       estimatedMinutes: taskTemplate?.estimatedMinutes ?? null,

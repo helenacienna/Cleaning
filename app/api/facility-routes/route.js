@@ -51,6 +51,7 @@ function mapRoute(route) {
         taskTemplateId: item.taskTemplateId,
         taskTemplateCode: item.taskTemplate?.taskTemplateCode ?? null,
         title: item.taskTemplate?.title ?? '',
+        serviceLevel: item.taskTemplate?.serviceLevel ?? 'clean',
         zone: item.taskTemplate?.zone?.name ?? '',
         taskGroup: item.taskTemplate?.taskGroup?.name ?? '',
       })),

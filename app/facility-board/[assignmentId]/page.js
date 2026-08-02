@@ -156,6 +156,12 @@ function formatTaskLabel(status = '') {
   return status.replace('-', ' ');
 }
 
+function formatServiceLevelLabel(serviceLevel = 'clean') {
+  if (serviceLevel === 'check') return 'Check';
+  if (serviceLevel === 'detailed_clean') return 'Detailed clean';
+  return 'Clean';
+}
+
 function normalizeTaskStatus(status = '') {
   if (status === 'in_progress') {
     return 'in-progress';
@@ -478,6 +484,7 @@ function renderAddedTaskCard(task) {
           <div><span className="muted">Zone</span><strong>{task.zone}</strong></div>
           <div><span className="muted">Status</span><strong>{formatTaskLabel(task.status)}</strong></div>
           <div><span className="muted">Assigned</span><strong>{task.staff || 'Unallocated'}</strong></div>
+          <div><span className="muted">Service level</span><strong>{formatServiceLevelLabel(task.serviceLevel)}</strong></div>
           <div><span className="muted">Photos</span><strong>{task.photoCount ?? taskPhotos(task).length}</strong></div>
         </div>
         {task.notes ? <p>{task.notes}</p> : null}
@@ -572,6 +579,7 @@ function buildFacilityAssignmentFromBoard(board, assignmentId, boardDay) {
       staff: card.staff || 'Unallocated',
       displayOrder: card.jobOrder,
       frequency: card.frequency,
+      serviceLevel: card.serviceLevel ?? 'clean',
       sourceType: card.sourceType,
       manuallyCreated: Boolean(card.manuallyCreated),
       addedToday: Boolean(card.addedToday),
@@ -871,6 +879,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                     <div><span className="muted">Zone</span><strong>{task.zone}</strong></div>
                                     <div><span className="muted">Status</span><strong>{formatTaskLabel(task.status)}</strong></div>
                                     <div><span className="muted">Assigned</span><strong>{task.staff || 'Unallocated'}</strong></div>
+                                    <div><span className="muted">Service level</span><strong>{formatServiceLevelLabel(task.serviceLevel)}</strong></div>
                                     <div><span className="muted">Photos</span><strong>{task.photoCount ?? taskPhotos(task).length}</strong></div>
                                   </div>
                                   <TaskPhotoGallery task={task} />
@@ -901,6 +910,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
                                         <div><span className="muted">Status</span><strong>{formatTaskLabel(task.status)}</strong></div>
                                         <div><span className="muted">Assigned</span><strong>{task.staff || 'Unallocated'}</strong></div>
                                         <div><span className="muted">Frequency</span><strong>{task.frequency || 'Periodic'}</strong></div>
+                                        <div><span className="muted">Service level</span><strong>{formatServiceLevelLabel(task.serviceLevel)}</strong></div>
                                         <div><span className="muted">Photos</span><strong>{task.photoCount ?? taskPhotos(task).length}</strong></div>
                                       </div>
                                       <div className="facility-board-task-meta-row">

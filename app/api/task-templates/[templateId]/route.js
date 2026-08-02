@@ -54,6 +54,19 @@ function parseServiceType(value) {
   }
 }
 
+function parseServiceLevel(value) {
+  switch (String(value ?? '').toLowerCase()) {
+    case 'check':
+      return 'check';
+    case 'detailed_clean':
+    case 'detailed clean':
+    case 'detail clean':
+      return 'detailed_clean';
+    default:
+      return 'clean';
+  }
+}
+
 function parseMissedTaskPolicy(value) {
   switch (String(value ?? '').toLowerCase()) {
     case 'stay_overdue':
@@ -167,6 +180,7 @@ export async function PATCH(request, { params }) {
       zoneId,
       taskGroupId,
       serviceType: parseServiceType(body.serviceType),
+      serviceLevel: parseServiceLevel(body.serviceLevel),
       recurrenceType,
       recurrenceRule: recurrenceType === 'weekly'
         ? {
