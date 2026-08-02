@@ -4734,13 +4734,14 @@ button.button {
 .facility-board-added-tasks-section{gap:10px;margin-bottom:12px;padding:12px;display:grid}
 .facility-board-added-task-groups{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 .facility-board-task-column-header{min-height:38px;padding:0 108px;display:block;position:relative}
-.facility-board-added-tasks-header{padding-left:0}
+.facility-board-added-tasks-header{padding-left:108px}
 .facility-board-task-column-header>div:first-child{text-align:center;min-width:0}
 .facility-board-task-column-header-actions{pointer-events:none;position:absolute;inset:0}
 .facility-board-task-column-header-actions .badge,.facility-board-task-column-header-actions .facility-board-expand-button{pointer-events:auto}
 .facility-board-task-column-header h2{letter-spacing:-.02em;margin:0;font-size:24px;line-height:1.05}
 .facility-board-task-column-header .muted{max-width:34ch;margin:4px auto 0;font-size:12px;line-height:1.35}
 .facility-board-task-column-header .badge{padding:6px 9px;font-size:11px;position:absolute;top:0;right:0}
+.facility-board-added-tasks-section .facility-board-add-task-button{justify-content:center;width:100%}
 .facility-board-expand-button{justify-content:center;white-space:nowrap;width:100%;padding-left:10px;padding-right:10px;font-size:12px}
 .facility-board-task-column-groups,.facility-board-extra-list{gap:8px;display:grid}
 .facility-board-extra-expand{display:grid;gap:8px}

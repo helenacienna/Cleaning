@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'cienna-cleaning-offline-v6';
+const CACHE_VERSION = 'cienna-cleaning-offline-v7';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const PRECACHE_URLS = [
   '/',
@@ -26,6 +26,12 @@ self.addEventListener('activate', (event) => {
         .map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 function isSameOrigin(url) {

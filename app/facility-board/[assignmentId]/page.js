@@ -681,7 +681,6 @@ export default async function FacilityBoardPage({ params, searchParams }) {
             <p className="muted">{assignment.stats.staffCount || 0} assigned staff · {totalZones} zones · {facilityResultLabel}</p>
           </div>
           <div className="facility-board-header-actions">
-            {view === 'tasks' ? <FacilityAddTaskButton facility={assignment.location} day={assignment.boardDay} /> : null}
             <Link className="button secondary facility-board-report-button" href={reportHref}>Report</Link>
             <ViewOptionsMenu queryBase={queryBase} view={view} />
           </div>
@@ -727,6 +726,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
               </div>
             </div>
             {addedTasks.length ? renderOutcomeProgress(addedTasks) : null}
+            <FacilityAddTaskButton facility={assignment.location} day={assignment.boardDay} />
             <div className="facility-board-task-column-groups facility-board-added-task-groups">
               {addedGroups.length ? addedGroups.map((group) => (
                 <details className="task-disclosure facility-board-zone-card facility-board-zone-card-daily" key={`${assignment.id}-added-${group.zone}-${group.taskGroup}`} open>
