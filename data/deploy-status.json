@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-08-02T08:02:41.011Z",
-  "version": "63c093a",
-  "summary": "Improve perceived photo loading"
+  "deployedAt": "2026-08-02T08:17:42.014Z",
+  "version": "e45d7f9",
+  "summary": "Preload task photos in background"
 }

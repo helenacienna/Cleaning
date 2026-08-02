@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import PhotoPreloader from '../../PhotoPreloader';
 import { getPrisma } from '../../../lib/prisma';
 import { formatBoardDayLabelForTimeZone, DEFAULT_APP_TIME_ZONE } from '../../../lib/app-timezone';
 import ReportActions from './ReportActions';
@@ -84,6 +85,10 @@ function taskPhotos(task) {
   return task.execution?.photos ?? [];
 }
 
+function taskPhotoUrl(photo) {
+  return photo?.id ? `/api/task-photos/${photo.id}` : '';
+}
+
 function photoCountLabel(count) {
   return `${count} photo${count === 1 ? '' : 's'}`;
 }
@@ -108,7 +113,7 @@ function PhotoEvidence({ task, photos: providedPhotos = null, className = '' }) 
     <div className={`daily-report-photo-grid ${className}`.trim()}>
       {photos.map((photo, index) => (
         <figure className="daily-report-photo-card photo-loading-card" key={photo.id}>
-          <img src={`/api/task-photos/${photo.id}`} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
+          <img src={taskPhotoUrl(photo)} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
           <figcaption>
             <span>{photoLabel(photo, index)}</span>
             <span className="flag daily-report-photo-count-chip">{photoCountLabel(typeCounts[photo.photoType || 'general'] ?? photos.length)}</span>
@@ -394,9 +399,11 @@ export default async function DailyReportPage({ searchParams }) {
   const followUps = sortReportEntries(scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2));
   const addedTaskEntries = sortReportEntries(scored.filter(({ task }) => isAddedReportTask(task)));
   const scoreSections = buildReportScoreSections(scored);
+  const backgroundPhotoUrls = tasks.flatMap((task) => taskPhotos(task).map(taskPhotoUrl)).filter(Boolean);
 
   return (
     <main className="page daily-report-page">
+      <PhotoPreloader urls={backgroundPhotoUrls} limit={48} />
       <div className="daily-report-shell">
         <section className="daily-report-hero">
           <div>

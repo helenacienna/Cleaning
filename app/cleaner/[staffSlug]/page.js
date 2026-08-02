@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import PhotoPreloader from '../../PhotoPreloader';
 import ForceTodayRedirect from '../ForceTodayRedirect';
 import DeviceFastModePanel from './DeviceFastModePanel';
 import CleanerChecklistModal from '../../scan/[zoneId]/CleanerChecklistModal';
@@ -230,6 +231,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
   const nextBoardDay = activeBoardDayIndex >= 0 && activeBoardDayIndex < boardDays.length - 1 ? boardDays[activeBoardDayIndex + 1] : null;
   const todayBoardDay = formatBoardDayKeyForTimeZone(new Date(), timeZone);
   const todayHref = boardDays.includes(todayBoardDay) ? buildDayHref(staffSlug, todayBoardDay) : null;
+  const backgroundPhotoUrls = list.tasks.flatMap((task) => (task.photos ?? []).map((photo) => photo.photoUrl).filter(Boolean));
   const isTodayBoard = activeBoardDay === todayBoardDay;
 
   if (todayHref && activeBoardDay !== todayBoardDay && (!selectedDay || !allowHistoricView)) {
@@ -238,6 +240,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
 
   return (
     <main className="page dashboard-page compact-page cleaner-staff-page">
+      <PhotoPreloader urls={backgroundPhotoUrls} limit={36} />
       <ForceTodayRedirect enabled={Boolean(todayHref && activeBoardDay !== todayBoardDay && selectedDay && !allowHistoricView)} href={todayHref ?? ''} />
       <section className="card scan-hero" style={{ marginBottom: 16 }}>
         <div className="scan-header" style={{ flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>

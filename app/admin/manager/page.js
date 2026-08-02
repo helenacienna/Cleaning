@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import PhotoPreloader from '../../PhotoPreloader';
 import CleanerTrendReport from './CleanerTrendReport';
 import ManagerAlerts from './ManagerAlerts';
 import ManagerFilters from './ManagerFilters';
@@ -50,9 +51,11 @@ export default async function ManagerOverviewPage() {
     supervisorSnapshot,
     source,
   } = await getManagerOverviewData();
+  const backgroundPhotoUrls = exceptionTasks.flatMap((task) => (task.photos ?? []).map((photo) => photo.photoUrl).filter(Boolean));
 
   return (
     <main className="page admin-calendar-page">
+      <PhotoPreloader urls={backgroundPhotoUrls} limit={24} />
       <div className="topbar">
         <div className="brand">
           <p>Cienna Cleaning Admin</p>
