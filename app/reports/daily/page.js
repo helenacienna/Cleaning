@@ -107,8 +107,8 @@ function PhotoEvidence({ task, photos: providedPhotos = null, className = '' }) 
   return (
     <div className={`daily-report-photo-grid ${className}`.trim()}>
       {photos.map((photo, index) => (
-        <figure className="daily-report-photo-card" key={photo.id}>
-          <img src={`/api/task-photos/${photo.id}`} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" />
+        <figure className="daily-report-photo-card photo-loading-card" key={photo.id}>
+          <img src={`/api/task-photos/${photo.id}`} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
           <figcaption>
             <span>{photoLabel(photo, index)}</span>
             <span className="flag daily-report-photo-count-chip">{photoCountLabel(typeCounts[photo.photoType || 'general'] ?? photos.length)}</span>

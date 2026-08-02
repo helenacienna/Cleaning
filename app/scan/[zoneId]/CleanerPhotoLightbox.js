@@ -114,6 +114,8 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
             src={activePhoto.photoUrl}
             alt={`${title} preview`}
             className="photo-viewer-image"
+            decoding="async"
+            fetchPriority="high"
           />
         </div>
         {hasMultiplePhotos ? (
@@ -152,6 +154,11 @@ export default function CleanerPhotoLightbox({ photos, title, viewerPhotos = pho
               <img
                 src={photo.photoUrl}
                 alt={`${title} evidence`}
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
+                width="72"
+                height="72"
                 style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 12, border: '1px solid #d8dee8' }}
               />
             </button>

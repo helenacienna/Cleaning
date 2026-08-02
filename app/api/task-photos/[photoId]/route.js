@@ -29,7 +29,7 @@ export async function GET(_request, { params }) {
     status: 200,
     headers: {
       'Content-Type': stored.contentType,
-      'Cache-Control': 'private, max-age=60',
+      'Cache-Control': 'private, max-age=604800, stale-while-revalidate=86400',
     },
   });
 }

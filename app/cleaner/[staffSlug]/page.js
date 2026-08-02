@@ -25,9 +25,9 @@ function TaskPhotoEvidence({ task }) {
   return (
     <div className="daily-report-photo-grid cleaner-history-photo-grid">
       {photos.map((photo, index) => (
-        <figure className="daily-report-photo-card" key={photo.id ?? `${task.id}-photo-${index}`}>
+        <figure className="daily-report-photo-card photo-loading-card" key={photo.id ?? `${task.id}-photo-${index}`}>
           <a href={photo.photoUrl} target="_blank" rel="noreferrer">
-            <img src={photo.photoUrl} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" />
+            <img src={photo.photoUrl} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
           </a>
           <figcaption>{formatPhotoCaption(photo, index)}</figcaption>
         </figure>

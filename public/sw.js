@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'cienna-cleaning-offline-v7';
+const CACHE_VERSION = 'cienna-cleaning-offline-v8';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const PRECACHE_URLS = [
   '/',
@@ -121,6 +121,12 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/_next/static/')) {
     // Next static assets are content-hashed, so cached copies are safe and much faster on phones.
     event.respondWith(staleWhileRevalidate(request));
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/task-photos/')) {
+    // Photo evidence is immutable by id, so repeat report/facility views can use cached copies.
+    event.respondWith(cacheFirst(request));
     return;
   }
 
