@@ -9,6 +9,7 @@ import ManagerReviewActions from './ManagerReviewActions';
 import ManagerReviewHistory from './ManagerReviewHistory';
 import { getManagerOverviewData } from '../../../lib/manager-data';
 import { OUTCOME_PROGRESS_SEGMENTS } from '../../../lib/task-outcomes.js';
+import { taskPhotoUrl } from '../../../lib/task-photo-urls.js';
 
 export const metadata = {
   title: 'Manager Overview · Cienna Cleaning',
@@ -51,7 +52,7 @@ export default async function ManagerOverviewPage() {
     supervisorSnapshot,
     source,
   } = await getManagerOverviewData();
-  const backgroundPhotoUrls = exceptionTasks.flatMap((task) => (task.photos ?? []).map((photo) => photo.photoUrl).filter(Boolean));
+  const backgroundPhotoUrls = exceptionTasks.flatMap((task) => (task.photos ?? []).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: 240 })).filter(Boolean));
 
   return (
     <main className="page admin-calendar-page">
@@ -208,7 +209,7 @@ export default async function ManagerOverviewPage() {
                         {photos.slice(0, 3).map((photo) => (
                           <a key={photo.id} href={photo.photoUrl} target="_blank" rel="noreferrer">
                             <img
-                              src={photo.photoUrl}
+                              src={taskPhotoUrl(photo, { thumbnail: true, width: 240 })}
                               alt={`${title} ${photo.photoType}`}
                               loading="lazy"
                               decoding="async"

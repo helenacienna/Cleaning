@@ -1,8 +1,39 @@
 import { NextResponse } from 'next/server';
+import sharp from 'sharp';
 import { getPrisma } from '../../../../lib/prisma';
 import { deleteStoredPhoto, readStoredPhoto } from '../../../../lib/task-photo-storage';
 
-export async function GET(_request, { params }) {
+function shouldServeThumbnail(request) {
+  const url = new URL(request.url);
+  return url.searchParams.get('thumb') === '1';
+}
+
+function thumbnailWidth(request) {
+  const url = new URL(request.url);
+  const requested = Number(url.searchParams.get('w') || 480);
+  if (!Number.isFinite(requested)) return 480;
+  return Math.max(120, Math.min(1200, Math.round(requested)));
+}
+
+async function buildThumbnail(stored, width) {
+  if (!String(stored.contentType || '').startsWith('image/')) {
+    return null;
+  }
+
+  try {
+    const buffer = await sharp(stored.buffer, { failOn: 'none' })
+      .rotate()
+      .resize({ width, withoutEnlargement: true })
+      .webp({ quality: 72, effort: 4 })
+      .toBuffer();
+    return { buffer, contentType: 'image/webp' };
+  } catch (error) {
+    console.warn('task-photo-thumbnail-failed', JSON.stringify({ message: error?.message }));
+    return null;
+  }
+}
+
+export async function GET(request, { params }) {
   const prisma = await getPrisma();
 
   if (!prisma) {
@@ -25,11 +56,17 @@ export async function GET(_request, { params }) {
     return new NextResponse('Photo file unavailable', { status: 404 });
   }
 
-  return new NextResponse(stored.buffer, {
+  const thumbnail = shouldServeThumbnail(request)
+    ? await buildThumbnail(stored, thumbnailWidth(request))
+    : null;
+  const payload = thumbnail || stored;
+
+  return new NextResponse(payload.buffer, {
     status: 200,
     headers: {
-      'Content-Type': stored.contentType,
+      'Content-Type': payload.contentType,
       'Cache-Control': 'private, max-age=604800, stale-while-revalidate=86400',
+      'Vary': 'Accept',
     },
   });
 }

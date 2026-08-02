@@ -10,6 +10,7 @@ import { notFound } from 'next/navigation';
 import { getOrganiserBoardData } from '../../../lib/app-data';
 import { DEFAULT_APP_TIME_ZONE, formatBoardDayKeyForTimeZone, getTimeZoneFormatter } from '../../../lib/app-timezone.js';
 import { getOutcomeCompletedCount, getOutcomeCounts, OUTCOME_PROGRESS_SEGMENTS } from '../../../lib/task-outcomes.js';
+import { taskPhotoUrl as buildTaskPhotoUrl } from '../../../lib/task-photo-urls.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -418,8 +419,8 @@ function taskPhotos(task = {}) {
   return task.photos ?? [];
 }
 
-function taskPhotoUrl(photo) {
-  return photo?.photoUrl || (photo?.id ? `/api/task-photos/${photo.id}` : '');
+function taskPhotoUrl(photo, options = {}) {
+  return buildTaskPhotoUrl(photo, options);
 }
 
 function TaskPhotoIndicator({ task }) {
@@ -444,7 +445,9 @@ function TaskPhotoGallery({ task }) {
     <div className="facility-board-photo-gallery">
       {photos.map((photo, index) => (
         <figure className="facility-board-photo-card photo-loading-card" key={photo.id ?? `${task.id}-photo-${index}`}>
-          <img src={taskPhotoUrl(photo)} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
+          <a href={taskPhotoUrl(photo)} target="_blank" rel="noreferrer">
+            <img src={taskPhotoUrl(photo, { thumbnail: true, width: 480 })} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
+          </a>
           <figcaption>{photo.photoType === 'exception' ? 'Before issue photo' : photo.photoType === 'completion' ? 'After correction photo' : `Photo ${index + 1}`}</figcaption>
         </figure>
       ))}
@@ -636,7 +639,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
   const addedGroups = groupAssignmentTasks(addedTasks);
   const dailyGroups = groupAssignmentTasks(dailyTasks);
   const periodicGroups = groupAssignmentTasks(periodicTasks);
-  const backgroundPhotoUrls = assignment.tasks.flatMap((task) => taskPhotos(task).map(taskPhotoUrl)).filter(Boolean);
+  const backgroundPhotoUrls = assignment.tasks.flatMap((task) => taskPhotos(task).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: 480 }))).filter(Boolean);
   const grouped = groupAssignmentTasks(assignment.tasks);
   const groupedByStaff = groupTasksByStaff(assignment.tasks, board?.staffMeta);
   const totalZones = new Set(grouped.map((group) => group.zone)).size;
