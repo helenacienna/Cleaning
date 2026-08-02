@@ -217,6 +217,26 @@ function formatDayLabel(day) {
   return formatBoardDayLabelForTimeZone(date, DEFAULT_APP_TIME_ZONE);
 }
 
+function toDayKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(day, count) {
+  const date = dayDate(day) ?? new Date();
+  date.setUTCDate(date.getUTCDate() + count);
+  return toDayKey(date);
+}
+
+function dailyReportHref({ facility, staffName, day }) {
+  const params = new URLSearchParams();
+  if (facility) params.set('facility', facility);
+  if (staffName) params.set('staff', staffName);
+  if (day) params.set('day', day);
+  const query = params.toString();
+  return `/reports/daily${query ? `?${query}` : ''}`;
+}
+
 function percent(value, total) {
   if (!total) return 0;
   return Math.round((value / total) * 100);
@@ -375,6 +395,8 @@ export default async function DailyReportPage({ searchParams }) {
   };
   const completionPercent = percent(totals.completed, totals.total);
   const reportPath = `/reports/daily?facility=${encodeURIComponent(facility)}&staff=${encodeURIComponent(staffName)}&day=${encodeURIComponent(day)}${ids.length ? `&ids=${encodeURIComponent(ids.join(','))}` : ''}`;
+  const previousDayHref = dailyReportHref({ facility, staffName, day: addDays(day, -1) });
+  const nextDayHref = dailyReportHref({ facility, staffName, day: addDays(day, 1) });
   const publicBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-3a1422.up.railway.app';
   const emailHref = buildEmailHref({ facility, staffName, day, totals, reportUrl: `${publicBaseUrl}${reportPath}` });
   const cleanerHref = buildCleanerHref(staffName);
@@ -413,6 +435,12 @@ export default async function DailyReportPage({ searchParams }) {
             <span className="badge">Daily checklist report</span>
             <h1>{facility || 'Facility'} daily clean</h1>
             <p>{formatDayLabel(day)} · {staffName || 'Cleaner'}</p>
+            <div className="workflow-banner-actions" style={{ marginTop: 14 }}>
+              <Link className="button secondary" href={previousDayHref}>Previous day</Link>
+              <Link className="button secondary" href={nextDayHref}>Next day</Link>
+              <Link className="button secondary" href="/reports/weekly">Weekly report</Link>
+              <Link className="button secondary" href="/reports/monthly">Monthly report</Link>
+            </div>
           </div>
           <div className="daily-report-hero-stats">
             <div className="daily-report-score-card daily-report-score-card-with-pie">
