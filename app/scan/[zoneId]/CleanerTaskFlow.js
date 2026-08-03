@@ -35,6 +35,30 @@ function formatServiceLevelLabel(serviceLevel = 'clean') {
   return 'Clean';
 }
 
+
+function buildZoneGroups(tasks = [], taskState = {}) {
+  const zones = new Map();
+  tasks.forEach((task, index) => {
+    const zoneName = String(task?.zone || 'Unassigned zone').trim() || 'Unassigned zone';
+    const key = zoneName;
+    if (!zones.has(key)) {
+      zones.set(key, { key, zone: zoneName, items: [], total: 0, completed: 0, issues: 0 });
+    }
+    const localState = taskState[task.id] || {};
+    const grade = localState.grade ?? task.score;
+    const displayTask = { ...task, score: grade };
+    const zone = zones.get(key);
+    zone.items.push({ task, index });
+    zone.total += 1;
+    if (isTaskCompleted(displayTask)) zone.completed += 1;
+    if (Number(grade) >= 1 && Number(grade) <= 2 && !localState.resolvedIssue) zone.issues += 1;
+  });
+  return [...zones.values()].map((zone) => ({
+    ...zone,
+    progress: zone.total ? Math.round((zone.completed / zone.total) * 100) : 0,
+  }));
+}
+
 function formatStatusLabel(task) {
   if (Number(task?.score) >= 3) {
     return `Completed · Grade ${task.score}/5`;
@@ -105,6 +129,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const [hasBlockedSync, setHasBlockedSync] = useState(false);
   const [gradeReferenceHiddenByScroll, setGradeReferenceHiddenByScroll] = useState(false);
   const [dismissedAllocatedNoticeKey, setDismissedAllocatedNoticeKey] = useState('');
+  const [expandedZoneKeys, setExpandedZoneKeys] = useState({});
   const cardRefs = useRef([]);
   const gradePanelRefs = useRef([]);
   const issuePanelRefs = useRef({});
@@ -184,10 +209,27 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
     });
   }
 
+  function setZoneExpanded(zoneKey, expanded) {
+    if (!zoneKey) return;
+    setExpandedZoneKeys((existing) => ({
+      ...existing,
+      [zoneKey]: expanded,
+    }));
+  }
+
+  function expandZoneForTask(index) {
+    const zoneKey = tasks[index]?.zone || 'Unassigned zone';
+    setZoneExpanded(zoneKey, true);
+    return zoneKey;
+  }
+
   function focusJob(index) {
     setGradeReferenceHiddenByScroll(false);
+    expandZoneForTask(index);
     setCurrentIndex(index);
-    scrollElementIntoTaskPosition(cardRefs.current[index], 'center');
+    window.requestAnimationFrame(() => {
+      scrollElementIntoTaskPosition(cardRefs.current[index], 'center');
+    });
   }
 
   function focusTaskActions(index, delayMs = 80) {
@@ -204,6 +246,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   }
 
   function scrollToIssuePanel(taskId, index, block = 'center') {
+    expandZoneForTask(index);
     setCurrentIndex(index);
     const issuePanel = issuePanelRefs.current[taskId];
     if (issuePanel) {
@@ -897,6 +940,7 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
   const currentSelectedGrade = currentTask ? (currentLocalState.grade ?? currentTask.score) : null;
   const allocatedNoticeTasks = tasks.filter((task) => task.addedToday || task.allocationNote);
   const allocatedNoticeKey = allocatedNoticeTasks.map((task) => task.id).join('|');
+  const zoneGroups = buildZoneGroups(tasks, taskState);
   const showAllocatedTaskNotice = Boolean(allocatedNoticeKey && dismissedAllocatedNoticeKey !== allocatedNoticeKey);
   const showGradeReference = Boolean(
     currentTask
@@ -1065,16 +1109,35 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
         <section className="active-checklist-instructions" aria-label="Active checklist instructions">
           <div className="instruction-copy">
             <span className="badge">How to use this list</span>
-            <strong>Work through each job, grade it, then move to the next open task.</strong>
+            <strong>Open a zone, grade each job, then move to the next open task.</strong>
             <ul>
-              <li>Tap a task to focus it. Use <strong>Next open</strong> to jump to the next unfinished job.</li>
+              <li>Tap a zone to expand its jobs. Use <strong>Next open</strong> to jump to the next unfinished job.</li>
               <li>Grade each job from <strong>1 to 5</strong>: 1-2 needs correction, 3 is partly done, 4-5 is complete.</li>
               <li>If you choose 1 or 2, add a <strong>before photo</strong>, fix the issue, then choose the corrected score and add an <strong>after photo</strong>.</li>
               <li>Add any required photo or note before saving. Use <strong>Report</strong> to open the daily report when needed.</li>
             </ul>
           </div>
         </section>
-        {tasks.map((task, index) => {
+        {zoneGroups.map((zoneGroup) => (
+          <details
+            className="task-disclosure task-disclosure-compact active-checklist-zone-group"
+            key={zoneGroup.key}
+            open={Boolean(expandedZoneKeys[zoneGroup.key])}
+            onToggle={(event) => setZoneExpanded(zoneGroup.key, event.currentTarget.open)}
+          >
+            <summary className="task-row task-row-disclosure task-row-disclosure-compact active-checklist-zone-summary">
+              <div className="active-checklist-zone-summary-copy">
+                <strong>{zoneGroup.zone}</strong>
+                <div className="muted">{zoneGroup.total} task{zoneGroup.total === 1 ? '' : 's'}</div>
+              </div>
+              <div className="task-disclosure-summary-right task-disclosure-summary-right-compact active-checklist-zone-summary-right">
+                {zoneGroup.issues ? <span className="badge tone-red">{zoneGroup.issues} follow-up</span> : null}
+                <span className="task-group-progress-label">{zoneGroup.completed}/{zoneGroup.total} completed</span>
+                <span className="task-disclosure-chevron" aria-hidden="true">⌄</span>
+              </div>
+            </summary>
+            <div className="task-disclosure-body active-checklist-zone-tasks">
+              {zoneGroup.items.map(({ task, index }) => {
           const isCurrent = index === currentIndex;
           const localState = taskState[task.id] || { grade: null, note: '', saving: false, saved: false, photoCount: 0, photos: [], resolutionNote: '', issueGrade: null, issueStage: null, finalGrade: null, lastPhotoType: null, askAnotherPhoto: false, resolvedIssue: false, statusMessage: '', statusTone: 'muted' };
           const selectedGrade = localState.grade;
@@ -1455,7 +1518,10 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
               )}
             </article>
           );
-        })}
+              })}
+            </div>
+          </details>
+        ))}
 
         {allTasksCompleted ? (
           <article className="compact-task-card current-task-card graded-task-card" ref={endCardRef}>

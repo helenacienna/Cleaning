@@ -6336,3 +6336,42 @@ button.button {
 .period-report-week-days .daily-report-task-row {
   background: rgba(248,250,252,0.86);
 }
+
+.active-checklist-zone-group {
+  border: 1px solid rgba(148,163,184,0.26);
+  border-radius: 20px;
+  background: rgba(255,255,255,0.78);
+  overflow: hidden;
+}
+
+.active-checklist-zone-summary {
+  border-radius: 0;
+  background: rgba(248,250,252,0.92);
+}
+
+.active-checklist-zone-summary-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.active-checklist-zone-summary-copy strong {
+  font-size: 16px;
+}
+
+.active-checklist-zone-summary-right {
+  align-items: center;
+}
+
+.active-checklist-zone-tasks {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.active-checklist-zone-tasks .compact-task-card {
+  margin: 0;
+}
+
+.active-checklist-zone-group:not([open]) .task-disclosure-chevron {
+  transform: rotate(-90deg);
+}
