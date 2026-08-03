@@ -7,30 +7,25 @@ import RemainingWorkPanel from './RemainingWorkPanel';
 
 const RESUME_REFRESH_COOLDOWN_MS = 5000;
 
-function ServiceLevelCheckboxGroup({ value, disabled = false, onChange }) {
+function ServiceLevelChoiceGroup({ value, disabled = false, onChange }) {
   return (
-    <fieldset className="field-label" style={serviceLevelFieldsetStyle}>
-      <legend style={serviceLevelLegendStyle}>Cleaning level</legend>
-      <div style={serviceLevelCheckboxGridStyle}>
-        {SERVICE_LEVEL_OPTIONS.map((option) => {
-          const checked = value === option.value;
-          return (
-            <label
-              key={option.value}
-              style={{ ...serviceLevelCheckboxOptionStyle, ...(checked ? serviceLevelCheckboxOptionSelectedStyle : {}) }}
-            >
-              <input
-                type="checkbox"
-                checked={checked}
-                disabled={disabled}
-                onChange={() => onChange(option.value)}
-              />
-              <span>{option.label}</span>
-            </label>
-          );
-        })}
+    <div style={serviceLevelGroupStyle}>
+      <strong>Cleaning level</strong>
+      <div style={serviceLevelChoiceListStyle} aria-label="Cleaning level">
+        {SERVICE_LEVEL_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={value === option.value ? 'button primary' : 'button secondary'}
+            style={serviceLevelChoiceStyle}
+            onClick={() => onChange(option.value)}
+            disabled={disabled}
+          >
+            <strong>{option.label}</strong>
+          </button>
+        ))}
       </div>
-    </fieldset>
+    </div>
   );
 }
 
@@ -404,7 +399,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                         <div className="card" style={selectedTaskSummaryStyle}>
                           <strong>{addTaskState.pendingTask?.label ?? addTaskState.pendingTask?.title ?? 'Task'}</strong>
                         </div>
-                        <ServiceLevelCheckboxGroup
+                        <ServiceLevelChoiceGroup
                           value={addTaskState.selectedServiceLevel}
                           disabled={addTaskState.saving}
                           onChange={(serviceLevel) => setAddTaskState((current) => ({ ...current, selectedServiceLevel: serviceLevel }))}
@@ -744,39 +739,22 @@ const adHocDetailsStyle = {
   maxWidth: 720,
 };
 
-const serviceLevelFieldsetStyle = {
-  border: 0,
-  padding: 0,
-  margin: 0,
+const serviceLevelGroupStyle = {
   display: 'grid',
-  gap: 6,
-};
-
-const serviceLevelLegendStyle = {
-  padding: 0,
-  fontWeight: 700,
-};
-
-const serviceLevelCheckboxGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: '1fr',
   gap: 8,
 };
 
-const serviceLevelCheckboxOptionStyle = {
-  display: 'flex',
-  alignItems: 'center',
+const serviceLevelChoiceListStyle = {
+  display: 'grid',
   gap: 8,
-  minHeight: 42,
-  padding: '8px 10px',
-  borderRadius: 12,
-  border: '1px solid rgba(148,163,184,0.32)',
-  background: 'rgba(15,23,42,0.03)',
-  cursor: 'pointer',
 };
 
-const serviceLevelCheckboxOptionSelectedStyle = {
-  borderColor: 'rgba(37,99,235,0.72)',
-  background: 'rgba(37,99,235,0.12)',
-  fontWeight: 700,
+const serviceLevelChoiceStyle = {
+  display: 'grid',
+  justifyItems: 'start',
+  textAlign: 'left',
+  gap: 2,
+  minHeight: 40,
+  padding: '7px 10px',
+  whiteSpace: 'normal',
 };
