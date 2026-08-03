@@ -95,7 +95,7 @@ async function buildCleanerSaveError(response, fallbackMessage) {
   return error;
 }
 
-export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefreshProgress, onClose, onAllTasksCompleted, onOpenReport, reportUrl = '', reportStatus = 'idle', completionMode = 'completed', completeLabel = 'Submit and go back', completeTitle = 'All tasks submitted', completeDescription = 'Everything on this active list has been graded. Submit to go back.' }) {
+export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefreshProgress, onClose, onAllTasksCompleted, onOpenReport, onOpenAllocatedList, reportUrl = '', reportStatus = 'idle', completionMode = 'completed', completeLabel = 'Submit and go back', completeTitle = 'All tasks submitted', completeDescription = 'Everything on this active list has been graded. Submit to go back.' }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [taskState, setTaskState] = useState(() => createInitialTaskState(tasks));
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine !== false));
@@ -970,7 +970,16 @@ export default function CleanerTaskFlow({ tasks, onTaskSaved, onComplete, onRefr
                 </div>
               ))}
             </div>
-            <button className="button primary" type="button" onClick={() => setDismissedAllocatedNoticeKey(allocatedNoticeKey)}>Open my list</button>
+            <button
+              className="button primary"
+              type="button"
+              onClick={() => {
+                setDismissedAllocatedNoticeKey(allocatedNoticeKey);
+                onOpenAllocatedList?.();
+              }}
+            >
+              Open my list
+            </button>
           </section>
         </div>
       ) : null}

@@ -554,6 +554,10 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                 onClose={closeChecklist}
                 onAllTasksCompleted={createDailyReport}
                 onOpenReport={openDailyReport}
+                onOpenAllocatedList={() => {
+                  setAssignedRemainingTasks([]);
+                  setStage('assigned');
+                }}
                 reportUrl={dailyReportUrl}
                 reportStatus={dailyReportStatus}
                 onComplete={() => {
