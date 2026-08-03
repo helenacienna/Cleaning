@@ -6396,3 +6396,54 @@ button.button {
   display: grid;
   gap: 6px;
 }
+
+.staff-message-notifier {
+  position: fixed;
+  left: max(14px, env(safe-area-inset-left));
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 90;
+  max-width: 720px;
+  margin: 0 auto;
+  border: 1px solid rgba(47,111,232,0.28);
+  border-radius: 22px;
+  background: rgba(255,255,255,0.96);
+  box-shadow: 0 24px 70px rgba(22,50,92,0.20);
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  backdrop-filter: blur(16px);
+}
+
+.staff-message-notifier > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.staff-message-notifier strong,
+.staff-message-notifier .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staff-message-notifier-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 620px) {
+  .staff-message-notifier {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .staff-message-notifier-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}

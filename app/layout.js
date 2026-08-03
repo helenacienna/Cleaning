@@ -1,6 +1,7 @@
 import './globals.css';
 import ServiceWorkerRegistration from './ServiceWorkerRegistration';
 import StaffPresenceHeartbeat from './StaffPresenceHeartbeat';
+import StaffMessageNotifier from './StaffMessageNotifier';
 import { buildBoardThemeCss, getBoardThemeSettings } from '../lib/app-settings';
 
 export const dynamic = 'force-dynamic';
@@ -41,6 +42,7 @@ export default async function RootLayout({ children }) {
         <style>{themeCss}</style>
         <ServiceWorkerRegistration />
         <StaffPresenceHeartbeat />
+        <StaffMessageNotifier />
         {children}
       </body>
     </html>
