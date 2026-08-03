@@ -28,6 +28,21 @@ function upsertAllocationNote(existingReason, note) {
   return [withoutPreviousAllocation, allocationNote].filter(Boolean).join('\n');
 }
 
+function parseServiceLevel(value, fallback = 'clean') {
+  switch (String(value ?? '').toLowerCase()) {
+    case 'check':
+      return 'check';
+    case 'detailed_clean':
+    case 'detailed clean':
+    case 'detail clean':
+      return 'detailed_clean';
+    case 'clean':
+      return 'clean';
+    default:
+      return fallback;
+  }
+}
+
 function getTopAssignedStaffId(tasks = []) {
   const counts = new Map();
   tasks.forEach((task) => {
@@ -74,6 +89,7 @@ export async function POST(request) {
   const staffName = String(body?.staffName ?? '').trim();
   const customTask = Boolean(body?.customTask);
   const cleanerNote = String(body?.notes ?? '').trim();
+  const requestedServiceLevel = parseServiceLevel(body?.serviceLevel, null);
   const boardDay = String(body?.day ?? '').trim();
   const parsedDay = parseExtraTaskBoardDay(boardDay);
 
@@ -113,6 +129,7 @@ export async function POST(request) {
   const taskFacility = taskTemplate?.facility ?? fallbackLocation.facility;
   const taskZone = taskTemplate?.zone ?? fallbackLocation.zone;
   const taskGroupRecord = taskTemplate?.taskGroup ?? fallbackLocation.taskGroup;
+  const serviceLevel = requestedServiceLevel ?? taskTemplate?.serviceLevel ?? 'clean';
 
   const requestedStaff = staffId || staffName ? await prisma.staff.findFirst({
     where: {
@@ -138,22 +155,26 @@ export async function POST(request) {
       id: true,
       titleSnapshot: true,
       status: true,
+      serviceLevel: true,
       assignedStaffId: true,
       exceptionReason: true,
     },
   });
 
   if (existing) {
-    const task = cleanerNote
+    const shouldUpdateExisting = Boolean(cleanerNote) || Boolean(requestedServiceLevel);
+    const task = shouldUpdateExisting
       ? await prisma.taskInstance.update({
           where: { id: existing.id },
           data: {
-            exceptionReason: upsertAllocationNote(existing.exceptionReason, cleanerNote),
+            ...(cleanerNote ? { exceptionReason: upsertAllocationNote(existing.exceptionReason, cleanerNote) } : {}),
+            ...(requestedServiceLevel ? { serviceLevel } : {}),
           },
           select: {
             id: true,
             titleSnapshot: true,
             status: true,
+            serviceLevel: true,
             assignedStaffId: true,
             exceptionReason: true,
           },
@@ -213,7 +234,7 @@ export async function POST(request) {
       sequence: maxSequence + 1,
       status: 'scheduled',
       priority: taskTemplate?.priority ?? 'standard',
-      serviceLevel: taskTemplate?.serviceLevel ?? 'clean',
+      serviceLevel,
       evidenceRequirement: taskTemplate?.evidenceRequirement ?? 'none',
       commentRequirement: taskTemplate?.commentRequirement ?? 'none',
       estimatedMinutes: taskTemplate?.estimatedMinutes ?? null,
@@ -225,6 +246,7 @@ export async function POST(request) {
       id: true,
       titleSnapshot: true,
       status: true,
+      serviceLevel: true,
       assignedStaff: { select: { fullName: true } },
     },
   });

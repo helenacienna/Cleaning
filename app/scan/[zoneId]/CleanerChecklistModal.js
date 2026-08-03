@@ -28,8 +28,15 @@ const ADD_TASK_EMPTY_STATE = {
   customTitle: '',
   customNotes: '',
   cleanerNote: '',
+  selectedServiceLevel: 'clean',
   selectedStaff: null,
 };
+
+const SERVICE_LEVEL_OPTIONS = [
+  { value: 'check', label: 'Check' },
+  { value: 'clean', label: 'Clean' },
+  { value: 'detailed_clean', label: 'Detailed clean' },
+];
 
 function readStoredChecklistState(label) {
   if (typeof window === 'undefined') {
@@ -132,6 +139,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
       mode: 'allocate',
       pendingTask: taskPayload,
       selectedStaff: null,
+      selectedServiceLevel: taskPayload?.serviceLevel ?? 'clean',
       cleanerNote: taskPayload?.notes ?? '',
       error: '',
       success: '',
@@ -151,6 +159,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
           staffName: staffMember?.fullName ?? staffName,
           staffId: staffMember?.id ?? undefined,
           ...payload,
+          serviceLevel: addTaskState.selectedServiceLevel,
           notes: String(addTaskState.cleanerNote ?? '').trim() || String(payload?.notes ?? '').trim(),
         }),
       });
@@ -183,6 +192,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
       customTask: true,
       title,
       notes: String(addTaskState.customNotes ?? '').trim(),
+      serviceLevel: addTaskState.selectedServiceLevel,
       label: title,
       meta: 'Ad hoc task',
     });
@@ -363,7 +373,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                       <button
                         className={addTaskState.mode === 'custom' ? 'button secondary slim' : 'button primary slim'}
                         type="button"
-                        onClick={() => setAddTaskState((current) => ({ ...current, mode: current.mode === 'custom' ? 'cards' : 'custom', pendingTask: null, selectedStaff: null, cleanerNote: '', error: '', success: '' }))}
+                        onClick={() => setAddTaskState((current) => ({ ...current, mode: current.mode === 'custom' ? 'cards' : 'custom', pendingTask: null, selectedStaff: null, selectedServiceLevel: 'clean', cleanerNote: '', error: '', success: '' }))}
                         disabled={addTaskState.saving}
                       >
                         {addTaskState.mode === 'custom' ? 'Task cards' : 'Add Task'}
@@ -378,7 +388,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                         <button
                           className="button secondary slim"
                           type="button"
-                          onClick={() => setAddTaskState((current) => ({ ...current, mode: current.pendingTask?.customTask ? 'custom' : 'cards', pendingTask: null, selectedStaff: null, cleanerNote: '', error: '', success: '' }))}
+                          onClick={() => setAddTaskState((current) => ({ ...current, mode: current.pendingTask?.customTask ? 'custom' : 'cards', pendingTask: null, selectedStaff: null, selectedServiceLevel: 'clean', cleanerNote: '', error: '', success: '' }))}
                           disabled={addTaskState.saving}
                           style={{ justifySelf: 'start' }}
                         >
@@ -389,6 +399,16 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                           <strong>{addTaskState.pendingTask?.label ?? addTaskState.pendingTask?.title ?? 'Task'}</strong>
                           {addTaskState.pendingTask?.meta ? <span>{addTaskState.pendingTask.meta}</span> : null}
                         </div>
+                        <label className="field-label">
+                          <span>Cleaning level</span>
+                          <select
+                            value={addTaskState.selectedServiceLevel}
+                            onChange={(event) => setAddTaskState((current) => ({ ...current, selectedServiceLevel: event.target.value }))}
+                            disabled={addTaskState.saving}
+                          >
+                            {SERVICE_LEVEL_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                          </select>
+                        </label>
                         <strong>Allocate to staff</strong>
                         <div style={staffListStyle} aria-label="Allocate task to staff">
                           {addTaskState.loading ? <div className="muted">Loading staff…</div> : null}
@@ -500,6 +520,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                                   title: card.title,
                                   zone: card.zone,
                                   taskGroup: card.taskGroup,
+                                  serviceLevel: card.serviceLevel ?? 'clean',
                                   label: card.title,
                                   meta: [card.frequency, serviceLevelLabel(card.serviceLevel)].filter(Boolean).join(' · '),
                                 })}
