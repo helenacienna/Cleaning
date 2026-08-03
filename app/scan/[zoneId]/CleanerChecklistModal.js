@@ -343,27 +343,6 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
           </a>
         ) : null}
       </section>
-
-      {isOpen && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${label} active checklist`}>
-          <div className="fullscreen-checklist">
-            <header className="modal-header compact-modal-header">
-              <div className="workflow-banner-actions checklist-header-primary-actions" style={{ justifyContent: 'flex-start' }}>
-                <button className="button secondary slim" type="button" onClick={openAddTaskPopup} disabled={!boardDay}>
-                  Add task
-                </button>
-              </div>
-              <strong>{label} {effectiveStage === 'daily' ? 'Daily List' : effectiveStage === 'remaining' ? 'Remaining Work' : 'Assigned Active List'}</strong>
-              <div className="workflow-banner-actions checklist-header-secondary-actions">
-                {effectiveStage === 'remaining' ? (
-                  <button className="button secondary" type="button" onClick={refreshProgress}>
-                    Refresh progress
-                  </button>
-                ) : null}
-                <button className="button secondary close-modal-button" type="button" onClick={closeChecklist}>Close</button>
-              </div>
-            </header>
-
             {addTaskState.open ? (
               <div className="modal-backdrop" role="presentation" style={addTaskBackdropStyle} onClick={closeAddTaskPopup}>
                 <section className="card" role="dialog" aria-modal="true" aria-label="Add task" style={addTaskCardStyle} onClick={(event) => event.stopPropagation()}>
@@ -545,6 +524,27 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                 </section>
               </div>
             ) : null}
+
+
+      {isOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${label} active checklist`}>
+          <div className="fullscreen-checklist">
+            <header className="modal-header compact-modal-header">
+              <div className="workflow-banner-actions checklist-header-primary-actions" style={{ justifyContent: 'flex-start' }}>
+                <button className="button secondary slim" type="button" onClick={openAddTaskPopup} disabled={!boardDay}>
+                  Add task
+                </button>
+              </div>
+              <strong>{label} {effectiveStage === 'daily' ? 'Daily List' : effectiveStage === 'remaining' ? 'Remaining Work' : 'Assigned Active List'}</strong>
+              <div className="workflow-banner-actions checklist-header-secondary-actions">
+                {effectiveStage === 'remaining' ? (
+                  <button className="button secondary" type="button" onClick={refreshProgress}>
+                    Refresh progress
+                  </button>
+                ) : null}
+                <button className="button secondary close-modal-button" type="button" onClick={closeChecklist}>Close</button>
+              </div>
+            </header>
 
             {effectiveStage === 'daily' ? (
               <CleanerTaskFlow
