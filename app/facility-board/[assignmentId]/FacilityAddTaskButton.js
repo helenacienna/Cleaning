@@ -193,6 +193,16 @@ export default function FacilityAddTaskButton({ facility, day }) {
             <header style={addTaskHeaderStyle}>
               <h3 style={{ margin: 0 }}>Add task</h3>
               <div className="workflow-banner-actions">
+                {addTaskState.mode === 'allocate' ? (
+                  <button
+                    className="button secondary slim"
+                    type="button"
+                    onClick={() => setAddTaskState((current) => ({ ...current, mode: current.pendingTask?.customTask ? 'custom' : 'cards', pendingTask: null, selectedStaff: null, selectedServiceLevel: 'clean', cleanerNote: '', error: '', success: '' }))}
+                    disabled={addTaskState.saving}
+                  >
+                    Back
+                  </button>
+                ) : null}
                 <button
                   className={addTaskState.mode === 'custom' ? 'button secondary slim' : 'button primary slim'}
                   type="button"
@@ -208,19 +218,8 @@ export default function FacilityAddTaskButton({ facility, day }) {
             <section className="card" style={addTaskPanelStyle}>
               {addTaskState.mode === 'allocate' ? (
                 <div style={allocationPanelStyle}>
-                  <button
-                    className="button secondary slim"
-                    type="button"
-                    onClick={() => setAddTaskState((current) => ({ ...current, mode: current.pendingTask?.customTask ? 'custom' : 'cards', pendingTask: null, selectedStaff: null, selectedServiceLevel: 'clean', cleanerNote: '', error: '', success: '' }))}
-                    disabled={addTaskState.saving}
-                    style={{ justifySelf: 'start' }}
-                  >
-                    Back
-                  </button>
                   <div className="card" style={selectedTaskSummaryStyle}>
-                    <span className="muted">Selected task</span>
                     <strong>{addTaskState.pendingTask?.label ?? addTaskState.pendingTask?.title ?? 'Task'}</strong>
-                    {addTaskState.pendingTask?.meta ? <span>{addTaskState.pendingTask.meta}</span> : null}
                   </div>
                   <ServiceLevelCheckboxGroup
                     value={addTaskState.selectedServiceLevel}
@@ -240,7 +239,6 @@ export default function FacilityAddTaskButton({ facility, day }) {
                         disabled={addTaskState.saving || !addTaskState.pendingTask}
                       >
                         <strong>{member.fullName}</strong>
-                        <span>{member.preferredShiftLabel || member.preferredTimeWindow || member.staffCode}</span>
                       </button>
                     )) : null}
                     {!addTaskState.loading && !addTaskState.staff.length ? <div className="muted">No active cleaner staff found.</div> : null}
@@ -344,7 +342,6 @@ export default function FacilityAddTaskButton({ facility, day }) {
                             <strong>{card.title}</strong>
                             {card.scheduledToday ? <span className="badge">Scheduled</span> : null}
                           </span>
-                          <span className="muted">{serviceLevelLabel(card.serviceLevel)}</span>
                         </button>
                       )) : null}
                       {!addTaskState.loading && selectedZone && !selectedZoneTasks.length ? <div className="muted">No task cards in this zone.</div> : null}
@@ -375,7 +372,7 @@ const taskCardChoiceStyle = { display: 'grid', alignItems: 'center', justifyItem
 const allocationPanelStyle = { display: 'grid', gridTemplateRows: 'auto auto auto minmax(0, 1fr)', gap: 10, minHeight: 0, height: '100%' };
 const selectedTaskSummaryStyle = { display: 'grid', gap: 4 };
 const staffListStyle = { display: 'grid', gap: 8, minHeight: 0, overflow: 'auto', paddingRight: 4, paddingBottom: 'calc(10mm + env(safe-area-inset-bottom, 0px))', scrollPaddingBottom: 'calc(10mm + env(safe-area-inset-bottom, 0px))' };
-const staffChoiceStyle = { display: 'grid', justifyItems: 'start', textAlign: 'left', gap: 3, whiteSpace: 'normal' };
+const staffChoiceStyle = { display: 'grid', justifyItems: 'start', textAlign: 'left', gap: 2, minHeight: 40, padding: '7px 10px', whiteSpace: 'normal' };
 const adHocDetailsStyle = { display: 'grid', gap: 10, alignContent: 'start', maxWidth: 720 };
 
 const serviceLevelFieldsetStyle = {

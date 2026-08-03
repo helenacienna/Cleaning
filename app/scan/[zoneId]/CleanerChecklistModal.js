@@ -376,6 +376,16 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                   <header style={addTaskHeaderStyle}>
                     <h3 style={{ margin: 0 }}>Add task</h3>
                     <div className="workflow-banner-actions">
+                      {addTaskState.mode === 'allocate' ? (
+                        <button
+                          className="button secondary slim"
+                          type="button"
+                          onClick={() => setAddTaskState((current) => ({ ...current, mode: current.pendingTask?.customTask ? 'custom' : 'cards', pendingTask: null, selectedStaff: null, selectedServiceLevel: 'clean', cleanerNote: '', error: '', success: '' }))}
+                          disabled={addTaskState.saving}
+                        >
+                          Back
+                        </button>
+                      ) : null}
                       <button
                         className={addTaskState.mode === 'custom' ? 'button secondary slim' : 'button primary slim'}
                         type="button"
@@ -391,19 +401,8 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                   <section className="card" style={addTaskPanelStyle}>
                     {addTaskState.mode === 'allocate' ? (
                       <div style={allocationPanelStyle}>
-                        <button
-                          className="button secondary slim"
-                          type="button"
-                          onClick={() => setAddTaskState((current) => ({ ...current, mode: current.pendingTask?.customTask ? 'custom' : 'cards', pendingTask: null, selectedStaff: null, selectedServiceLevel: 'clean', cleanerNote: '', error: '', success: '' }))}
-                          disabled={addTaskState.saving}
-                          style={{ justifySelf: 'start' }}
-                        >
-                          Back
-                        </button>
                         <div className="card" style={selectedTaskSummaryStyle}>
-                          <span className="muted">Selected task</span>
                           <strong>{addTaskState.pendingTask?.label ?? addTaskState.pendingTask?.title ?? 'Task'}</strong>
-                          {addTaskState.pendingTask?.meta ? <span>{addTaskState.pendingTask.meta}</span> : null}
                         </div>
                         <ServiceLevelCheckboxGroup
                           value={addTaskState.selectedServiceLevel}
@@ -423,7 +422,6 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                               disabled={addTaskState.saving || !addTaskState.pendingTask}
                             >
                               <strong>{member.fullName}</strong>
-                              <span>{member.preferredShiftLabel || member.preferredTimeWindow || member.staffCode}</span>
                             </button>
                           )) : null}
                           {!addTaskState.loading && !addTaskState.staff.length ? <div className="muted">No active cleaner staff found.</div> : null}
@@ -531,7 +529,6 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
                                   <strong>{card.title}</strong>
                                   {card.scheduledToday ? <span className="badge">Scheduled</span> : null}
                                 </span>
-                                <span className="muted">{serviceLevelLabel(card.serviceLevel)}</span>
                               </button>
                             )) : null}
                             {!addTaskState.loading && selectedZone && !selectedZoneTasks.length ? <div className="muted">No task cards in this zone.</div> : null}
@@ -703,7 +700,7 @@ const taskCardChoiceStyle = {
   justifyItems: 'stretch',
   textAlign: 'left',
   gap: 3,
-  minHeight: 52,
+  minHeight: 44,
   whiteSpace: 'normal',
 };
 
@@ -734,7 +731,9 @@ const staffChoiceStyle = {
   display: 'grid',
   justifyItems: 'start',
   textAlign: 'left',
-  gap: 3,
+  gap: 2,
+  minHeight: 40,
+  padding: '7px 10px',
   whiteSpace: 'normal',
 };
 
