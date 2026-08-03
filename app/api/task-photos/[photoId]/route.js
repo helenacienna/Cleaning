@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { getPrisma } from '../../../../lib/prisma';
 import { deleteStoredPhoto, readStoredPhoto } from '../../../../lib/task-photo-storage';
+import { isTestingCostControlMode } from '../../../../lib/cost-control';
 
 function shouldServeThumbnail(request) {
   const url = new URL(request.url);
@@ -11,8 +12,10 @@ function shouldServeThumbnail(request) {
 function thumbnailWidth(request) {
   const url = new URL(request.url);
   const requested = Number(url.searchParams.get('w') || 480);
-  if (!Number.isFinite(requested)) return 480;
-  return Math.max(120, Math.min(1200, Math.round(requested)));
+  const defaultWidth = isTestingCostControlMode() ? 240 : 480;
+  const maxWidth = isTestingCostControlMode() ? 360 : 1200;
+  if (!Number.isFinite(requested)) return defaultWidth;
+  return Math.max(120, Math.min(maxWidth, Math.round(requested)));
 }
 
 async function buildThumbnail(stored, width) {
@@ -24,7 +27,7 @@ async function buildThumbnail(stored, width) {
     const buffer = await sharp(stored.buffer, { failOn: 'none' })
       .rotate()
       .resize({ width, withoutEnlargement: true })
-      .webp({ quality: 72, effort: 4 })
+      .webp({ quality: isTestingCostControlMode() ? 55 : 72, effort: 4 })
       .toBuffer();
     return { buffer, contentType: 'image/webp' };
   } catch (error) {

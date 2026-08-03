@@ -3,6 +3,7 @@ import PhotoPreloader from '../../PhotoPreloader';
 import { getPrisma } from '../../../lib/prisma';
 import { formatBoardDayLabelForTimeZone, DEFAULT_APP_TIME_ZONE } from '../../../lib/app-timezone';
 import { taskPhotoUrl as buildTaskPhotoUrl } from '../../../lib/task-photo-urls.js';
+import { photoPreloadLimit, photoThumbnailWidth } from '../../../lib/cost-control.js';
 import ReportActions from './ReportActions';
 
 export const dynamic = 'force-dynamic';
@@ -125,7 +126,7 @@ function PhotoEvidence({ task, photos: providedPhotos = null, className = '' }) 
       {photos.map((photo, index) => (
         <figure className="daily-report-photo-card photo-loading-card" key={photo.id}>
           <a href={taskPhotoUrl(photo)} target="_blank" rel="noreferrer">
-            <img src={taskPhotoUrl(photo, { thumbnail: true, width: 520 })} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
+            <img src={taskPhotoUrl(photo, { thumbnail: true, width: photoThumbnailWidth(520) })} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
           </a>
           <figcaption>
             <span>{photoLabel(photo, index)}</span>
@@ -440,11 +441,11 @@ export default async function DailyReportPage({ searchParams }) {
   const followUps = sortReportEntries(scored.filter(({ grade, resolvedIssue }) => !resolvedIssue && hasNumericGrade(grade) && Number(grade) <= 2));
   const addedTaskEntries = sortReportEntries(scored.filter(({ task }) => isAddedReportTask(task)));
   const scoreSections = buildReportScoreSections(scored);
-  const backgroundPhotoUrls = tasks.flatMap((task) => taskPhotos(task).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: 520 }))).filter(Boolean);
+  const backgroundPhotoUrls = tasks.flatMap((task) => taskPhotos(task).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: photoThumbnailWidth(520) }))).filter(Boolean);
 
   return (
     <main className="page daily-report-page">
-      <PhotoPreloader urls={backgroundPhotoUrls} limit={48} />
+      <PhotoPreloader urls={backgroundPhotoUrls} limit={photoPreloadLimit(48)} />
       <div className="daily-report-shell">
         <section className="daily-report-hero">
           <div>

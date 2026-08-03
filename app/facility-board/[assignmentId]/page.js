@@ -11,6 +11,7 @@ import { getOrganiserBoardData } from '../../../lib/app-data';
 import { DEFAULT_APP_TIME_ZONE, formatBoardDayKeyForTimeZone, getTimeZoneFormatter } from '../../../lib/app-timezone.js';
 import { getOutcomeCompletedCount, getOutcomeCounts, OUTCOME_PROGRESS_SEGMENTS } from '../../../lib/task-outcomes.js';
 import { taskPhotoUrl as buildTaskPhotoUrl } from '../../../lib/task-photo-urls.js';
+import { photoPreloadLimit, photoThumbnailWidth } from '../../../lib/cost-control.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -452,7 +453,7 @@ function TaskPhotoGallery({ task }) {
       {photos.map((photo, index) => (
         <figure className="facility-board-photo-card photo-loading-card" key={photo.id ?? `${task.id}-photo-${index}`}>
           <a href={taskPhotoUrl(photo)} target="_blank" rel="noreferrer">
-            <img src={taskPhotoUrl(photo, { thumbnail: true, width: 480 })} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
+            <img src={taskPhotoUrl(photo, { thumbnail: true, width: photoThumbnailWidth(480) })} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
           </a>
           <figcaption>{photo.photoType === 'exception' ? 'Before issue photo' : photo.photoType === 'completion' ? 'After correction photo' : `Photo ${index + 1}`}</figcaption>
         </figure>
@@ -647,7 +648,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
   const addedGroups = groupAssignmentTasks(addedTasks);
   const dailyGroups = groupAssignmentTasks(dailyTasks);
   const periodicGroups = groupAssignmentTasks(periodicTasks);
-  const backgroundPhotoUrls = assignment.tasks.flatMap((task) => taskPhotos(task).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: 480 }))).filter(Boolean);
+  const backgroundPhotoUrls = assignment.tasks.flatMap((task) => taskPhotos(task).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: photoThumbnailWidth(480) }))).filter(Boolean);
   const grouped = groupAssignmentTasks(assignment.tasks);
   const groupedByStaff = groupTasksByStaff(assignment.tasks, board?.staffMeta);
   const totalZones = new Set(grouped.map((group) => group.zone)).size;
@@ -689,7 +690,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
 
   return (
     <main className="page facility-board-detail-shell">
-      <PhotoPreloader urls={backgroundPhotoUrls} limit={48} />
+      <PhotoPreloader urls={backgroundPhotoUrls} limit={photoPreloadLimit(48)} />
       <section className="card facility-board-detail-hero">
         <div className="facility-board-header-control-row">
           <FacilityBoardDatePicker boardDay={assignment.boardDay} boardDays={boardDays} view={view} timeZone={timeZone} />

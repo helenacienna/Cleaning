@@ -7,6 +7,7 @@ import CleanerChecklistModal from '../../scan/[zoneId]/CleanerChecklistModal';
 import { getCleanerStaffList } from '../../../lib/cleaner-data';
 import { formatBoardDayKeyForTimeZone } from '../../../lib/app-timezone.js';
 import { taskPhotoUrl } from '../../../lib/task-photo-urls.js';
+import { photoPreloadLimit, photoThumbnailWidth } from '../../../lib/cost-control.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,7 @@ function TaskPhotoEvidence({ task }) {
       {photos.map((photo, index) => (
         <figure className="daily-report-photo-card photo-loading-card" key={photo.id ?? `${task.id}-photo-${index}`}>
           <a href={photo.photoUrl} target="_blank" rel="noreferrer">
-            <img src={taskPhotoUrl(photo, { thumbnail: true, width: 480 })} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
+            <img src={taskPhotoUrl(photo, { thumbnail: true, width: photoThumbnailWidth(480) })} alt={`${task.title} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="320" height="240" />
           </a>
           <figcaption>{formatPhotoCaption(photo, index)}</figcaption>
         </figure>
@@ -232,7 +233,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
   const nextBoardDay = activeBoardDayIndex >= 0 && activeBoardDayIndex < boardDays.length - 1 ? boardDays[activeBoardDayIndex + 1] : null;
   const todayBoardDay = formatBoardDayKeyForTimeZone(new Date(), timeZone);
   const todayHref = boardDays.includes(todayBoardDay) ? buildDayHref(staffSlug, todayBoardDay) : null;
-  const backgroundPhotoUrls = (list.tasks ?? []).flatMap((task) => (task.photos ?? []).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: 480 })).filter(Boolean));
+  const backgroundPhotoUrls = (list.tasks ?? []).flatMap((task) => (task.photos ?? []).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: photoThumbnailWidth(480) })).filter(Boolean));
   const isTodayBoard = activeBoardDay === todayBoardDay;
 
   if (todayHref && activeBoardDay !== todayBoardDay && (!selectedDay || !allowHistoricView)) {
@@ -241,7 +242,7 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
 
   return (
     <main className="page dashboard-page compact-page cleaner-staff-page">
-      <PhotoPreloader urls={backgroundPhotoUrls} limit={36} />
+      <PhotoPreloader urls={backgroundPhotoUrls} limit={photoPreloadLimit(36)} />
       <ForceTodayRedirect enabled={Boolean(todayHref && activeBoardDay !== todayBoardDay && selectedDay && !allowHistoricView)} href={todayHref ?? ''} />
       <section className="card scan-hero" style={{ marginBottom: 16 }}>
         <div className="scan-header" style={{ flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>

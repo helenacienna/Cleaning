@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../lib/prisma';
 import { saveTaskPhotoFile } from '../../../lib/task-photo-storage';
+import { optimiseTaskPhotoForStorage } from '../../../lib/task-photo-optimizer';
 
 function normalisePhotoType(value) {
   return ['completion', 'exception', 'audit'].includes(value) ? value : 'completion';
@@ -72,15 +73,16 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Task instance not found' }, { status: 404 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const mimeType = file.type || 'application/octet-stream';
+  const uploadedBuffer = Buffer.from(await file.arrayBuffer());
+  const uploadedMimeType = file.type || 'application/octet-stream';
+  const storedPhoto = await optimiseTaskPhotoForStorage({ buffer: uploadedBuffer, mimeType: uploadedMimeType });
   const photoId = crypto.randomUUID();
   let photoUrl;
 
   try {
-    photoUrl = await saveTaskPhotoFile({ photoId, buffer, mimeType });
+    photoUrl = await saveTaskPhotoFile({ photoId, buffer: storedPhoto.buffer, mimeType: storedPhoto.mimeType });
   } catch {
-    photoUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    photoUrl = `data:${storedPhoto.mimeType};base64,${storedPhoto.buffer.toString('base64')}`;
   }
 
   const now = new Date();

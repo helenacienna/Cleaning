@@ -10,6 +10,7 @@ import ManagerReviewHistory from './ManagerReviewHistory';
 import { getManagerOverviewData } from '../../../lib/manager-data';
 import { OUTCOME_PROGRESS_SEGMENTS } from '../../../lib/task-outcomes.js';
 import { taskPhotoUrl } from '../../../lib/task-photo-urls.js';
+import { photoPreloadLimit, photoThumbnailWidth } from '../../../lib/cost-control.js';
 
 export const metadata = {
   title: 'Manager Overview · Cienna Cleaning',
@@ -52,11 +53,11 @@ export default async function ManagerOverviewPage() {
     supervisorSnapshot,
     source,
   } = await getManagerOverviewData();
-  const backgroundPhotoUrls = exceptionTasks.flatMap((task) => (task.photos ?? []).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: 240 })).filter(Boolean));
+  const backgroundPhotoUrls = exceptionTasks.flatMap((task) => (task.photos ?? []).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: photoThumbnailWidth(240) })).filter(Boolean));
 
   return (
     <main className="page admin-calendar-page">
-      <PhotoPreloader urls={backgroundPhotoUrls} limit={24} />
+      <PhotoPreloader urls={backgroundPhotoUrls} limit={photoPreloadLimit(24)} />
       <div className="topbar">
         <div className="brand">
           <p>Cienna Cleaning Admin</p>
@@ -209,7 +210,7 @@ export default async function ManagerOverviewPage() {
                         {photos.slice(0, 3).map((photo) => (
                           <a key={photo.id} href={photo.photoUrl} target="_blank" rel="noreferrer">
                             <img
-                              src={taskPhotoUrl(photo, { thumbnail: true, width: 240 })}
+                              src={taskPhotoUrl(photo, { thumbnail: true, width: photoThumbnailWidth(240) })}
                               alt={`${title} ${photo.photoType}`}
                               loading="lazy"
                               decoding="async"

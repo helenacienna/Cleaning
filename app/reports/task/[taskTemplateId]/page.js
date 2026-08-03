@@ -17,6 +17,7 @@ import {
   loadTaskPeriodReport,
 } from '../../../../lib/report-summary';
 import { taskPhotoUrl } from '../../../../lib/task-photo-urls';
+import { photoPreloadLimit, photoThumbnailWidth } from '../../../../lib/cost-control.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -126,7 +127,7 @@ function TaskRunList({ scored, title = 'Task history', description = 'Every run 
                   <div className="daily-report-photo-grid">
                     {photos.slice(0, 6).map((photo, index) => (
                       <a className="daily-report-photo-card photo-loading-card" href={taskPhotoUrl(photo)} target="_blank" rel="noreferrer" key={photo.id}>
-                        <img src={taskPhotoUrl(photo, { thumbnail: true, width: 360 })} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="240" height="180" />
+                        <img src={taskPhotoUrl(photo, { thumbnail: true, width: photoThumbnailWidth(360) })} alt={`${task.titleSnapshot} evidence photo ${index + 1}`} loading="lazy" decoding="async" fetchPriority="low" width="240" height="180" />
                       </a>
                     ))}
                     {photos.length > 6 ? <span className="flag">+{photos.length - 6} more</span> : null}
@@ -156,12 +157,12 @@ export default async function TaskReportPage({ params, searchParams }) {
   const reportReady = source === 'prisma' && Boolean(template);
   const oppositePeriod = period.type === 'weekly' ? buildMonthlyPeriod('') : buildWeeklyPeriod('');
   const backgroundPhotoUrls = scored
-    .flatMap((entry) => (entry.task.execution?.photos ?? []).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: 360 })))
+    .flatMap((entry) => (entry.task.execution?.photos ?? []).map((photo) => taskPhotoUrl(photo, { thumbnail: true, width: photoThumbnailWidth(360) })))
     .filter(Boolean);
 
   return (
     <main className="page daily-report-page">
-      <PhotoPreloader urls={backgroundPhotoUrls} limit={36} delayMs={2400} />
+      <PhotoPreloader urls={backgroundPhotoUrls} limit={photoPreloadLimit(36)} delayMs={2400} />
       <div className="daily-report-shell">
         <section className="daily-report-hero">
           <div>
