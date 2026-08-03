@@ -2113,6 +2113,7 @@ export default function HomePage() {
                 <Link className="dashboard-settings-link" href="/facility-board/cienna?view=order">Task Card Organiser</Link>
                 <Link className="dashboard-settings-link" href="/reports/weekly">Weekly report</Link>
                 <Link className="dashboard-settings-link" href="/reports/monthly">Monthly report</Link>
+                <Link className="dashboard-settings-link" href="/reports/building-manager">Building manager report</Link>
                 <Link className="dashboard-settings-link" href="/admin/facilities">Facilities</Link>
                 <Link className="dashboard-settings-link" href="/admin/staff">Staff</Link>
               </div>

@@ -7,6 +7,7 @@ import {
   loadPeriodReport,
   nextPeriodHref,
   previousPeriodHref,
+  periodParamForHref,
   scoreLabel,
   parseIssueNote,
   parseResolutionNote,
@@ -19,7 +20,37 @@ function formatDayLabel(day) {
 }
 
 function gradeRows(totals) {
-  return [5, 4, 3, 2, 1].map((grade) => ({ label: `Grade ${grade}`, count: totals.grades[grade] ?? 0 }));
+  return [5, 4, 3, 2, 1].map((grade) => ({
+    key: `score-${grade}`,
+    label: `Grade ${grade}`,
+    count: totals.grades[grade] ?? 0,
+    className: `score-${grade}`,
+  }));
+}
+
+function ScoreBreakdown({ totals }) {
+  const rows = [
+    ...gradeRows(totals),
+    {
+      key: 'not-scored',
+      label: 'Not graded',
+      count: totals.grades.notScored ?? 0,
+      className: 'score-not-scored',
+    },
+  ];
+
+  return (
+    <div className="daily-report-score-breakdown" aria-label="Grade distribution breakdown">
+      {rows.map((row) => (
+        <div className="daily-report-score-breakdown-row" key={row.key}>
+          <span className={`score-dot ${row.className}`} aria-hidden="true" />
+          <strong>{row.label}</strong>
+          <span>{row.count}</span>
+          <span>{totals.total ? Math.round((row.count / totals.total) * 100) : 0}%</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function SummaryMetrics({ totals }) {
@@ -51,19 +82,97 @@ function GroupTable({ title, description, groups, dayLabels = false }) {
         </div>
       </div>
       <div className="daily-report-compact-task-grid period-report-group-grid">
+        {groups.map((group) => <GroupSummaryRow group={group} dayLabels={dayLabels} key={group.key} />)}
+      </div>
+    </section>
+  );
+}
+
+function GroupSummaryRow({ group, dayLabels = false }) {
+  return (
+    <article className="daily-report-task-row daily-report-task-row-compact">
+      <div className="daily-report-task-main">
+        <strong>{dayLabels ? formatDayLabel(group.key) : group.key}</strong>
+        <div className="muted">{group.completed}/{group.total} complete · {group.completionPercent}%</div>
+      </div>
+      <div className="daily-report-task-meta">
+        {group.unresolvedIssues ? <span className="badge tone-red">{group.unresolvedIssues} unresolved</span> : null}
+        {group.resolvedIssues ? <span className="badge tone-amber">{group.resolvedIssues} resolved</span> : null}
+        {group.photos ? <span className="flag">{group.photos} photos</span> : null}
+        {group.notes ? <span className="flag">{group.notes} notes</span> : null}
+      </div>
+    </article>
+  );
+}
+
+function weekLabel(group) {
+  const start = formatDayLabel(group.startKey);
+  const end = formatDayLabel(group.endKey);
+  return start === end ? start : `${start} – ${end}`;
+}
+
+function buildWeekGroups(dayGroups) {
+  const weeks = new Map();
+  dayGroups.forEach((dayGroup) => {
+    const parsed = new Date(`${dayGroup.key}T00:00:00.000Z`);
+    const day = parsed.getUTCDay();
+    const offset = day === 0 ? -6 : 1 - day;
+    const weekStart = new Date(parsed);
+    weekStart.setUTCDate(parsed.getUTCDate() + offset);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
+    const key = weekStart.toISOString().slice(0, 10);
+    if (!weeks.has(key)) {
+      weeks.set(key, {
+        key,
+        startKey: key,
+        endKey: weekEnd.toISOString().slice(0, 10),
+        total: 0,
+        completed: 0,
+        partial: 0,
+        unresolvedIssues: 0,
+        resolvedIssues: 0,
+        photos: 0,
+        notes: 0,
+        days: [],
+      });
+    }
+    const week = weeks.get(key);
+    week.total += dayGroup.total;
+    week.completed += dayGroup.completed;
+    week.partial += dayGroup.partial ?? 0;
+    week.unresolvedIssues += dayGroup.unresolvedIssues;
+    week.resolvedIssues += dayGroup.resolvedIssues;
+    week.photos += dayGroup.photos;
+    week.notes += dayGroup.notes;
+    week.days.push(dayGroup);
+  });
+
+  return [...weeks.values()]
+    .map((week) => ({ ...week, completionPercent: week.total ? Math.round((week.completed / week.total) * 100) : 0 }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+}
+
+function WeekGroupTable({ groups }) {
+  if (!groups.length) return null;
+  return (
+    <section className="card daily-report-card">
+      <div className="panel-title">
+        <div>
+          <h2>Week-by-week summary</h2>
+          <p className="muted">Monthly operational trend by week. Expand a week to see the daily summaries.</p>
+        </div>
+      </div>
+      <div className="daily-report-compact-task-grid period-report-group-grid">
         {groups.map((group) => (
-          <article className="daily-report-task-row daily-report-task-row-compact" key={group.key}>
-            <div className="daily-report-task-main">
-              <strong>{dayLabels ? formatDayLabel(group.key) : group.key}</strong>
-              <div className="muted">{group.completed}/{group.total} complete · {group.completionPercent}%</div>
+          <details className="period-report-week-group" key={group.key}>
+            <summary>
+              <GroupSummaryRow group={{ ...group, key: weekLabel(group) }} />
+            </summary>
+            <div className="period-report-week-days">
+              {group.days.map((dayGroup) => <GroupSummaryRow group={dayGroup} dayLabels key={dayGroup.key} />)}
             </div>
-            <div className="daily-report-task-meta">
-              {group.unresolvedIssues ? <span className="badge tone-red">{group.unresolvedIssues} unresolved</span> : null}
-              {group.resolvedIssues ? <span className="badge tone-amber">{group.resolvedIssues} resolved</span> : null}
-              {group.photos ? <span className="flag">{group.photos} photos</span> : null}
-              {group.notes ? <span className="flag">{group.notes} notes</span> : null}
-            </div>
-          </article>
+          </details>
         ))}
       </div>
     </section>
@@ -100,9 +209,11 @@ function IssueList({ entries }) {
   );
 }
 
-export default async function PeriodReportPage({ period, routePath, compareHref, title }) {
+export default async function PeriodReportPage({ period, routePath, compareHref, title, reportHeading, includeFacilityStaff = false, managerReport = false }) {
   const { source, totals, dayGroups, facilityGroups, staffGroups, issueEntries } = await loadPeriodReport({ period });
   const reportReady = source === 'prisma' && totals.total > 0;
+  const weekGroups = period.type === 'monthly' ? buildWeekGroups(dayGroups) : [];
+  const managerHref = `/reports/building-manager?${periodParamForHref(period)}&type=${period.type}`;
 
   return (
     <main className="page daily-report-page">
@@ -110,12 +221,13 @@ export default async function PeriodReportPage({ period, routePath, compareHref,
         <section className="daily-report-hero">
           <div>
             <span className="badge">{title}</span>
-            <h1>Cienna Cleaning {period.type} report</h1>
+            <h1>{reportHeading ?? `Cienna Cleaning ${period.type} report`}</h1>
             <p>{period.label}</p>
             <div className="workflow-banner-actions" style={{ marginTop: 14 }}>
               <Link className="button secondary" href={previousPeriodHref(period, routePath)}>Previous</Link>
               <Link className="button secondary" href={nextPeriodHref(period, routePath)}>Next</Link>
-              <Link className="button secondary" href={compareHref}>{period.type === 'weekly' ? 'Monthly report' : 'Weekly report'}</Link>
+              <Link className="button secondary" href={compareHref}>{period.type === 'weekly' ? (managerReport ? 'Monthly manager report' : 'Monthly report') : (managerReport ? 'Weekly manager report' : 'Weekly report')}</Link>
+              {!managerReport ? <Link className="button secondary" href={managerHref}>Building manager report</Link> : null}
               <Link className="button secondary" href="/reports/daily">Daily reports</Link>
             </div>
           </div>
@@ -126,20 +238,7 @@ export default async function PeriodReportPage({ period, routePath, compareHref,
               <div>{totals.completed}/{totals.total} complete</div>
             </div>
             <div className="daily-report-score-distribution-card">
-              <div className="daily-report-score-breakdown" aria-label="Grade distribution breakdown">
-                {gradeRows(totals).map((row) => (
-                  <div className="daily-report-score-breakdown-row" key={row.label}>
-                    <strong>{row.label}</strong>
-                    <span>{row.count}</span>
-                    <span>{totals.total ? Math.round((row.count / totals.total) * 100) : 0}%</span>
-                  </div>
-                ))}
-                <div className="daily-report-score-breakdown-row">
-                  <strong>Not graded</strong>
-                  <span>{totals.grades.notScored}</span>
-                  <span>{totals.total ? Math.round((totals.grades.notScored / totals.total) * 100) : 0}%</span>
-                </div>
-              </div>
+              <ScoreBreakdown totals={totals} />
             </div>
           </div>
         </section>
@@ -153,9 +252,11 @@ export default async function PeriodReportPage({ period, routePath, compareHref,
         ) : (
           <>
             <SummaryMetrics totals={totals} />
-            <GroupTable title="Day-by-day summary" description="Daily operational trend across the selected period." groups={dayGroups} dayLabels />
-            <GroupTable title="Facility summary" description="Completion, issue, photo, and note counts by facility." groups={facilityGroups} />
-            <GroupTable title="Staff summary" description="Work completed or assigned by staff member." groups={staffGroups} />
+            {period.type === 'monthly'
+              ? <WeekGroupTable groups={weekGroups} />
+              : <GroupTable title="Day-by-day summary" description="Daily operational trend across the selected period." groups={dayGroups} dayLabels />}
+            {includeFacilityStaff ? <GroupTable title="Facility summary" description="Completion, issue, photo, and note counts by facility." groups={facilityGroups} /> : null}
+            {includeFacilityStaff ? <GroupTable title="Staff summary" description="Work completed or assigned by staff member." groups={staffGroups} /> : null}
             <IssueList entries={issueEntries} />
           </>
         )}

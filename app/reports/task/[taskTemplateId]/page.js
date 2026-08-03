@@ -52,7 +52,37 @@ function nextTaskPeriodHref(period, route) {
 }
 
 function gradeRows(totals) {
-  return [5, 4, 3, 2, 1].map((grade) => ({ label: `Grade ${grade}`, count: totals.grades[grade] ?? 0 }));
+  return [5, 4, 3, 2, 1].map((grade) => ({
+    key: `score-${grade}`,
+    label: `Grade ${grade}`,
+    count: totals.grades[grade] ?? 0,
+    className: `score-${grade}`,
+  }));
+}
+
+function ScoreBreakdown({ totals }) {
+  const rows = [
+    ...gradeRows(totals),
+    {
+      key: 'not-scored',
+      label: 'Not graded',
+      count: totals.grades.notScored ?? 0,
+      className: 'score-not-scored',
+    },
+  ];
+
+  return (
+    <div className="daily-report-score-breakdown" aria-label="Grade distribution breakdown">
+      {rows.map((row) => (
+        <div className="daily-report-score-breakdown-row" key={row.key}>
+          <span className={`score-dot ${row.className}`} aria-hidden="true" />
+          <strong>{row.label}</strong>
+          <span>{row.count}</span>
+          <span>{totals.total ? Math.round((row.count / totals.total) * 100) : 0}%</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function SummaryMetrics({ totals }) {
@@ -186,20 +216,7 @@ export default async function TaskReportPage({ params, searchParams }) {
               <div>{totals.completed}/{totals.total} complete</div>
             </div>
             <div className="daily-report-score-distribution-card">
-              <div className="daily-report-score-breakdown" aria-label="Grade distribution breakdown">
-                {gradeRows(totals).map((row) => (
-                  <div className="daily-report-score-breakdown-row" key={row.label}>
-                    <strong>{row.label}</strong>
-                    <span>{row.count}</span>
-                    <span>{totals.total ? Math.round((row.count / totals.total) * 100) : 0}%</span>
-                  </div>
-                ))}
-                <div className="daily-report-score-breakdown-row">
-                  <strong>Not graded</strong>
-                  <span>{totals.grades.notScored}</span>
-                  <span>{totals.total ? Math.round((totals.grades.notScored / totals.total) * 100) : 0}%</span>
-                </div>
-              </div>
+              <ScoreBreakdown totals={totals} />
             </div>
           </div>
         </section>

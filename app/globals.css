@@ -4932,6 +4932,10 @@ button.button {
   font-size: 12px;
 }
 
+.daily-report-score-breakdown-row > span:nth-child(3) {
+  justify-self: center;
+}
+
 .daily-report-score-breakdown-row > span:nth-child(3),
 .daily-report-score-breakdown-row > span:last-child {
   color: var(--muted);
@@ -6288,4 +6292,47 @@ button.button {
   border-radius: 999px;
   padding: 4px 8px;
   background: rgba(255, 255, 255, 0.62);
+}
+
+.period-report-week-group {
+  border: 1px solid rgba(148,163,184,0.28);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.72);
+  overflow: hidden;
+}
+
+.period-report-week-group > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.period-report-week-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.period-report-week-group > summary .daily-report-task-row {
+  border: 0;
+  border-radius: 0;
+}
+
+.period-report-week-group > summary .daily-report-task-main strong::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--muted);
+  transition: transform 0.18s ease;
+}
+
+.period-report-week-group[open] > summary .daily-report-task-main strong::before {
+  transform: rotate(90deg);
+}
+
+.period-report-week-days {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px 28px;
+}
+
+.period-report-week-days .daily-report-task-row {
+  background: rgba(248,250,252,0.86);
 }

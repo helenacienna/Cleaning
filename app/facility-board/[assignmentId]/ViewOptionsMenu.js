@@ -29,6 +29,7 @@ export default function ViewOptionsMenu({ queryBase, view }) {
         <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/reports/daily">Daily reports</Link>
         <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/reports/weekly">Weekly report</Link>
         <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/reports/monthly">Monthly report</Link>
+        <Link onClick={closeMenu} className="facility-board-view-link facility-board-view-link-action" href="/reports/building-manager">Building manager report</Link>
       </div>
     </details>
   );
