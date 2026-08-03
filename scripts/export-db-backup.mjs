@@ -17,6 +17,7 @@ function parseArgs(argv) {
 }
 
 const { out } = parseArgs(process.argv);
+const includePhotoBlobs = ['1', 'true', 'yes'].includes(String(process.env.INCLUDE_PHOTO_BLOBS_IN_DB_BACKUP || '').toLowerCase());
 
 if (!out) {
   console.error('Usage: node scripts/export-db-backup.mjs --out <file>');
@@ -33,6 +34,7 @@ if (!prisma) {
 const payload = {
   schema: 'cienna-cleaning.db-backup.v1',
   exportedAt: new Date().toISOString(),
+  photoBackupMode: includePhotoBlobs ? 'full-photo-urls' : 'metadata-only',
   tables: {},
 };
 
@@ -57,7 +59,11 @@ try {
       orderBy: [{ dueAt: 'asc' }, { sequence: 'asc' }],
     }),
     prisma.taskExecution.findMany({
-      include: { photos: true },
+      include: {
+        photos: includePhotoBlobs
+          ? true
+          : { select: { id: true, taskExecutionId: true, photoType: true, uploadedAt: true } },
+      },
       orderBy: { completedAt: 'asc' },
     }),
     prisma.taskAudit.findMany({ orderBy: { auditedAt: 'asc' } }),

@@ -359,7 +359,7 @@ async function loadReport({ facility, staffName, day, ids }) {
       assignedStaff: true,
       execution: {
         include: {
-          photos: true,
+          photos: { select: { id: true, photoType: true, uploadedAt: true } },
         },
       },
       audits: {

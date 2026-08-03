@@ -40,7 +40,7 @@ export async function POST(request) {
       assignedStaff: true,
       execution: {
         include: {
-          photos: true,
+          photos: { select: { id: true, photoType: true, uploadedAt: true } },
         },
       },
     },

@@ -1,5 +1,5 @@
 {
-  "deployedAt": "2026-08-03T05:29:31.391Z",
-  "version": "e604fdc",
-  "summary": "Add testing cost control mode"
+  "deployedAt": "2026-08-03T05:55:26.078Z",
+  "version": "4c861fe",
+  "summary": "Reduce Postgres photo egress"
 }

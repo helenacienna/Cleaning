@@ -74,7 +74,7 @@ export async function GET(request) {
       plannedZone: true,
       plannedTaskGroup: true,
       taskTemplate: { select: { recurrenceType: true } },
-      execution: { include: { photos: true } },
+      execution: { include: { photos: { select: { id: true, photoType: true, uploadedAt: true } } } },
     },
     orderBy: [{ dueAt: 'asc' }, { sequence: 'asc' }],
   });
