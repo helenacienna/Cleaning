@@ -198,14 +198,6 @@ export default function FacilityAddTaskButton({ facility, day }) {
                     Back
                   </button>
                 ) : null}
-                <button
-                  className={addTaskState.mode === 'custom' ? 'button secondary slim' : 'button primary slim'}
-                  type="button"
-                  onClick={() => setAddTaskState((current) => ({ ...current, mode: current.mode === 'custom' ? 'cards' : 'custom', pendingTask: null, selectedStaff: null, selectedServiceLevel: 'clean', cleanerNote: '', error: '', success: '' }))}
-                  disabled={addTaskState.saving}
-                >
-                  {addTaskState.mode === 'custom' ? 'Task cards' : 'Add Task'}
-                </button>
                 <button className="button secondary slim" type="button" onClick={closeAddTaskPopup} disabled={addTaskState.saving}>Close</button>
               </div>
             </header>
@@ -214,7 +206,7 @@ export default function FacilityAddTaskButton({ facility, day }) {
               {addTaskState.mode === 'allocate' ? (
                 <div style={allocationPanelStyle}>
                   <div className="card" style={selectedTaskSummaryStyle}>
-                    <strong>{addTaskState.pendingTask?.label ?? addTaskState.pendingTask?.title ?? 'Task'}</strong>
+                    <strong>{[addTaskState.pendingTask?.zone, addTaskState.pendingTask?.label ?? addTaskState.pendingTask?.title ?? 'Task'].filter(Boolean).join(' · ')}</strong>
                   </div>
                   <ServiceLevelChoiceGroup
                     value={addTaskState.selectedServiceLevel}
@@ -285,6 +277,15 @@ export default function FacilityAddTaskButton({ facility, day }) {
                 </div>
               ) : (
                 <>
+                  <button
+                    className="button secondary"
+                    type="button"
+                    onClick={() => setAddTaskState((current) => ({ ...current, mode: 'custom', pendingTask: null, selectedStaff: null, selectedServiceLevel: 'clean', cleanerNote: '', error: '', success: '' }))}
+                    disabled={addTaskState.saving}
+                    style={{ justifySelf: 'stretch' }}
+                  >
+                    Add custom task
+                  </button>
                   <label className="field-label">
                     <input
                       type="search"
@@ -333,9 +334,9 @@ export default function FacilityAddTaskButton({ facility, day }) {
                           })}
                           disabled={addTaskState.saving}
                         >
-                          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%' }}>
+                          <span style={taskCardTitleRowStyle}>
                             <strong>{card.title}</strong>
-                            {card.scheduledToday ? <span className="badge">Scheduled</span> : null}
+                            {card.scheduledToday ? <span className="badge" style={taskCardBadgeStyle}>Scheduled</span> : null}
                           </span>
                         </button>
                       )) : null}
@@ -363,6 +364,21 @@ const zonePickerStackStyle = { display: 'grid', gridTemplateRows: 'auto minmax(0
 const zoneListStyle = { display: 'flex', gap: 8, overflowX: 'auto', overflowY: 'hidden', paddingBottom: 8, WebkitOverflowScrolling: 'touch' };
 const zoneChoiceStyle = { display: 'grid', justifyItems: 'start', textAlign: 'left', gap: 2, whiteSpace: 'normal', minWidth: 150, maxWidth: 190, flex: '0 0 auto' };
 const taskCardListStyle = { display: 'grid', gap: 8, minHeight: 0, overflow: 'auto', paddingRight: 4, paddingBottom: 'calc(10mm + env(safe-area-inset-bottom, 0px))', scrollPaddingBottom: 'calc(10mm + env(safe-area-inset-bottom, 0px))' };
+const taskCardTitleRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 8,
+  width: '100%',
+  minHeight: 28,
+};
+
+const taskCardBadgeStyle = {
+  alignSelf: 'center',
+  display: 'inline-flex',
+  alignItems: 'center',
+};
+
 const taskCardChoiceStyle = { display: 'grid', alignItems: 'center', justifyItems: 'stretch', textAlign: 'left', gap: 3, minHeight: 52, whiteSpace: 'normal' };
 const allocationPanelStyle = { display: 'grid', gridTemplateRows: 'auto auto auto minmax(0, 1fr)', gap: 10, minHeight: 0, height: '100%' };
 const selectedTaskSummaryStyle = { display: 'grid', gap: 4 };
