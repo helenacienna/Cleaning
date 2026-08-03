@@ -28,6 +28,33 @@ const SERVICE_LEVEL_OPTIONS = [
   { value: 'detailed_clean', label: 'Detailed clean' },
 ];
 
+function ServiceLevelCheckboxGroup({ value, disabled = false, onChange }) {
+  return (
+    <fieldset className="field-label" style={serviceLevelFieldsetStyle}>
+      <legend style={serviceLevelLegendStyle}>Cleaning level</legend>
+      <div style={serviceLevelCheckboxGridStyle}>
+        {SERVICE_LEVEL_OPTIONS.map((option) => {
+          const checked = value === option.value;
+          return (
+            <label
+              key={option.value}
+              style={{ ...serviceLevelCheckboxOptionStyle, ...(checked ? serviceLevelCheckboxOptionSelectedStyle : {}) }}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                disabled={disabled}
+                onChange={() => onChange(option.value)}
+              />
+              <span>{option.label}</span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 function serviceLevelLabel(value) {
   if (value === 'check') return 'Check';
   if (value === 'detailed_clean') return 'Detailed clean';
@@ -195,16 +222,11 @@ export default function FacilityAddTaskButton({ facility, day }) {
                     <strong>{addTaskState.pendingTask?.label ?? addTaskState.pendingTask?.title ?? 'Task'}</strong>
                     {addTaskState.pendingTask?.meta ? <span>{addTaskState.pendingTask.meta}</span> : null}
                   </div>
-                  <label className="field-label">
-                    <span>Cleaning level</span>
-                    <select
-                      value={addTaskState.selectedServiceLevel}
-                      onChange={(event) => setAddTaskState((current) => ({ ...current, selectedServiceLevel: event.target.value }))}
-                      disabled={addTaskState.saving}
-                    >
-                      {SERVICE_LEVEL_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                    </select>
-                  </label>
+                  <ServiceLevelCheckboxGroup
+                    value={addTaskState.selectedServiceLevel}
+                    disabled={addTaskState.saving}
+                    onChange={(serviceLevel) => setAddTaskState((current) => ({ ...current, selectedServiceLevel: serviceLevel }))}
+                  />
                   <strong>Allocate to staff</strong>
                   <div style={staffListStyle} aria-label="Allocate task to staff">
                     {addTaskState.loading ? <div className="muted">Loading staff…</div> : null}
@@ -355,3 +377,40 @@ const selectedTaskSummaryStyle = { display: 'grid', gap: 4 };
 const staffListStyle = { display: 'grid', gap: 8, minHeight: 0, overflow: 'auto', paddingRight: 4, paddingBottom: 'calc(10mm + env(safe-area-inset-bottom, 0px))', scrollPaddingBottom: 'calc(10mm + env(safe-area-inset-bottom, 0px))' };
 const staffChoiceStyle = { display: 'grid', justifyItems: 'start', textAlign: 'left', gap: 3, whiteSpace: 'normal' };
 const adHocDetailsStyle = { display: 'grid', gap: 10, alignContent: 'start', maxWidth: 720 };
+
+const serviceLevelFieldsetStyle = {
+  border: 0,
+  padding: 0,
+  margin: 0,
+  display: 'grid',
+  gap: 6,
+};
+
+const serviceLevelLegendStyle = {
+  padding: 0,
+  fontWeight: 700,
+};
+
+const serviceLevelCheckboxGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+  gap: 8,
+};
+
+const serviceLevelCheckboxOptionStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  minHeight: 42,
+  padding: '8px 10px',
+  borderRadius: 12,
+  border: '1px solid rgba(148,163,184,0.32)',
+  background: 'rgba(15,23,42,0.03)',
+  cursor: 'pointer',
+};
+
+const serviceLevelCheckboxOptionSelectedStyle = {
+  borderColor: 'rgba(37,99,235,0.72)',
+  background: 'rgba(37,99,235,0.12)',
+  fontWeight: 700,
+};
