@@ -81,6 +81,7 @@ export default async function CleanerLandingPage({ searchParams }) {
             </div>
             <div className="workflow-banner-actions">
               <Link className="button secondary" href="/">Admin dashboard</Link>
+              <Link className="button secondary" href="/cleaner/messages">Staff messages</Link>
               <Link className="button secondary" href="/help">Help & setup</Link>
               <Link className="button secondary" href="/admin/staff">Staff admin</Link>
             </div>

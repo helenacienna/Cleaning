@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function FacilityManager({ initialFacilities = [], source = 'unavailable' }) {
+export default function FacilityManager({ initialFacilities = [], initialStaffStatuses = [], source = 'unavailable' }) {
   const [facilities, setFacilities] = useState(initialFacilities);
   const [state, setState] = useState({ savingId: null, error: '', success: '' });
   const liveDataAvailable = source === 'prisma';
@@ -36,6 +36,44 @@ export default function FacilityManager({ initialFacilities = [], source = 'unav
   }
 
   return (
+    <>
+    <section className="card admin-calendar-shell staff-online-status-shell">
+      <div className="panel-title">
+        <div>
+          <h3>Staff online status</h3>
+          <p className="muted">Active app sessions and each staff member’s most recent completed task.</p>
+        </div>
+        <span className="badge">{initialStaffStatuses.filter((member) => member.online).length}/{initialStaffStatuses.length} online</span>
+      </div>
+
+      {!initialStaffStatuses.length ? (
+        <div className="muted">No active staff records found yet.</div>
+      ) : (
+        <div className="staff-online-status-grid">
+          {initialStaffStatuses.map((member) => (
+            <article className="staff-online-status-card" key={member.id}>
+              <div className="staff-online-status-main">
+                <span className={`staff-online-dot ${member.online ? 'staff-online-dot-on' : ''}`} aria-hidden="true" />
+                <div>
+                  <strong>{member.fullName}</strong>
+                  <div className="muted">{member.role} · {member.staffCode}</div>
+                </div>
+              </div>
+              <div className="staff-online-status-meta">
+                <span className={`badge ${member.online ? 'tone-green' : ''}`}>{member.online ? 'Online now' : `Last seen ${member.lastSeenAgo}`}</span>
+                {member.deviceCount ? <span className="flag">{member.deviceCount} device{member.deviceCount === 1 ? '' : 's'}</span> : null}
+              </div>
+              <div className="staff-last-task">
+                <span className="muted">Last task</span>
+                <strong>{member.lastTaskTitle || 'No completed tasks yet'}</strong>
+                {member.lastTaskTitle ? <div className="muted">{[member.lastTaskFacility, member.lastTaskZone].filter(Boolean).join(' · ')} · {member.lastTaskAgo}</div> : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+
     <section className="card admin-calendar-shell">
       <div className="panel-title">
         <div>
@@ -106,5 +144,6 @@ export default function FacilityManager({ initialFacilities = [], source = 'unav
         {state.success && <div className="tone-green">{state.success}</div>}
       </div>
     </section>
+    </>
   );
 }

@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { markInboxThreadRead } from '../../../../../../lib/inbox-data';
+import { getCurrentStaffSession } from '../../../../../../lib/session-staff.js';
 
 export async function POST(request, { params }) {
   const body = await request.json().catch(() => null);
-  const participantStaffCode = typeof body?.participantStaffCode === 'string' ? body.participantStaffCode : null;
+  const { session, staff } = await getCurrentStaffSession();
+  const participantStaffCode = session?.role === 'staff' ? staff?.staffCode : (typeof body?.participantStaffCode === 'string' ? body.participantStaffCode : null);
 
   try {
     const result = await markInboxThreadRead({

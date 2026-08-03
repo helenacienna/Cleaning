@@ -248,6 +248,9 @@ export default async function CleanerStaffListPage({ params, searchParams }) {
         <div className="scan-header" style={{ flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <div style={{ textAlign: 'center' }}>
             <h1>{list.staff}</h1>
+            <div className="workflow-banner-actions" style={{ justifyContent: 'center', marginTop: 10 }}>
+              <Link className="button secondary" href="/cleaner/messages">Staff messages</Link>
+            </div>
             {list.weeklyShifts?.length ? (
               <div className="staff-week-strip">
                 {list.weeklyShifts.map((day) => {

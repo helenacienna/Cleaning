@@ -23,6 +23,8 @@ const STAFF_API_PREFIXES = [
   '/api/task-photos',
   '/api/task-library',
   '/api/facility-extra-task',
+  '/api/inbox',
+  '/api/presence',
 ];
 
 function authEnabled() {

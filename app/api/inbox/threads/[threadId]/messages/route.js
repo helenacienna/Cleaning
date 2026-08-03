@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createInboxReply, getInboxWorkspaceData } from '../../../../../../lib/inbox-data';
+import { getCurrentStaffSession } from '../../../../../../lib/session-staff.js';
 
 export async function GET(_request, { params }) {
-  const workspace = await getInboxWorkspaceData(params.threadId);
+  const { session, staff } = await getCurrentStaffSession();
+  const workspace = await getInboxWorkspaceData(params.threadId, {
+    audience: session?.role === 'staff' ? 'staff' : undefined,
+    participantStaffCode: session?.role === 'staff' ? staff?.staffCode : '',
+  });
   if (!workspace.selectedThread) {
     return NextResponse.json({ error: 'Thread not found' }, { status: 404 });
   }
@@ -12,7 +17,8 @@ export async function GET(_request, { params }) {
 
 export async function POST(request, { params }) {
   const body = await request.json().catch(() => null);
-  const senderStaffCode = typeof body?.senderStaffCode === 'string' ? body.senderStaffCode : null;
+  const { session, staff } = await getCurrentStaffSession();
+  const senderStaffCode = session?.role === 'staff' ? staff?.staffCode : (typeof body?.senderStaffCode === 'string' ? body.senderStaffCode : null);
   const messageBody = typeof body?.body === 'string' ? body.body : '';
   const attachments = Array.isArray(body?.attachments) ? body.attachments : [];
 
