@@ -38,6 +38,7 @@ export default function InboxWorkspace({
   const liveDataAvailable = source === 'prisma';
   const isMaintenanceStyle = audienceLabel.toLowerCase() === 'staff';
   const isSimpleChat = true;
+  const isContactChat = audienceLabel.toLowerCase() === 'staff';
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -59,6 +60,8 @@ export default function InboxWorkspace({
   const [composerState, setComposerState] = useState({ saving: false, error: '', success: '' });
   const [threadCreateState, setThreadCreateState] = useState({ saving: false, error: '', success: '' });
   const [statusState, setStatusState] = useState({ saving: false, error: '', success: '' });
+  const [openingContact, setOpeningContact] = useState('');
+  const [contactError, setContactError] = useState('');
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -142,6 +145,24 @@ export default function InboxWorkspace({
     [threads],
   );
 
+  const staffContacts = useMemo(() => {
+    const term = searchValue.trim().toLowerCase();
+    return participantOptions
+      .filter((contact) => contact.value !== senderStaffCode)
+      .filter((contact) => !term || contact.label.toLowerCase().includes(term))
+      .map((contact) => {
+        const matchingThread = threads.find((thread) => thread.participants?.some((participant) => participant.staffCode === contact.value));
+        return {
+          ...contact,
+          thread: matchingThread,
+          unreadCount: matchingThread?.unreadCount ?? 0,
+          preview: matchingThread?.lastMessagePreview ?? 'Tap to start a direct chat',
+          formattedTime: matchingThread?.formattedTime ?? '',
+          active: Boolean(selectedThread?.participants?.some((participant) => participant.staffCode === contact.value)),
+        };
+      });
+  }, [participantOptions, searchValue, selectedThread?.participants, senderStaffCode, threads]);
+
   const filterCounts = useMemo(() => ({
     all: threads.length,
     unread: threads.filter((thread) => thread.unreadCount > 0).length,
@@ -190,6 +211,24 @@ export default function InboxWorkspace({
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`);
     });
+  }
+
+  async function handleSelectContact(contact) {
+    if (!contact?.value || openingContact) return;
+    setOpeningContact(contact.value);
+    setContactError('');
+    const response = await fetch('/api/inbox/staff-direct', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ staffCode: contact.value }),
+    });
+    const payload = await response.json().catch(() => null);
+    setOpeningContact('');
+    if (!response.ok || !payload?.href) {
+      setContactError(payload?.error || `Unable to open chat with ${contact.label}.`);
+      return;
+    }
+    router.push(payload.href);
   }
 
   async function handleSendMessage(event) {
@@ -351,8 +390,8 @@ export default function InboxWorkspace({
             <div className="maintenance-chat-brand">
               <span className="maintenance-chat-logo">CC</span>
               <div>
-                <strong>Messages</strong>
-                <span>Staff chat</span>
+                <strong>Staff</strong>
+                <span>Choose a contact</span>
               </div>
             </div>
             <div className="maintenance-chat-actions">
@@ -370,7 +409,7 @@ export default function InboxWorkspace({
           </div>
         )}
 
-        {isMaintenanceStyle && <div className="threads-head">Conversations</div>}
+        {isMaintenanceStyle && <div className="threads-head">Staff</div>}
 
         <div className="inbox-sidebar-tools">
           <label className="inbox-search-field">
@@ -378,7 +417,7 @@ export default function InboxWorkspace({
             <input
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
-              placeholder="Search conversations…"
+              placeholder={isContactChat ? 'Search staff…' : 'Search conversations…'}
               type="search"
             />
           </label>
@@ -400,9 +439,9 @@ export default function InboxWorkspace({
 
           <div className="inbox-sidebar-actions">
             <span className={`badge ${unreadCount ? 'tone-red' : ''}`}>{unreadCount} unread</span>
-            <button className="button secondary" type="button" onClick={() => setShowNewThread((current) => !current)} disabled={!liveDataAvailable}>
+            {!isContactChat && <button className="button secondary" type="button" onClick={() => setShowNewThread((current) => !current)} disabled={!liveDataAvailable}>
               {showNewThread ? 'Close' : 'New chat'}
-            </button>
+            </button>}
           </div>
         </div>
 
@@ -486,8 +525,27 @@ export default function InboxWorkspace({
           </form>
         )}
 
-        <div className="inbox-thread-list">
-          {filteredThreads.map((thread) => {
+        <div className={`inbox-thread-list ${isContactChat ? 'contact-list' : ''}`}>
+          {isContactChat ? staffContacts.map((contact) => (
+            <button
+              key={contact.value}
+              type="button"
+              className={`inbox-thread-card contact-card ${contact.active ? 'inbox-thread-card-active' : ''}`}
+              onClick={() => handleSelectContact(contact)}
+              disabled={openingContact === contact.value}
+            >
+              <span className="contact-avatar">{contact.label.split(' ')[0]?.slice(0, 1) || 'S'}</span>
+              <span className="contact-main">
+                <span className="inbox-thread-card-top">
+                  <strong>{contact.label.split(' · ')[0]}</strong>
+                  <span className="muted">{openingContact === contact.value ? 'Opening…' : contact.formattedTime}</span>
+                </span>
+                <span className="muted contact-role">{contact.label.split(' · ')[1] || 'Staff'}</span>
+                <span className="inbox-thread-preview">{contact.preview}</span>
+              </span>
+              {contact.unreadCount ? <span className="contact-unread">{contact.unreadCount}</span> : null}
+            </button>
+          )) : filteredThreads.map((thread) => {
             const isActive = thread.id === selectedThread?.id;
             return (
               <button
@@ -510,8 +568,10 @@ export default function InboxWorkspace({
               </button>
             );
           })}
+          {contactError ? <div className="inbox-empty-list tone-red">{contactError}</div> : null}
           {!liveDataAvailable && <div className="inbox-empty-list muted">Live inbox data is unavailable.</div>}
-          {liveDataAvailable && !filteredThreads.length && <div className="inbox-empty-list muted">No threads match this filter.</div>}
+          {liveDataAvailable && isContactChat && !staffContacts.length && <div className="inbox-empty-list muted">No staff match this search.</div>}
+          {liveDataAvailable && !isContactChat && !filteredThreads.length && <div className="inbox-empty-list muted">No conversations match this search.</div>}
         </div>
       </aside>
 
@@ -645,8 +705,8 @@ export default function InboxWorkspace({
           </>
         ) : (
           <div className="inbox-empty-state">
-            <strong>No thread selected.</strong>
-            <p className="muted">Pick a conversation from the left to open the operational detail.</p>
+            <strong>Select a staff member</strong>
+            <p className="muted">Choose someone from the staff list to open the direct conversation.</p>
           </div>
         )}
       </div>

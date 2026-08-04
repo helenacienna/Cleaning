@@ -7242,3 +7242,75 @@ button.button {
     display: grid !important;
   }
 }
+
+.google-chat-shell .contact-list {
+  gap: 2px;
+}
+
+.google-chat-shell .contact-card {
+  display: grid !important;
+  grid-template-columns: 44px minmax(0, 1fr) auto !important;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+}
+
+.google-chat-shell .contact-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #1d4ed8;
+  font-weight: 950;
+  font-size: 17px;
+  text-transform: uppercase;
+}
+
+.google-chat-shell .contact-main {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.google-chat-shell .contact-main .inbox-thread-card-top {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.google-chat-shell .contact-main strong,
+.google-chat-shell .contact-role,
+.google-chat-shell .contact-main .inbox-thread-preview {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.google-chat-shell .contact-role {
+  font-size: 12px;
+}
+
+.google-chat-shell .contact-unread {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: #2563eb;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.maintenance-chat-shell.google-chat-shell .contact-card {
+  display: grid !important;
+  grid-template-columns: 44px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
