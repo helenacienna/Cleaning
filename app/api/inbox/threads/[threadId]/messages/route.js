@@ -3,8 +3,7 @@ import { createInboxReply, getInboxWorkspaceData } from '../../../../../../lib/i
 import { getCurrentStaffSession } from '../../../../../../lib/session-staff.js';
 import { getPrisma } from '../../../../../../lib/prisma.js';
 
-async function getAdminSenderStaffCode(session, explicitStaffCode = '') {
-  if (explicitStaffCode) return explicitStaffCode.trim().toUpperCase();
+async function getAdminSenderStaffCode(session) {
   const prisma = await getPrisma();
   if (!prisma) return '';
   const username = String(session?.username || '').trim().toLowerCase();
@@ -34,8 +33,7 @@ export async function POST(request, { params }) {
   const { threadId } = await params;
   const body = await request.json().catch(() => null);
   const { session, staff } = await getCurrentStaffSession();
-  const explicitSenderStaffCode = typeof body?.senderStaffCode === 'string' ? body.senderStaffCode : '';
-  const senderStaffCode = session?.role === 'staff' ? staff?.staffCode : await getAdminSenderStaffCode(session, explicitSenderStaffCode);
+  const senderStaffCode = session?.role === 'staff' ? staff?.staffCode : await getAdminSenderStaffCode(session);
   const messageBody = typeof body?.body === 'string' ? body.body : '';
   const attachments = Array.isArray(body?.attachments) ? body.attachments : [];
 
