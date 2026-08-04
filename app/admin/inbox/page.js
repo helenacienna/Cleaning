@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export default async function InboxPage({ searchParams }) {
   const selectedThreadId = searchParams?.thread ?? null;
   const audience = typeof searchParams?.audience === 'string' ? searchParams.audience : 'manager';
-  const audienceLabel = audience === 'supervisor' ? 'Supervisor' : audience === 'cleaner' ? 'Cleaner' : 'Manager';
+  const audienceLabel = audience === 'staff' ? 'Staff' : audience === 'supervisor' ? 'Supervisor' : audience === 'cleaner' ? 'Cleaner' : 'Manager';
   const workspace = await getInboxWorkspaceData(selectedThreadId, { audience, limit: 14 });
 
   return (
@@ -38,6 +38,7 @@ export default async function InboxPage({ searchParams }) {
           <Link className="button secondary" href="/admin/inbox?audience=manager">Manager</Link>
           <Link className="button secondary" href="/admin/inbox?audience=supervisor">Supervisor</Link>
           <Link className="button secondary" href="/admin/inbox?audience=cleaner">Cleaner</Link>
+          <Link className="button secondary" href="/admin/inbox?audience=staff">Staff</Link>
           <span className="badge">{workspace.threads.length} threads</span>
           <span className={`badge ${workspace.unreadCount ? 'tone-red' : ''}`}>{workspace.unreadCount} unread</span>
         </div>

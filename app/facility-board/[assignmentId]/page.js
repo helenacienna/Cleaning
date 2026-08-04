@@ -5,6 +5,7 @@ import ExtraTaskScheduleCard from './ExtraTaskScheduleCard';
 import FacilityAddTaskButton from './FacilityAddTaskButton';
 import ExpandAllZonesButton from './ExpandAllZonesButton';
 import FacilityTaskOrderView from './FacilityTaskOrderView';
+import StaffOnlinePanel from './StaffOnlinePanel';
 import { taskCardTemplates as demoTaskCardTemplates } from '../../../data/demo-data';
 import { notFound } from 'next/navigation';
 import { getOrganiserBoardData } from '../../../lib/app-data';
@@ -12,6 +13,7 @@ import { DEFAULT_APP_TIME_ZONE, formatBoardDayKeyForTimeZone, getTimeZoneFormatt
 import { getOutcomeCompletedCount, getOutcomeCounts, OUTCOME_PROGRESS_SEGMENTS } from '../../../lib/task-outcomes.js';
 import { taskPhotoUrl as buildTaskPhotoUrl } from '../../../lib/task-photo-urls.js';
 import { photoPreloadLimit, photoThumbnailWidth } from '../../../lib/cost-control.js';
+import { getStaffStatusSummaries } from '../../../lib/staff-status-summary.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -687,6 +689,7 @@ export default async function FacilityBoardPage({ params, searchParams }) {
   const facilityResultLabel = reportTotals.unresolvedIssues
     ? 'Supervisor review required'
     : reportTotals.resolvedIssues ? 'Issues found and resolved' : 'No low-score issues';
+  const staffStatuses = await getStaffStatusSummaries();
 
   return (
     <main className="page facility-board-detail-shell">
@@ -722,6 +725,8 @@ export default async function FacilityBoardPage({ params, searchParams }) {
 
         {renderOutcomeProgress(assignment.tasks)}
       </section>
+
+      <StaffOnlinePanel staffStatuses={staffStatuses} />
 
       {source !== 'prisma' && (
         <section className="card" style={{ marginBottom: 16 }}>
