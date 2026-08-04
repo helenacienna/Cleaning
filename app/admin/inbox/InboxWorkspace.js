@@ -37,6 +37,7 @@ export default function InboxWorkspace({
 }) {
   const liveDataAvailable = source === 'prisma';
   const isMaintenanceStyle = audienceLabel.toLowerCase() === 'staff';
+  const isSimpleChat = true;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -343,7 +344,7 @@ export default function InboxWorkspace({
   }
 
   return (
-    <section className={`inbox-shell ${isMaintenanceStyle ? 'maintenance-chat-shell' : ''} ${selectedThread ? 'thread-open' : ''}`}>
+    <section className={`inbox-shell google-chat-shell ${isMaintenanceStyle ? 'maintenance-chat-shell' : ''} ${selectedThread ? 'thread-open' : ''}`}>
       <aside className="card inbox-sidebar">
         {isMaintenanceStyle ? (
           <div className="maintenance-chat-topbar">
@@ -362,14 +363,14 @@ export default function InboxWorkspace({
         ) : (
           <div className="panel-title">
             <div>
-              <h3>Threads</h3>
-              <p className="muted">Operational work, escalations, and {audienceLabel.toLowerCase()} discussions.</p>
+              <h3>Conversations</h3>
+              <p className="muted">Open a conversation to read and reply.</p>
             </div>
             <span className="badge">{threads.length}</span>
           </div>
         )}
 
-        {isMaintenanceStyle && <div className="threads-head">Messages</div>}
+        {isMaintenanceStyle && <div className="threads-head">Conversations</div>}
 
         <div className="inbox-sidebar-tools">
           <label className="inbox-search-field">
@@ -377,12 +378,12 @@ export default function InboxWorkspace({
             <input
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
-              placeholder="Search title, note, or status…"
+              placeholder="Search conversations…"
               type="search"
             />
           </label>
 
-          <div className="inbox-filter-row">
+          {!isSimpleChat && <div className="inbox-filter-row">
             {THREAD_FILTERS.map((filter) => (
               <button
                 key={filter.key}
@@ -395,12 +396,12 @@ export default function InboxWorkspace({
                 <strong>{filterCounts[filter.key] ?? 0}</strong>
               </button>
             ))}
-          </div>
+          </div>}
 
           <div className="inbox-sidebar-actions">
             <span className={`badge ${unreadCount ? 'tone-red' : ''}`}>{unreadCount} unread</span>
             <button className="button secondary" type="button" onClick={() => setShowNewThread((current) => !current)} disabled={!liveDataAvailable}>
-              {showNewThread ? 'Close composer' : (isMaintenanceStyle ? 'New message' : 'New thread')}
+              {showNewThread ? 'Close' : 'New chat'}
             </button>
           </div>
         </div>
@@ -530,7 +531,7 @@ export default function InboxWorkspace({
               </div>
             </div>
 
-            {!isMaintenanceStyle && <div className="inbox-status-row">
+            {!isSimpleChat && <div className="inbox-status-row">
               {THREAD_STATUSES.map((status) => (
                 <button
                   key={status}
@@ -581,7 +582,7 @@ export default function InboxWorkspace({
             </div>
 
             <form className="inbox-composer" onSubmit={handleSendMessage}>
-              {!isMaintenanceStyle && <div className="inbox-composer-toolbar">
+              {!isSimpleChat && <div className="inbox-composer-toolbar">
                 <label className="field-label inbox-field-compact">
                   <span>Reply as</span>
                   <select value={senderStaffCode} onChange={(event) => setSenderStaffCode(event.target.value)} disabled={!liveDataAvailable}>
@@ -597,10 +598,10 @@ export default function InboxWorkspace({
                 rows={4}
                 value={messageBody}
                 onChange={(event) => setMessageBody(event.target.value)}
-                placeholder={isMaintenanceStyle ? 'Write a message…' : 'Write a clear operational update…'}
+                placeholder="Message…"
                 disabled={!liveDataAvailable}
               />
-              {!isMaintenanceStyle && <div className="inbox-attachment-block">
+              {!isSimpleChat && <div className="inbox-attachment-block">
                 <div className="panel-title" style={{ marginBottom: 0 }}>
                   <div>
                     <h4>Attachments</h4>
@@ -637,7 +638,7 @@ export default function InboxWorkspace({
                   {composerState.success && <div className="tone-green">{composerState.success}</div>}
                 </div>
                 <button className="button primary" type="submit" disabled={composerState.saving || isPending || !messageBody.trim() || !liveDataAvailable}>
-                  {composerState.saving ? 'Sending…' : (isMaintenanceStyle ? 'Send' : 'Send reply')}
+                  {composerState.saving ? 'Sending…' : 'Send'}
                 </button>
               </div>
             </form>
@@ -650,7 +651,7 @@ export default function InboxWorkspace({
         )}
       </div>
 
-      <aside className="card inbox-detail-column">
+      {!isSimpleChat && <aside className="card inbox-detail-column">
         <div className="panel-title">
           <div>
             <h3>Thread detail</h3>
@@ -697,7 +698,7 @@ export default function InboxWorkspace({
         ) : (
           <div className="muted">No operational thread loaded yet.</div>
         )}
-      </aside>
+      </aside>}
     </section>
   );
 }

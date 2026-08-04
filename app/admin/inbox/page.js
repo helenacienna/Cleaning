@@ -19,7 +19,7 @@ export default async function InboxPage({ searchParams }) {
       <div className="topbar">
         <div className="brand">
           <p>Cienna Cleaning Admin</p>
-          <h1>Operations inbox</h1>
+          <h1>Messages</h1>
         </div>
         <div className="badge-row">
           <Link className="button secondary" href="/">Back to dashboard</Link>
@@ -32,13 +32,13 @@ export default async function InboxPage({ searchParams }) {
       <section className="workflow-banner no-top-gap">
         <div>
           <span className="badge">Internal messaging</span>
-          <strong>Replace Telegram with a clean in-app inbox for operational threads, {audienceLabel.toLowerCase()} replies, and system alerts.</strong>
+          <strong>Simple in-app chat for staff messages and operational conversations.</strong>
         </div>
         <div className="workflow-banner-actions">
+          <Link className="button secondary" href="/admin/inbox?audience=staff">Staff chats</Link>
           <Link className="button secondary" href="/admin/inbox?audience=manager">Manager</Link>
           <Link className="button secondary" href="/admin/inbox?audience=supervisor">Supervisor</Link>
           <Link className="button secondary" href="/admin/inbox?audience=cleaner">Cleaner</Link>
-          <Link className="button secondary" href="/admin/inbox?audience=staff">Staff</Link>
           <span className="badge">{workspace.threads.length} threads</span>
           <span className={`badge ${workspace.unreadCount ? 'tone-red' : ''}`}>{workspace.unreadCount} unread</span>
         </div>

@@ -6860,3 +6860,385 @@ button.button {
     padding: 12px;
   }
 }
+
+/* Google Chat-style simplified messaging layout. */
+.google-chat-shell {
+  display: grid;
+  grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+  min-height: 72vh;
+}
+
+.google-chat-shell .inbox-detail-column,
+.google-chat-shell .inbox-status-row,
+.google-chat-shell .inbox-attachment-block,
+.google-chat-shell .inbox-composer-toolbar {
+  display: none !important;
+}
+
+.google-chat-shell .inbox-sidebar,
+.google-chat-shell .inbox-main-column {
+  border: 1px solid rgba(15,23,42,0.10);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15,23,42,0.08);
+  overflow: hidden;
+}
+
+.google-chat-shell .inbox-sidebar {
+  padding: 14px;
+  align-content: start;
+}
+
+.google-chat-shell .inbox-main-column {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 72vh;
+  padding: 0;
+}
+
+.google-chat-shell .panel-title {
+  margin-bottom: 4px;
+}
+
+.google-chat-shell .panel-title h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.google-chat-shell .inbox-sidebar-tools {
+  display: grid;
+  gap: 10px;
+}
+
+.google-chat-shell .inbox-search-field span,
+.google-chat-shell .inbox-thread-card .flag-row .flag:nth-child(1),
+.google-chat-shell .inbox-thread-card .flag-row .flag:nth-child(2) {
+  display: none;
+}
+
+.google-chat-shell .inbox-search-field input {
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: #f8fafc;
+  padding: 13px 16px;
+}
+
+.google-chat-shell .inbox-sidebar-actions {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.google-chat-shell .inbox-sidebar-actions .badge {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.google-chat-shell .inbox-sidebar-actions .button {
+  border-radius: 999px;
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.google-chat-shell .inbox-new-thread-card {
+  border-radius: 18px;
+  background: #f8fafc;
+  border: 1px solid rgba(15,23,42,0.08);
+}
+
+.google-chat-shell .inbox-thread-list {
+  max-height: calc(72vh - 150px);
+  overflow: auto;
+  display: grid;
+  gap: 4px;
+  padding-right: 2px;
+}
+
+.google-chat-shell .inbox-thread-card {
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  padding: 12px;
+  box-shadow: none;
+}
+
+.google-chat-shell .inbox-thread-card:hover {
+  background: #f1f5f9;
+  transform: none;
+  box-shadow: none;
+}
+
+.google-chat-shell .inbox-thread-card-active {
+  background: #e8f0fe;
+  border: 0;
+  box-shadow: none;
+}
+
+.google-chat-shell .inbox-thread-card-top {
+  align-items: center;
+}
+
+.google-chat-shell .inbox-thread-card-top strong {
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.google-chat-shell .inbox-thread-card-top .muted,
+.google-chat-shell .inbox-thread-preview {
+  font-size: 12px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.google-chat-shell .inbox-thread-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(15,23,42,0.08);
+  background: #fff;
+}
+
+.google-chat-shell .inbox-thread-header h2 {
+  margin: 0 0 4px;
+  font-size: 21px;
+}
+
+.google-chat-shell .inbox-thread-header .flag-row {
+  margin-top: 8px;
+}
+
+.google-chat-shell .inbox-message-stream {
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 22px;
+  background: #fff;
+}
+
+.google-chat-shell .inbox-message-card {
+  width: auto;
+  max-width: min(760px, 82%);
+  border: 0;
+  border-radius: 18px;
+  background: #f1f5f9;
+  padding: 10px 13px;
+  box-shadow: none;
+}
+
+.google-chat-shell .inbox-message-card.msg.admin,
+.google-chat-shell .inbox-message-card.msg.resident {
+  box-shadow: none;
+}
+
+.google-chat-shell .inbox-message-card.msg.admin {
+  align-self: flex-end;
+  margin-left: auto;
+  background: #dbeafe;
+  color: #0f172a;
+  border: 0;
+  border-bottom-right-radius: 6px;
+}
+
+.google-chat-shell .inbox-message-card.msg.resident {
+  align-self: flex-start;
+  margin-right: auto;
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 0;
+  border-bottom-left-radius: 6px;
+}
+
+.google-chat-shell .inbox-message-meta {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.google-chat-shell .inbox-message-meta .task-status {
+  display: none;
+}
+
+.google-chat-shell .inbox-message-body {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.google-chat-shell .inbox-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(15,23,42,0.08);
+  background: #fff;
+}
+
+.google-chat-shell .inbox-composer-input {
+  min-height: 46px;
+  height: 46px;
+  resize: none;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: #f8fafc;
+  padding: 12px 16px;
+}
+
+.google-chat-shell .inbox-composer-actions {
+  align-items: stretch;
+}
+
+.google-chat-shell .inbox-composer-actions > div {
+  display: none;
+}
+
+.google-chat-shell .inbox-composer-actions .button.primary {
+  min-height: 46px;
+  border-radius: 999px;
+  padding: 0 20px;
+}
+
+.google-chat-shell .inbox-empty-state,
+.google-chat-shell .inbox-empty-list {
+  margin: 12px;
+  border-radius: 18px;
+  border: 1px dashed rgba(15,23,42,0.14);
+  background: #f8fafc;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .google-chat-shell {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 70vh;
+  }
+
+  .google-chat-shell .inbox-main-column {
+    display: none;
+    min-height: 70vh;
+  }
+
+  .google-chat-shell.thread-open .inbox-sidebar {
+    display: none;
+  }
+
+  .google-chat-shell.thread-open .inbox-main-column {
+    display: grid;
+  }
+
+  .google-chat-shell .inbox-message-card {
+    max-width: 92%;
+  }
+
+  .google-chat-shell .inbox-composer {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 12px;
+  }
+}
+
+/* Make Google Chat simplification win over the earlier Maintenance-style skin. */
+.maintenance-chat-shell.google-chat-shell {
+  grid-template-columns: minmax(300px, 390px) minmax(0, 1fr) !important;
+  height: auto !important;
+  min-height: 72vh !important;
+  padding: 0 !important;
+  margin-top: 16px !important;
+  background: transparent !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .threads-head,
+.maintenance-chat-shell.google-chat-shell .maintenance-chat-topbar {
+  display: none !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .inbox-sidebar,
+.maintenance-chat-shell.google-chat-shell .inbox-main-column {
+  border: 1px solid rgba(15,23,42,0.10) !important;
+  border-radius: 24px !important;
+  background: #fff !important;
+  box-shadow: 0 12px 32px rgba(15,23,42,0.08) !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .inbox-main-column {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  padding: 0 !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .inbox-thread-header {
+  margin: 0 !important;
+  padding: 16px 20px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(15,23,42,0.08) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .inbox-thread-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .inbox-thread-card-active {
+  background: #e8f0fe !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .inbox-message-stream {
+  background: #fff !important;
+  padding: 18px 22px !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .inbox-message-card.msg.admin {
+  background: #dbeafe !important;
+  border: 0 !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .inbox-message-card.msg.resident {
+  background: #f1f5f9 !important;
+  border: 0 !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .inbox-composer {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  border-top: 1px solid rgba(15,23,42,0.08) !important;
+  background: #fff !important;
+}
+
+.maintenance-chat-shell.google-chat-shell .inbox-composer-input {
+  min-height: 46px !important;
+  height: 46px !important;
+  border-radius: 999px !important;
+}
+
+@media (max-width: 760px) {
+  .maintenance-chat-shell.google-chat-shell {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .maintenance-chat-shell.google-chat-shell .inbox-main-column {
+    display: none !important;
+  }
+
+  .maintenance-chat-shell.google-chat-shell.thread-open .inbox-sidebar {
+    display: none !important;
+  }
+
+  .maintenance-chat-shell.google-chat-shell.thread-open .inbox-main-column {
+    display: grid !important;
+  }
+}
