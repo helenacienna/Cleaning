@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import CleanerTaskFlow from './CleanerTaskFlow';
 import RemainingWorkPanel from './RemainingWorkPanel';
+import { canReceiveCleaningTasks } from '../../../lib/staff-role-label';
 
 const RESUME_REFRESH_COOLDOWN_MS = 5000;
 
@@ -143,7 +144,7 @@ export default function CleanerChecklistModal({ tasks, label, staffName, reportH
         ...current,
         loading: false,
         cards: taskPayload.cards.filter((card) => card.active !== false && (!card.facility || card.facility === label)),
-        staff: staffPayload.staff.filter((member) => member.active !== false && member.role === 'cleaner'),
+        staff: staffPayload.staff.filter((member) => member.active !== false && canReceiveCleaningTasks(member.role)),
       }));
     } catch (error) {
       setAddTaskState((current) => ({ ...current, loading: false, error: error.message || 'Could not load task cards and staff.' }));

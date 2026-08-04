@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { canReceiveCleaningTasks } from '../../../lib/staff-role-label';
 
 const ADD_TASK_EMPTY_STATE = {
   open: false,
@@ -80,7 +81,7 @@ export default function FacilityAddTaskButton({ facility, day }) {
         ...current,
         loading: false,
         cards: taskPayload.cards.filter((card) => card.active !== false && (!card.facility || card.facility === facility)),
-        staff: staffPayload.staff.filter((member) => member.active !== false && member.role === 'cleaner'),
+        staff: staffPayload.staff.filter((member) => member.active !== false && canReceiveCleaningTasks(member.role)),
       }));
     } catch (error) {
       setAddTaskState((current) => ({ ...current, loading: false, error: error.message || 'Could not load task cards and staff.' }));

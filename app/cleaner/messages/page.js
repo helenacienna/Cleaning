@@ -2,6 +2,7 @@ import Link from 'next/link';
 import InboxWorkspace from '../../admin/inbox/InboxWorkspace';
 import { getInboxWorkspaceData } from '../../../lib/inbox-data';
 import { getCurrentStaffSession } from '../../../lib/session-staff';
+import { formatStaffRole } from '../../../lib/staff-role-label';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,7 +41,7 @@ export default async function StaffMessagesPage({ searchParams }) {
     limit: 30,
   });
 
-  const senderOptions = [{ value: staff.staffCode, label: `${staff.fullName} · ${staff.role}` }];
+  const senderOptions = [{ value: staff.staffCode, label: `${staff.fullName} · ${formatStaffRole(staff.role)}` }];
 
   return (
     <main className="page admin-calendar-page staff-messenger-page maintenance-chat-page">

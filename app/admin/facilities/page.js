@@ -2,6 +2,7 @@ import Link from 'next/link';
 import FacilityManager from './FacilityManager';
 import { getPrisma } from '../../../lib/prisma';
 import { readStaffPresenceMap, summarizePresence, formatAgo } from '../../../lib/staff-presence';
+import { formatStaffRole } from '../../../lib/staff-role-label';
 
 export const metadata = {
   title: 'Facilities · Cienna Cleaning',
@@ -80,6 +81,7 @@ export default async function FacilitiesPage() {
       staffCode: member.staffCode,
       fullName: member.fullName,
       role: member.role,
+      roleLabel: formatStaffRole(member.role),
       online: presence.online,
       lastSeenAt: presence.lastSeenAt,
       lastSeenAgo: presence.lastSeenAt ? formatAgo(presence.lastSeenAt) : 'Never seen',

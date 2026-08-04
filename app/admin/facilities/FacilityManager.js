@@ -56,7 +56,7 @@ export default function FacilityManager({ initialFacilities = [], initialStaffSt
                 <span className={`staff-online-dot ${member.online ? 'staff-online-dot-on' : ''}`} aria-hidden="true" />
                 <div>
                   <strong>{member.fullName}</strong>
-                  <div className="muted">{member.role} · {member.staffCode}</div>
+                  <div className="muted">{member.roleLabel || member.role} · {member.staffCode}</div>
                 </div>
               </div>
               <div className="staff-online-status-meta">
