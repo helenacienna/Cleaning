@@ -36,6 +36,7 @@ export default function InboxWorkspace({
   audienceLabel = 'Manager',
 }) {
   const liveDataAvailable = source === 'prisma';
+  const isMaintenanceStyle = audienceLabel.toLowerCase() === 'staff';
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -50,7 +51,7 @@ export default function InboxWorkspace({
   const [newThreadForm, setNewThreadForm] = useState({
     title: '',
     subtitle: '',
-    audience: 'manager',
+    audience: audienceLabel.toLowerCase() === 'staff' ? 'staff' : 'manager',
     senderStaffCode: senderOptions[0]?.value ?? 'MGR001',
     participantStaffCodes: [],
   });
@@ -147,6 +148,40 @@ export default function InboxWorkspace({
     group: threads.filter((thread) => thread.type === 'group').length,
     manual: threads.filter((thread) => thread.scope === 'manual').length,
   }), [threads]);
+
+  async function handleRefresh() {
+    if (!liveDataAvailable) return;
+    const audienceParam = audienceLabel.toLowerCase();
+    const params = new URLSearchParams({ audience: audienceParam, limit: '20' });
+    const threadsResponse = await fetch(`/api/inbox/threads?${params.toString()}`, { cache: 'no-store' }).catch(() => null);
+    const threadsPayload = threadsResponse ? await threadsResponse.json().catch(() => null) : null;
+    if (threadsResponse?.ok && Array.isArray(threadsPayload?.threads)) {
+      setThreads(threadsPayload.threads);
+    }
+    if (selectedThread?.id) {
+      const threadResponse = await fetch(`/api/inbox/threads/${selectedThread.id}/messages`, { cache: 'no-store' }).catch(() => null);
+      const threadPayload = threadResponse ? await threadResponse.json().catch(() => null) : null;
+      if (threadResponse?.ok && threadPayload?.thread) {
+        setSelectedThread(threadPayload.thread);
+      }
+    }
+  }
+
+  function handleBack() {
+    if (isMaintenanceStyle && selectedThread?.id && window.matchMedia('(max-width: 760px)').matches) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('thread');
+      startTransition(() => {
+        router.push(params.toString() ? `${pathname}?${params.toString()}` : pathname);
+      });
+      return;
+    }
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    router.push(audienceLabel.toLowerCase() === 'staff' ? '/cleaner' : '/');
+  }
 
   async function handleSelectThread(threadId) {
     const params = new URLSearchParams(searchParams.toString());
@@ -286,7 +321,7 @@ export default function InboxWorkspace({
     setNewThreadForm({
       title: '',
       subtitle: '',
-      audience: 'manager',
+      audience: audienceLabel.toLowerCase() === 'staff' ? 'staff' : 'manager',
       senderStaffCode: senderOptions[0]?.value ?? 'MGR001',
       participantStaffCodes: [],
     });
@@ -308,15 +343,33 @@ export default function InboxWorkspace({
   }
 
   return (
-    <section className="inbox-shell">
+    <section className={`inbox-shell ${isMaintenanceStyle ? 'maintenance-chat-shell' : ''} ${selectedThread ? 'thread-open' : ''}`}>
       <aside className="card inbox-sidebar">
-        <div className="panel-title">
-          <div>
-            <h3>Threads</h3>
-            <p className="muted">Operational work, escalations, and {audienceLabel.toLowerCase()} discussions.</p>
+        {isMaintenanceStyle ? (
+          <div className="maintenance-chat-topbar">
+            <div className="maintenance-chat-brand">
+              <span className="maintenance-chat-logo">CC</span>
+              <div>
+                <strong>Messages</strong>
+                <span>Staff chat</span>
+              </div>
+            </div>
+            <div className="maintenance-chat-actions">
+              <button className="top-action" type="button" onClick={handleBack}>← Back</button>
+              <button className="top-action" type="button" onClick={handleRefresh} disabled={!liveDataAvailable}>Refresh</button>
+            </div>
           </div>
-          <span className="badge">{threads.length}</span>
-        </div>
+        ) : (
+          <div className="panel-title">
+            <div>
+              <h3>Threads</h3>
+              <p className="muted">Operational work, escalations, and {audienceLabel.toLowerCase()} discussions.</p>
+            </div>
+            <span className="badge">{threads.length}</span>
+          </div>
+        )}
+
+        {isMaintenanceStyle && <div className="threads-head">Messages</div>}
 
         <div className="inbox-sidebar-tools">
           <label className="inbox-search-field">
@@ -347,7 +400,7 @@ export default function InboxWorkspace({
           <div className="inbox-sidebar-actions">
             <span className={`badge ${unreadCount ? 'tone-red' : ''}`}>{unreadCount} unread</span>
             <button className="button secondary" type="button" onClick={() => setShowNewThread((current) => !current)} disabled={!liveDataAvailable}>
-              {showNewThread ? 'Close composer' : 'New thread'}
+              {showNewThread ? 'Close composer' : (isMaintenanceStyle ? 'New message' : 'New thread')}
             </button>
           </div>
         </div>
@@ -356,7 +409,7 @@ export default function InboxWorkspace({
           <form className="inbox-new-thread-card" onSubmit={handleCreateThread}>
             <div className="panel-title" style={{ marginBottom: 0 }}>
               <div>
-                <h4>New internal thread</h4>
+                <h4>{isMaintenanceStyle ? 'New staff message' : 'New internal thread'}</h4>
                 <p className="muted">Start a clean operational conversation inside the platform.</p>
               </div>
             </div>
@@ -366,7 +419,7 @@ export default function InboxWorkspace({
               <input
                 value={newThreadForm.title}
                 onChange={(event) => setNewThreadForm((current) => ({ ...current, title: event.target.value }))}
-                placeholder="Example: North foyer follow-up"
+                placeholder={isMaintenanceStyle ? 'Example: Message for Tony' : 'Example: North foyer follow-up' }
                 type="text"
               />
             </label>
@@ -381,7 +434,7 @@ export default function InboxWorkspace({
               />
             </label>
 
-            <div className="inbox-new-thread-grid">
+            {!isMaintenanceStyle && <div className="inbox-new-thread-grid">
               <label className="field-label inbox-field-compact">
                 <span>Audience</span>
                 <select value={newThreadForm.audience} onChange={(event) => setNewThreadForm((current) => ({ ...current, audience: event.target.value }))}>
@@ -399,7 +452,7 @@ export default function InboxWorkspace({
                   ))}
                 </select>
               </label>
-            </div>
+            </div>}
 
             <div className="inbox-picker-block">
               <span className="muted">Participants</span>
@@ -466,18 +519,18 @@ export default function InboxWorkspace({
           <>
             <div className="inbox-thread-header">
               <div>
-                <span className="badge">{selectedThread.scope || 'internal thread'}</span>
+                {!isMaintenanceStyle && <span className="badge">{selectedThread.scope || 'internal thread'}</span>}
                 <h2>{selectedThread.title}</h2>
                 {selectedThread.subtitle && <p className="muted">{selectedThread.subtitle}</p>}
               </div>
               <div className="flag-row">
                 <span className="flag">{selectedThread.participantCount} participants</span>
                 <span className="flag">{selectedThread.messageCount ?? selectedThread.messages?.length ?? 0} messages</span>
-                <span className="flag">{selectedThread.status}</span>
+                {!isMaintenanceStyle && <span className="flag">{selectedThread.status}</span>}
               </div>
             </div>
 
-            <div className="inbox-status-row">
+            {!isMaintenanceStyle && <div className="inbox-status-row">
               {THREAD_STATUSES.map((status) => (
                 <button
                   key={status}
@@ -492,11 +545,13 @@ export default function InboxWorkspace({
               <div className="muted">
                 {statusState.error || statusState.success || (liveDataAvailable ? 'Use status to keep threads open, watched, or resolved.' : 'Status changes are disabled until live inbox data is available.')}
               </div>
-            </div>
+            </div>}
 
             <div className="inbox-message-stream">
-              {(selectedThread.messages ?? []).map((message) => (
-                <article className="inbox-message-card" key={message.id}>
+              {(selectedThread.messages ?? []).map((message) => {
+                const isOwnMessage = message.senderKey === `staff:${senderStaffCode}`;
+                return (
+                <article className={`inbox-message-card ${isMaintenanceStyle ? (isOwnMessage ? 'msg admin' : 'msg resident') : ''}`} key={message.id}>
                   <div className="inbox-message-meta">
                     <div>
                       <strong>{message.senderName}</strong>
@@ -521,11 +576,12 @@ export default function InboxWorkspace({
                     </div>
                   ) : null}
                 </article>
-              ))}
+                );
+              })}
             </div>
 
             <form className="inbox-composer" onSubmit={handleSendMessage}>
-              <div className="inbox-composer-toolbar">
+              {!isMaintenanceStyle && <div className="inbox-composer-toolbar">
                 <label className="field-label inbox-field-compact">
                   <span>Reply as</span>
                   <select value={senderStaffCode} onChange={(event) => setSenderStaffCode(event.target.value)} disabled={!liveDataAvailable}>
@@ -535,16 +591,16 @@ export default function InboxWorkspace({
                   </select>
                 </label>
                 <div className="muted">{liveDataAvailable ? 'Live refresh runs every 15 seconds for active threads.' : 'Replying is disabled until live inbox data is available.'}</div>
-              </div>
+              </div>}
               <textarea
                 className="inbox-composer-input"
                 rows={4}
                 value={messageBody}
                 onChange={(event) => setMessageBody(event.target.value)}
-                placeholder="Write a clear operational update…"
+                placeholder={isMaintenanceStyle ? 'Write a message…' : 'Write a clear operational update…'}
                 disabled={!liveDataAvailable}
               />
-              <div className="inbox-attachment-block">
+              {!isMaintenanceStyle && <div className="inbox-attachment-block">
                 <div className="panel-title" style={{ marginBottom: 0 }}>
                   <div>
                     <h4>Attachments</h4>
@@ -574,14 +630,14 @@ export default function InboxWorkspace({
                     </div>
                   ))}
                 </div>
-              </div>
+              </div>}
               <div className="inbox-composer-actions">
                 <div>
                   {composerState.error && <div className="tone-red">{composerState.error}</div>}
                   {composerState.success && <div className="tone-green">{composerState.success}</div>}
                 </div>
                 <button className="button primary" type="submit" disabled={composerState.saving || isPending || !messageBody.trim() || !liveDataAvailable}>
-                  {composerState.saving ? 'Sending…' : 'Send reply'}
+                  {composerState.saving ? 'Sending…' : (isMaintenanceStyle ? 'Send' : 'Send reply')}
                 </button>
               </div>
             </form>

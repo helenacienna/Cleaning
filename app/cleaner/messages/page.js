@@ -43,24 +43,21 @@ export default async function StaffMessagesPage({ searchParams }) {
   const senderOptions = [{ value: staff.staffCode, label: `${staff.fullName} · ${staff.role}` }];
 
   return (
-    <main className="page admin-calendar-page staff-messenger-page">
-      <div className="topbar">
-        <div className="brand">
-          <p>Cienna Cleaning</p>
-          <h1>Staff messages</h1>
+    <main className="page admin-calendar-page staff-messenger-page maintenance-chat-page">
+      <div className="maintenance-page-top">
+        <div className="maintenance-page-brand">
+          <div className="maintenance-page-logo">CC</div>
+          <div>
+            <p>Cienna Cleaning</p>
+            <h1>Messages</h1>
+            <span>Signed in as {staff.fullName}</span>
+          </div>
         </div>
-        <div className="badge-row">
-          <Link className="button secondary" href={session?.staffSlug ? `/cleaner/${session.staffSlug}` : '/cleaner'}>My work</Link>
-          <Link className="button secondary" href="/cleaner">Staff landing</Link>
-          <span className="badge">Signed in as {staff.fullName}</span>
+        <div className="maintenance-page-actions">
+          <Link className="top-action" href={session?.staffSlug ? `/cleaner/${session.staffSlug}` : '/cleaner'}>← Back</Link>
+          <Link className="top-action" href="/cleaner/messages">Refresh</Link>
         </div>
       </div>
-
-      <section className="card inbox-hero-card messenger-reference-card">
-        <span className="badge">Staff messenger</span>
-        <strong>Message other staff from inside the cleaning system.</strong>
-        <div className="muted">Threads are limited to their participants. Keep task instructions and follow-up questions in one place.</div>
-      </section>
 
       <InboxWorkspace
         initialThreads={workspace.threads}
