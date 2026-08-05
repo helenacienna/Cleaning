@@ -1,27 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function StaffOnlinePanel({ staffStatuses = [] }) {
-  const router = useRouter();
-  const [state, setState] = useState({ staffCode: '', error: '' });
   const onlineCount = staffStatuses.filter((member) => member.online).length;
-
-  async function handleMessage(member) {
-    setState({ staffCode: member.staffCode, error: '' });
-    const response = await fetch('/api/inbox/staff-direct', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ staffCode: member.staffCode }),
-    });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || !payload?.href) {
-      setState({ staffCode: '', error: payload?.error || `Unable to open message thread for ${member.fullName}.` });
-      return;
-    }
-    router.push(payload.href);
-  }
 
   return (
     <section className="card admin-calendar-shell staff-online-status-shell facility-board-staff-online-shell">
@@ -32,8 +14,6 @@ export default function StaffOnlinePanel({ staffStatuses = [] }) {
         </div>
         <span className="badge">{onlineCount}/{staffStatuses.length} online</span>
       </div>
-
-      {state.error ? <div className="tone-red" style={{ marginBottom: 10 }}>{state.error}</div> : null}
 
       {!staffStatuses.length ? (
         <div className="muted">No active staff records found yet.</div>
@@ -57,14 +37,9 @@ export default function StaffOnlinePanel({ staffStatuses = [] }) {
                 <strong>{member.lastTaskTitle || 'No completed tasks yet'}</strong>
                 {member.lastTaskTitle ? <div className="muted">{[member.lastTaskFacility, member.lastTaskZone].filter(Boolean).join(' · ')} · {member.lastTaskAgo}</div> : null}
               </div>
-              <button
-                className="button primary slim staff-message-button"
-                type="button"
-                onClick={() => handleMessage(member)}
-                disabled={state.staffCode === member.staffCode}
-              >
-                {state.staffCode === member.staffCode ? 'Opening…' : `Message ${member.fullName}`}
-              </button>
+              <Link className="button primary slim staff-message-button" href="/admin/inbox?audience=staff">
+                Chat
+              </Link>
             </article>
           ))}
         </div>

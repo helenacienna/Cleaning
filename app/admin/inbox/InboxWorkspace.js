@@ -151,7 +151,7 @@ export default function InboxWorkspace({
       .filter((contact) => contact.value !== senderStaffCode)
       .filter((contact) => !term || contact.label.toLowerCase().includes(term))
       .map((contact) => {
-        const matchingThread = threads.find((thread) => thread.participants?.some((participant) => participant.staffCode === contact.value));
+        const matchingThread = threads.find((thread) => thread.type === 'direct' && thread.participants?.some((participant) => participant.staffCode === contact.value));
         return {
           ...contact,
           thread: matchingThread,
@@ -170,6 +170,13 @@ export default function InboxWorkspace({
     group: threads.filter((thread) => thread.type === 'group').length,
     manual: threads.filter((thread) => thread.scope === 'manual').length,
   }), [threads]);
+
+  const groupChats = useMemo(() => {
+    const term = searchValue.trim().toLowerCase();
+    return threads
+      .filter((thread) => thread.type === 'group')
+      .filter((thread) => !term || [thread.title, thread.subtitle, thread.lastMessagePreview].filter(Boolean).some((value) => value.toLowerCase().includes(term)));
+  }, [searchValue, threads]);
 
   async function handleRefresh() {
     if (!liveDataAvailable) return;
@@ -526,7 +533,35 @@ export default function InboxWorkspace({
         )}
 
         <div className={`inbox-thread-list ${isContactChat ? 'contact-list' : ''}`}>
-          {isContactChat ? staffContacts.map((contact) => (
+          {isContactChat && groupChats.length ? (
+            <div className="chat-list-section">
+              <div className="chat-list-section-title">Group chats</div>
+              {groupChats.map((thread) => (
+                <button
+                  key={thread.id}
+                  type="button"
+                  className={`inbox-thread-card contact-card group-chat-card ${thread.id === selectedThread?.id ? 'inbox-thread-card-active' : ''}`}
+                  onClick={() => handleSelectThread(thread.id)}
+                >
+                  <span className="contact-avatar group-avatar">#</span>
+                  <span className="contact-main">
+                    <span className="inbox-thread-card-top">
+                      <strong>{thread.title}</strong>
+                      <span className="muted">{thread.formattedTime}</span>
+                    </span>
+                    <span className="muted contact-role">Group chat · {thread.participantCount} people</span>
+                    <span className="inbox-thread-preview">{thread.lastMessagePreview}</span>
+                  </span>
+                  {thread.unreadCount ? <span className="contact-unread">{thread.unreadCount}</span> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {isContactChat ? (
+            <div className="chat-list-section">
+              <div className="chat-list-section-title">Staff</div>
+              {staffContacts.map((contact) => (
             <button
               key={contact.value}
               type="button"
@@ -545,7 +580,9 @@ export default function InboxWorkspace({
               </span>
               {contact.unreadCount ? <span className="contact-unread">{contact.unreadCount}</span> : null}
             </button>
-          )) : filteredThreads.map((thread) => {
+              ))}
+            </div>
+          ) : filteredThreads.map((thread) => {
             const isActive = thread.id === selectedThread?.id;
             return (
               <button
@@ -705,8 +742,8 @@ export default function InboxWorkspace({
           </>
         ) : (
           <div className="inbox-empty-state">
-            <strong>Select a staff member</strong>
-            <p className="muted">Choose someone from the staff list to open the direct conversation.</p>
+            <strong>Choose a chat</strong>
+            <p className="muted">Select a staff member or group chat from the list to open the conversation.</p>
           </div>
         )}
       </div>

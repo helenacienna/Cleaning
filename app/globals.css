@@ -7314,3 +7314,23 @@ button.button {
   align-items: center !important;
   gap: 12px !important;
 }
+
+.google-chat-shell .chat-list-section {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.google-chat-shell .chat-list-section-title {
+  padding: 10px 12px 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.google-chat-shell .group-avatar {
+  background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+  color: #6d28d9;
+}

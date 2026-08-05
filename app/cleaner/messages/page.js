@@ -62,7 +62,7 @@ export default async function StaffMessagesPage({ searchParams }) {
 
       <InboxWorkspace
         initialThreads={workspace.threads}
-        initialThread={workspace.selectedThread}
+        initialThread={selectedThreadId ? workspace.selectedThread : null}
         source={workspace.source}
         senderOptions={senderOptions}
         participantOptions={workspace.composerDefaults.participantOptions}

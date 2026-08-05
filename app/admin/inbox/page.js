@@ -54,7 +54,7 @@ export default async function InboxPage({ searchParams }) {
 
       <InboxWorkspace
         initialThreads={workspace.threads}
-        initialThread={workspace.selectedThread}
+        initialThread={selectedThreadId ? workspace.selectedThread : null}
         source={workspace.source}
         senderOptions={workspace.composerDefaults.senderOptions}
         participantOptions={workspace.composerDefaults.participantOptions}
